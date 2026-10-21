@@ -5,7 +5,9 @@ A sloppiness score for things on the internet, shaped like a Rotten Tomatoes sco
 - **Critics**: is there a quality product definition? What it is, why it must exist, who it is for, what it is not.
 - **People**: do the people who find it actually use it?
 
-Heuristics only. No LLMs. Every rule is public and generated into the website's methodology page from the code.
+Built for founders and open source maintainers who want an honest, public answer to "was this worth building?", and for the contributors who think the rules could be better. It exists because AI made the "what" cheap: anyone can ship a spec in an afternoon, so the thing that separates a product from slop is the definition behind it, and nobody was measuring that.
+
+Heuristics only. No LLMs. Every rule is public and generated into the website's methodology page from the code. The API is a Cloudflare Worker written in TypeScript with Hono, the index is Neon Postgres, the website is Next.js on Vercel. A grade takes one HTTP fetch of your landing page or README and about 50 ms of regex. It is not an invoicing tool, a security scanner, or a replacement for talking to users.
 
 Live at [isitslop.org](https://isitslop.org). API at [api.isitslop.org](https://api.isitslop.org). Read [foundation.md](foundation.md) first: it is the "why" for this repo.
 
