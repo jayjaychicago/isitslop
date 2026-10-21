@@ -1,0 +1,43 @@
+import Link from "next/link";
+import { SearchBox } from "@/components/SearchBox";
+
+export default function Home() {
+  return (
+    <div className="mx-auto max-w-5xl px-4">
+      <section className="pt-14 pb-10 sm:pt-20 sm:pb-14">
+        <h1 className="display text-5xl sm:text-7xl leading-[0.95] max-w-3xl">
+          AI can build anything. <br />
+          <em>Was this worth building?</em>
+        </h1>
+        <p className="mt-6 max-w-2xl text-lg text-ink-2 leading-relaxed">
+          A sloppiness score for things on the internet, shaped like a Rotten Tomatoes score. <strong className="text-ink">Critics</strong> asks
+          whether there is a real product definition: what it is, why it must exist, who it is for. <strong className="text-ink">People</strong> asks
+          whether the people who find it actually use it. Heuristics only, no LLMs, every rule public.
+        </p>
+      </section>
+
+      <section className="pb-14">
+        <SearchBox />
+      </section>
+
+      <section className="grid sm:grid-cols-3 gap-4 pb-6">
+        <div className="card p-5">
+          <div className="display text-2xl mb-1">1. Add a URL</div>
+          <p className="text-sm text-ink-2">Anyone can add a website or a public GitHub repo to the index. Adding does not grade it.</p>
+        </div>
+        <div className="card p-5">
+          <div className="display text-2xl mb-1">2. Prove you own it</div>
+          <p className="text-sm text-ink-2">DNS record, a well-known file, an email to admin@ your domain, or a file in your repo. You get an owner key.</p>
+        </div>
+        <div className="card p-5">
+          <div className="display text-2xl mb-1">3. Ask for a grade</div>
+          <p className="text-sm text-ink-2">Only owners get graded. You accept the <Link href="/terms" className="underline">terms</Link>, we run the rules, the result is public. You can appeal.</p>
+        </div>
+      </section>
+      <p className="text-sm text-muted pb-4">
+        The rules are crude on purpose and will get better. Read the <Link href="/methodology" className="underline">methodology</Link> or{" "}
+        <a href="https://github.com/jayjaychicago/isitslop" className="underline">change it</a>.
+      </p>
+    </div>
+  );
+}
