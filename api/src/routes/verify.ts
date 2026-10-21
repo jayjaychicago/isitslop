@@ -3,7 +3,7 @@ import type { Env } from '../lib/env.ts';
 import { db } from '../lib/db.ts';
 import { randomCode, randomToken, sha256 } from '../lib/crypto.ts';
 import { lookupTxt } from '../lib/dns.ts';
-import { fetchText } from '../lib/fetch.ts';
+import { fetchText, rawGithub } from '../lib/fetch.ts';
 import { emailEnabled, sendEmail } from '../lib/ses.ts';
 import { rateLimit } from '../lib/ratelimit.ts';
 import { getEntry, publicEntry } from '../lib/entries.ts';
@@ -117,7 +117,7 @@ verify.post('/entries/:id/verify/check', async (c) => {
       const m = e.url.match(/github\.com\/([^/]+)\/([^/]+)/)!;
       let found: string | null = null;
       for (const br of ['main', 'master']) {
-        found = await fetchText(`https://raw.githubusercontent.com/${m[1]}/${m[2]}/${br}/.isitslop`);
+        found = await fetchText(rawGithub(m[1], m[2], br, '.isitslop'));
         if (found) break;
       }
       ok = !!found && found.includes(expected);

@@ -4,6 +4,10 @@ import type { Target } from './url.ts';
 const UA = 'isitslop-bot/0.1 (+https://isitslop.org/methodology)';
 const MAX_BYTES = 1_500_000;
 
+/** raw.githubusercontent.com caches for ~5 minutes; a unique query string makes the fetch see the latest commit. */
+export const rawGithub = (owner: string, name: string, branch: string, file: string) =>
+  `https://raw.githubusercontent.com/${owner}/${name}/${branch}/${file}?nocache=${Date.now()}`;
+
 async function get(url: string, accept: string): Promise<{ ok: boolean; status: number; body: string }> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 12_000);
@@ -23,9 +27,9 @@ export async function fetchTargetText(t: Target): Promise<{ extracted: Extracted
     const { owner, name } = t.repo;
     for (const branch of ['main', 'master']) {
       for (const file of ['README.md', 'readme.md', 'README.MD', 'README', 'README.rst', 'README.txt']) {
-        const src = `https://raw.githubusercontent.com/${owner}/${name}/${branch}/${file}`;
+        const src = rawGithub(owner, name, branch, file);
         const r = await get(src, 'text/plain');
-        if (r.ok) return { extracted: extractMarkdown(r.body), source: src, status: r.status };
+        if (r.ok) return { extracted: extractMarkdown(r.body), source: src.replace(/\?nocache=\d+$/, ''), status: r.status };
       }
     }
     return { error: 'could not fetch README on main or master (private repos are not supported in v0)' };
