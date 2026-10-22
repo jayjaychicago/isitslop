@@ -47,12 +47,12 @@ test('popularity: returning rate carries most weight, reach the rest, nobody is 
   assert.ok(r(5000, 2500) > r(5000, 500));
 });
 
-test('verdict: both halves good is not slop, either bad is slop, nothing is unknown', () => {
-  assert.equal(verdict(80, 80), 'not_slop');
-  assert.equal(verdict(80, 30), 'slop');
-  assert.equal(verdict(30, 80), 'slop');
-  assert.equal(verdict(50, 70), 'mixed');
-  assert.equal(verdict(95, 0), 'slop');
+test('verdict: two words, one per axis', () => {
+  assert.equal(verdict(80, 80), 'popular_craft');
+  assert.equal(verdict(80, 30), 'fringe_craft');
+  assert.equal(verdict(30, 80), 'popular_slop');
+  assert.equal(verdict(49, 49), 'fringe_slop');
+  assert.equal(verdict(95, 0), 'fringe_craft');
   assert.equal(overall(80, 40), 60);
   assert.equal(overall(80, 0), 40);
 });

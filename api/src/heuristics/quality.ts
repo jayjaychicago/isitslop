@@ -11,7 +11,7 @@
  */
 import type { QualityResult, Signal } from './types.ts';
 
-export const QUALITY_VERSION = '0.5.1';
+export const QUALITY_VERSION = '0.6.0';
 
 const UA = 'isitslop-bot/0.3 (+https://isitslop.org/methodology)';
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));

@@ -61,7 +61,7 @@ export function EntryView({ id }: { id: string }) {
           {entry.analyticsProvider && <span className="text-sm text-muted"> · analytics: {entry.analyticsProvider}</span>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <VerdictBadge verdict={grade?.verdict ?? "unrated"} size="lg" />
+          <VerdictBadge verdict={grade?.verdict ?? null} size="lg" />
         </div>
       </div>
 

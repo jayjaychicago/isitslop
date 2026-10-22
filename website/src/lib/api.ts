@@ -1,6 +1,6 @@
 export const API = (process.env.NEXT_PUBLIC_API_URL ?? "https://api.isitslop.org/v1").replace(/\/$/, "");
 
-export type Verdict = "not_slop" | "mixed" | "slop" | "unrated";
+export type Verdict = "fringe_slop" | "popular_slop" | "fringe_craft" | "popular_craft";
 
 export type GradeSummary = { quality: number; popularity: number; overall: number; verdict: string; createdAt: string };
 
@@ -47,26 +47,27 @@ export async function api<T>(path: string, init?: RequestInit & { ownerKey?: str
 
 export function verdictLabel(v: string | null | undefined): string {
   switch (v) {
-    case "not_slop": return "Not slop";
-    case "mixed": return "Mixed";
-    case "slop": return "Slop";
+    case "popular_craft": return "Popular Craft";
+    case "fringe_craft": return "Fringe Craft";
+    case "popular_slop": return "Popular Slop";
+    case "fringe_slop": return "Fringe Slop";
     default: return "Unrated";
   }
 }
 
 export function verdictClass(v: string | null | undefined): string {
   switch (v) {
-    case "not_slop": return "text-fresh bg-fresh-bg";
-    case "mixed": return "text-mixed bg-mixed-bg";
-    case "slop": return "text-slop bg-slop-bg";
+    case "popular_craft": return "text-fresh bg-fresh-bg";
+    case "fringe_craft":
+    case "popular_slop": return "text-mixed bg-mixed-bg";
+    case "fringe_slop": return "text-slop bg-slop-bg";
     default: return "text-unrated bg-unrated-bg";
   }
 }
 
 export function scoreClass(n: number | null | undefined): string {
   if (n === null || n === undefined) return "text-unrated";
-  if (n >= 60) return "text-fresh";
-  if (n >= 40) return "text-mixed";
+  if (n >= 50) return "text-fresh";
   return "text-slop";
 }
 

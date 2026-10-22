@@ -8,7 +8,7 @@ type Methodology = {
   termsVersion: string;
   quality: { question: string; source: string; maxPoints: number; rules: { id: string; description: string; weight: number; kind: 'points' | 'multiplier' }[] };
   popularity: { question: string; version: string; source: string; weights: { returning: number; reach: number }; returnBands: [number, number][]; reachBands: [number, number][]; caveat: string; missing: string };
-  verdict: { rule: string; thresholds: { notSlop: number; slop: number } };
+  verdict: { rule: string; thresholds: { craft: number; popular: number } };
 };
 
 async function load(): Promise<Methodology | null> {
@@ -29,8 +29,8 @@ export default async function MethodologyPage() {
       <p className="mt-4 text-ink-2 leading-relaxed">
         The score has two halves. <strong className="text-ink">Quality</strong> asks whether this is real, maintained work by more than one person
         over time, read from the GitHub repository: a year of pushes, other humans committing, issues being filed. <strong className="text-ink">Popularity</strong> asks
-        whether the people who find it actually use it, read from the owner&apos;s connected analytics. Both have to be good for something to be Not slop. If either
-        one is bad, it is Slop. Anything in between is Mixed. No repo is a quality of zero. No users is a popularity of zero.
+        whether the people who find it actually use it, read from the owner&apos;s connected analytics. The verdict is two words, one per axis: below the cut on
+        quality is <strong className="text-ink">Slop</strong>, above is <strong className="text-ink">Craft</strong>; below the cut on popularity is <strong className="text-ink">Fringe</strong>, above is <strong className="text-ink">Popular</strong>. No repo is a quality of zero. No users is a popularity of zero.
       </p>
       <p className="mt-4 text-ink-2 leading-relaxed">
         This page is generated from the code that computes the score, so it is always current. Every rule is a plain function anyone can read in{" "}
@@ -92,7 +92,7 @@ export default async function MethodologyPage() {
           <section className="mt-10">
             <h2 className="display text-3xl">Verdict</h2>
             <p className="mt-2 text-ink-2">{m.verdict.rule}</p>
-            <p className="text-sm text-muted">Not slop at {m.verdict.thresholds.notSlop} and above. Slop below {m.verdict.thresholds.slop}.</p>
+            <p className="text-sm text-muted">Craft at {m.verdict.thresholds.craft} and above, Popular at {m.verdict.thresholds.popular} and above.</p>
           </section>
 
           <section className="mt-10 text-sm text-muted">

@@ -86,6 +86,10 @@ create table if not exists appeals (
 );
 create index if not exists appeals_entry_idx on appeals (entry_id, created_at desc);
 
+-- 0.6.0: two-word verdicts (fringe/popular + slop/craft); recompute from scores
+update grades set verdict = (case when popularity_score >= 50 then 'popular' else 'fringe' end) || '_' || (case when quality_score >= 50 then 'craft' else 'slop' end)
+  where verdict in ('not_slop', 'mixed', 'slop');
+
 -- crude per-IP rate limiting, portable across hosts
 create table if not exists rate_limits (
   key        text primary key,

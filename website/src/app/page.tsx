@@ -12,7 +12,7 @@ export default function Home() {
         <p className="mt-6 max-w-2xl text-lg text-ink-2 leading-relaxed">
           A sloppiness score for things on the internet. It asks two plain questions. <strong className="text-ink">Quality</strong>: is this real,
           maintained work by more than one person over time? Read from the GitHub repo, using signals you cannot buy like stars. <strong className="text-ink">Popularity</strong>: do
-          the people who find it actually use it? Read from the owner&apos;s connected analytics: who visited, who came back. Both have to be good to be not slop. If either is bad, it is slop. No repo and no users both count as zero. Every rule is public.
+          the people who find it actually use it? Read from the owner&apos;s connected analytics: who visited, who came back. The verdict is two words, one per axis: Fringe or Popular, Slop or Craft. No repo and no users both count as zero. Every rule is public.
         </p>
         <p className="mt-4 max-w-2xl text-ink-2 leading-relaxed">
           Built for founders and open source maintainers who want an honest, public answer to &quot;was this worth building?&quot;. It is not a security

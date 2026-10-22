@@ -20,7 +20,7 @@ methodology.get('/methodology', (c) =>
     },
     popularity: { question: 'Popularity: do the people who find it actually use it?', ...methodologyPopularity() },
     verdict: {
-      rule: 'Both halves at or above notSlop is Not slop. Either half below slop is Slop. Everything else is Mixed. No repo is a quality of 0 and no users is a popularity of 0.',
+      rule: 'Two words, one per axis. Quality below the cut is Slop, at or above is Craft. Popularity below the cut is Fringe, at or above is Popular. No repo is a quality of 0 and no users is a popularity of 0.',
       thresholds: VERDICT_THRESHOLDS,
     },
   }),

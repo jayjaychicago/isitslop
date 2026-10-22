@@ -32,4 +32,4 @@ export type PopularityResult = {
   version: string;
 };
 
-export type Verdict = 'not_slop' | 'mixed' | 'slop';
+export type Verdict = 'fringe_slop' | 'popular_slop' | 'fringe_craft' | 'popular_craft';

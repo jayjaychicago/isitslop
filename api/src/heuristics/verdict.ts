@@ -1,17 +1,13 @@
 import type { Verdict } from './types.ts';
 
-export const VERDICT_THRESHOLDS = { notSlop: 60, slop: 40 };
+/** Each axis is a single cut. Quality: Slop below, Craft at or above. Popularity: Fringe below, Popular at or above. */
+export const VERDICT_THRESHOLDS = { craft: 50, popular: 50 };
 
-/**
- * Both halves must be good to be "Not slop"; either bad makes it "Slop".
- * Missing data is not "unknown". No repo is no visible quality; no users is no
- * popularity. Both are zero.
- */
+/** The verdict is two words, one per axis. Missing data is zero, never "unknown". */
 export function verdict(quality: number, popularity: number): Verdict {
-  const { notSlop, slop } = VERDICT_THRESHOLDS;
-  if (quality < slop || popularity < slop) return 'slop';
-  if (quality >= notSlop && popularity >= notSlop) return 'not_slop';
-  return 'mixed';
+  const q = quality >= VERDICT_THRESHOLDS.craft ? 'craft' : 'slop';
+  const p = popularity >= VERDICT_THRESHOLDS.popular ? 'popular' : 'fringe';
+  return `${p}_${q}` as Verdict;
 }
 
 export function overall(quality: number, popularity: number): number {
