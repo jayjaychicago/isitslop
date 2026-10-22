@@ -82,13 +82,13 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
         )}
         {items.map((it) => (
           <li key={it.id}>
-            <Link href={`/s/${it.id}`} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-6 p-4 hover:bg-paper transition-colors">
+            <Link href={`/s/${it.id}`} className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-8 p-5 sm:p-6 hover:bg-paper transition-colors">
               <div className="min-w-0">
-                <div className="display text-3xl leading-tight truncate">{it.url ? it.url.replace(/^https?:\/\//, "") : "Private repository"}</div>
-                {it.title && it.url && <div className="text-sm text-ink-2 truncate">{it.title}</div>}
+                <div className="display text-4xl sm:text-5xl lg:text-6xl leading-none break-words">{it.url ? it.url.replace(/^https?:\/\//, "") : "Private repository"}</div>
+                {it.title && it.url && <div className="mt-1.5 text-sm sm:text-base text-ink-2 truncate">{it.title}</div>}
               </div>
-              <div className="shrink-0 flex flex-col sm:items-end gap-1">
-                <div className="display text-2xl leading-tight">
+              <div className="shrink-0 flex flex-col lg:items-end gap-1.5">
+                <div className="display text-4xl sm:text-5xl lg:text-6xl leading-none">
                   <VerdictWords verdict={it.grade?.verdict} fallback={it.verified ? "Not graded yet" : "Unclaimed"} />
                 </div>
                 {it.grade && <MiniScores quality={it.grade.quality} popularity={it.grade.popularity} />}

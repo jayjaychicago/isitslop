@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
 import { SessionProvider, SignIn } from "@/components/Session";
+import { WordIcon } from "@/components/Icons";
 import { GoogleAnalytics } from "@next/third-parties/google";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="border-b border-line">
           <div className="mx-auto max-w-5xl px-4 py-3 sm:py-4 flex flex-wrap items-center gap-x-5 gap-y-2">
             <Link href="/" className="order-1 flex items-center gap-2.5 display text-2xl leading-none whitespace-nowrap">
-              <img src="/brand/mark.svg" alt="" width={28} height={28} className="rounded-md" />
+              <WordIcon word="slop" size={30} className="text-slop inline-block shrink-0" />
               <span>is it <em>slop</em>?</span>
             </Link>
             <div className="order-2 sm:order-3 ml-auto sm:ml-0 shrink-0"><SignIn /></div>

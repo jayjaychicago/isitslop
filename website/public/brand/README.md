@@ -1,7 +1,7 @@
 # Is it slop? brand
 
-- `mark.svg` / `mark.png` — the mark: ink rounded square, paper dog bowl heaped with slop, two fallen lumps in the accent colour. Use at any size; 1024px PNG included.
-- `mark-light.*` — paper square, ink bowl, for dark backgrounds.
+- `mark.svg` / `mark.png` — the mark: ink rounded square with the Slop dog bowl in the dark-mode Slop colour (#e3845f, also the accent). Use at any size; 1024px PNG included.
+- `mark-light.*` — paper square with the bowl in the light-mode Slop colour (#8a3f23), for dark backgrounds. The bowl is always the same colour the Slop verdict has on screen.
 - `logo.svg` / `logo.png` — horizontal lockup, ink on transparent.
 - `logo-on-dark.*` — horizontal lockup, paper on transparent.
 - `logo-paper.png`, `logo-ink.png` — horizontal lockup on a solid background.
