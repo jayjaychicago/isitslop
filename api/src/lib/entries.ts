@@ -18,6 +18,8 @@ export type EntryRow = {
   github_token_expires_at: string | null;
   analytics_provider: string | null;
   analytics_config: string | null;
+  owner_user_id: string | null;
+  repo_private: boolean;
 };
 
 export type GradeRow = {
@@ -44,19 +46,22 @@ export type AppealRow = {
   resolved_at: string | null;
 };
 
+/** Public view. The URL of a private repository is never published. */
 export function publicEntry(e: EntryRow) {
+  const privateRepoEntry = e.kind === 'github' && e.repo_private;
   return {
     id: e.id,
-    url: e.url,
+    url: privateRepoEntry ? null : e.url,
     kind: e.kind,
     domain: e.domain,
-    title: e.title,
+    title: privateRepoEntry ? e.title || 'Private repository' : e.title,
     createdAt: e.created_at,
     verified: !!e.verified_at,
     verifiedAt: e.verified_at,
-    repoUrl: e.repo_url,
-    githubLogin: e.github_login,
-    analyticsProvider: e.analytics_provider,
+    repoUrl: e.repo_private ? null : e.repo_url,
+    repoPrivate: e.repo_private,
+    analyticsConnected: !!e.analytics_provider,
+    ownerUserId: e.owner_user_id,
   };
 }
 

@@ -31,6 +31,29 @@ alter table entries add column if not exists analytics_config text;
 create index if not exists entries_domain_idx on entries (domain);
 create index if not exists entries_created_idx on entries (created_at desc);
 
+create table if not exists users (
+  id            uuid primary key default gen_random_uuid(),
+  github_id     bigint not null unique,
+  github_login  text not null,
+  github_token  text,
+  github_refresh_token text,
+  github_token_expires_at timestamptz,
+  created_at    timestamptz not null default now(),
+  last_seen_at  timestamptz not null default now()
+);
+
+create table if not exists sessions (
+  id          text primary key,
+  user_id     uuid not null references users(id) on delete cascade,
+  created_at  timestamptz not null default now(),
+  expires_at  timestamptz not null default now() + interval '30 days'
+);
+create index if not exists sessions_user_idx on sessions (user_id);
+
+alter table entries add column if not exists owner_user_id uuid references users(id) on delete set null;
+alter table entries add column if not exists repo_private boolean not null default false;
+create index if not exists entries_owner_idx on entries (owner_user_id);
+
 create table if not exists verifications (
   id          uuid primary key default gen_random_uuid(),
   entry_id    uuid not null references entries(id) on delete cascade,

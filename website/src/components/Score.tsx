@@ -22,14 +22,15 @@ export function ScoreTile({ label, question, value, sub, big = false }: { label:
 
 export function MiniScores({ quality, popularity }: { quality: number | null | undefined; popularity: number | null | undefined }) {
   return (
-    <div className="flex items-center gap-3 text-sm tabular-nums">
-      <span title="Quality: real, maintained work by more than one person">
-        <span className="text-muted mr-1">Q</span>
-        <span className={`font-semibold ${scoreClass(quality)}`}>{quality ?? "?"}</span>
+    <div className="flex items-center gap-3 text-sm tabular-nums whitespace-nowrap">
+      <span title="Quality: real, maintained work by more than one person over time">
+        <span className="text-muted mr-1">Quality</span>
+        <span className={`font-semibold ${scoreClass(quality)}`}>{quality ?? "unknown"}</span>
       </span>
-      <span title="Popularity: do people who find it use it">
-        <span className="text-muted mr-1">P</span>
-        <span className={`font-semibold ${scoreClass(popularity)}`}>{popularity ?? "?"}</span>
+      <span className="text-line">·</span>
+      <span title="Popularity: do the people who find it use it">
+        <span className="text-muted mr-1">Popularity</span>
+        <span className={`font-semibold ${scoreClass(popularity)}`}>{popularity ?? "unknown"}</span>
       </span>
     </div>
   );

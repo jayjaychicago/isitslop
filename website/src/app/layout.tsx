@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import Link from "next/link";
 import "./globals.css";
+import { SessionProvider, SignIn } from "@/components/Session";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -18,6 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} ${display.variable} min-h-screen flex flex-col`}>
+        <SessionProvider>
         <header className="border-b border-line">
           <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between gap-4">
             <Link href="/" className="display text-2xl leading-none">
@@ -28,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/contribute" className="hover:text-ink font-semibold text-ink">Change the rules</Link>
               <Link href="/api-docs" className="hover:text-ink">API</Link>
               <a href="https://github.com/jayjaychicago/isitslop" className="hover:text-ink" target="_blank" rel="noreferrer">GitHub</a>
+              <SignIn />
             </nav>
           </div>
         </header>
@@ -44,6 +47,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </footer>
+        </SessionProvider>
       </body>
     </html>
   );

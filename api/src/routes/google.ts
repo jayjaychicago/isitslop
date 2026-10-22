@@ -5,6 +5,7 @@ import { randomToken, sha256 } from '../lib/crypto.ts';
 import { seal, signState, verifyState } from '../lib/github-auth.ts';
 import { ga4Report, listGa4Properties } from '../lib/analytics.ts';
 import { getEntry } from '../lib/entries.ts';
+import { currentUser } from '../lib/session.ts';
 
 export const google = new Hono<{ Bindings: Env }>();
 
@@ -16,9 +17,11 @@ google.get('/google/login', async (c) => {
   const sql = db(c.env.DATABASE_URL);
   const e = await getEntry(sql, c.req.query('entry') ?? '');
   if (!e) return c.json({ error: 'entry not found' }, 404);
+  const u = await currentUser(c, sql);
   const key = (c.req.query('ownerKey') ?? '').trim();
-  if (!key || !e.owner_key_hash || (await sha256(key)) !== e.owner_key_hash) return c.json({ error: 'valid ownerKey required' }, 401);
-  const state = await signState(c.env, { entry: e.id, ownerKeyHash: e.owner_key_hash, nonce: randomToken(8), google: true });
+  const byKey = !!key && !!e.owner_key_hash && (await sha256(key)) === e.owner_key_hash;
+  if (!byKey && (!u || e.owner_user_id !== u.id)) return c.json({ error: 'sign in as the owner' }, 401);
+  const state = await signState(c.env, { entry: e.id, nonce: randomToken(8), google: true });
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.searchParams.set('client_id', c.env.GOOGLE_CLIENT_ID);
   url.searchParams.set('redirect_uri', `${new URL(c.req.url).origin}/v1/google/callback`);
@@ -60,7 +63,7 @@ google.get('/google/callback', async (c) => {
   if (!props.length) return back(e.id, { google: 'error', detail: 'that Google account has no GA4 properties' });
 
   // Park the refresh token on the entry (encrypted) with no property yet; the picker completes it.
-  const cfg = { apiKey: '', refreshToken: t.refresh_token, projectId: props.length === 1 ? props[0].id : '' };
+  const cfg = { refreshToken: t.refresh_token, propertyId: props.length === 1 ? props[0].id : '', propertyName: props.length === 1 ? props[0].name : undefined };
   await sql`update entries set analytics_provider = 'ga4', analytics_config = ${await seal(c.env, JSON.stringify(cfg))} where id = ${e.id}`;
   if (props.length === 1) {
     const reading = await ga4Report(t.access_token, props[0].id);

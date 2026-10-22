@@ -1,10 +1,10 @@
 /**
  * POPULARITY: do the people who find it actually use it?
  *
- * Read from the owner's connected analytics, never typed in. Two numbers for
- * the last 30 days, available from any analytics product:
- *   visitors   unique people who visited
- *   returning  of those, how many came on at least two different days
+ * Read from the owner's Google Analytics, never typed in. Two numbers for the
+ * last 30 days:
+ *   visitors   active users
+ *   returning  of those, the ones Google classes as returning
  *
  * Coming back is the cheapest honest definition of "using it". Returning rate
  * carries most of the weight; absolute reach adds the rest so that two friends
@@ -48,17 +48,17 @@ export function scorePopularity(p: PopularityInput): PopularityResult {
   if (visitors === 0) return { score: 0, returningRate: 0, note: 'No visitors in the last 30 days.', version: POPULARITY_VERSION };
   const returningRate = returning / visitors;
   const score = Math.round(100 * (RETURN_WEIGHT * band(returningRate, RETURN_BANDS) + REACH_WEIGHT * band(Math.log10(visitors), REACH_BANDS)));
-  return { score, returningRate, note: `${visitors.toLocaleString()} visitors, ${returning.toLocaleString()} came back on another day, read from ${p.provider}.`, version: POPULARITY_VERSION };
+  return { score, returningRate, note: `${visitors.toLocaleString()} visitors, ${returning.toLocaleString()} came back on another day, read from Google Analytics.`, version: POPULARITY_VERSION };
 }
 
 export function methodologyPopularity() {
   return {
     version: POPULARITY_VERSION,
-    source: 'Read from the owner\'s connected analytics (Google Analytics, PostHog or Plausible in v0) for the last 30 days: unique visitors, and how many of them came on at least two different days.',
+    source: 'Read from the owner\'s Google Analytics 4 property, connected with Google sign-in, for the last 30 days: active users, and how many of them Google classes as returning.',
     weights: { returning: RETURN_WEIGHT, reach: REACH_WEIGHT },
     returnBands: RETURN_BANDS,
     reachBands: REACH_BANDS,
     missing: 'No analytics connected is unknown, not zero. Connected with no visitors is zero: a thing nobody uses is slop, however well built.',
-    caveat: 'Analytics keys are stored encrypted and used read-only at grading time. Google Analytics and others are open contributions.',
+    caveat: 'The Google connection is read-only and stored encrypted. Other analytics products are an open contribution.',
   };
 }

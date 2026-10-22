@@ -7,7 +7,8 @@ export type GradeSummary = { quality: number | null; popularity: number | null; 
 
 export type Entry = {
   id: string;
-  url: string;
+  /** null for private repositories: their URL is never published */
+  url: string | null;
   kind: "site" | "github";
   domain: string;
   title: string | null;
@@ -15,9 +16,12 @@ export type Entry = {
   verified: boolean;
   verifiedAt: string | null;
   repoUrl: string | null;
-  githubLogin: string | null;
-  analyticsProvider: string | null;
+  repoPrivate: boolean;
+  analyticsConnected: boolean;
+  ownerUserId: string | null;
 };
+
+export type Me = { user: { id: string; githubLogin: string; githubConnected: boolean } | null; entries: (Entry & { grade: GradeSummary | null })[] };
 
 export type Signal = { id: string; description: string; weight: number; score: number; evidence: string[] };
 
@@ -40,7 +44,7 @@ export type EntryDetail = { entry: Entry; grade: Grade | null; history: (GradeSu
 export async function api<T>(path: string, init?: RequestInit & { ownerKey?: string }): Promise<T> {
   const headers: Record<string, string> = { "content-type": "application/json", ...(init?.headers as Record<string, string>) };
   if (init?.ownerKey) headers.authorization = `Bearer ${init.ownerKey}`;
-  const r = await fetch(`${API}${path}`, { ...init, headers });
+  const r = await fetch(`${API}${path}`, { ...init, headers, credentials: "include" });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error((j as { error?: string }).error ?? `request failed (${r.status})`);
   return j as T;
@@ -68,6 +72,10 @@ export function scoreClass(n: number | null | undefined): string {
   if (n >= 50) return "text-fresh";
   return "text-slop";
 }
+
+export const me = () => api<Me>("/me");
+export const signInUrl = (returnTo: string) => `${API}/auth/github?return=${encodeURIComponent(returnTo)}`;
+export const entryLabel = (e: { url: string | null; title: string | null; domain: string; repoPrivate?: boolean }) => e.title || (e.url ? e.url.replace(/^https?:\/\//, "") : "Private repository");
 
 export const OWNER_KEY_STORAGE = "isitslop.ownerKeys";
 

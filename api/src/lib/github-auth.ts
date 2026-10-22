@@ -81,6 +81,16 @@ export async function githubUser(token: string): Promise<{ login: string; id: nu
   return { login: j.login, id: j.id };
 }
 
+/** Permission plus visibility. 'invisible' means the app cannot see the repo (not installed there, or no such repo). */
+export async function repoInfo(token: string, owner: string, name: string): Promise<{ permission: 'admin' | 'push' | 'pull' | 'none'; isPrivate: boolean } | 'invisible'> {
+  const r = await fetch(`https://api.github.com/repos/${owner}/${name}`, { headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'user-agent': 'isitslop-bot/0.3' } });
+  if (r.status === 404) return 'invisible';
+  if (!r.ok) return { permission: 'none', isPrivate: false };
+  const j = (await r.json()) as { private?: boolean; permissions?: { admin?: boolean; push?: boolean; pull?: boolean } };
+  const permission = j.permissions?.admin ? 'admin' : j.permissions?.push ? 'push' : j.permissions?.pull ? 'pull' : 'none';
+  return { permission, isPrivate: !!j.private };
+}
+
 /** Does this token's user have push (or better) on the repo? Also tells us if the app can see it at all. */
 export async function repoPermission(token: string, owner: string, name: string): Promise<'admin' | 'push' | 'pull' | 'none' | 'invisible'> {
   const r = await fetch(`https://api.github.com/repos/${owner}/${name}`, { headers: { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'user-agent': 'isitslop-bot/0.3' } });

@@ -25,7 +25,7 @@ export default function Contribute() {
         <ol className="mt-3 space-y-3 text-ink-2">
           <li className="card p-4"><strong className="text-ink">1. Read the repo.</strong> At grading time the API reads the GitHub repository with the owner&apos;s own login: commit history, contributors, issues, releases, the file tree, the README. About ten API calls, nothing stored but the result.</li>
           <li className="card p-4"><strong className="text-ink">2. Run the rules.</strong> Each rule in <code>quality.ts</code> turns those facts into a number between 0 and 1 plus the evidence it saw. Three signals, weights summing to 100, all of which take time: a year of pushes, other humans committing, issues being filed. That is the Quality score.</li>
-          <li className="card p-4"><strong className="text-ink">3. Popularity.</strong> The API reads the owner&apos;s connected analytics (<code>analytics.ts</code>): unique visitors in 30 days and how many came back on another day. The bands in <code>popularity.ts</code> turn that into the score. This answers: do the people who find it use it?</li>
+          <li className="card p-4"><strong className="text-ink">3. Popularity.</strong> The API reads the owner&apos;s Google Analytics property (<code>analytics.ts</code>): active users in 30 days and how many are returning. The bands in <code>popularity.ts</code> turn that into the score. This answers: do the people who find it use it?</li>
           <li className="card p-4"><strong className="text-ink">4. Verdict.</strong> <code>verdict.ts</code> turns each axis into a word: Slop or Craft, Fringe or Popular. The verdict is both words. The <Link href="/methodology" className="underline">methodology page</Link> is generated from these files.</li>
         </ol>
       </section>
@@ -71,7 +71,7 @@ export default function Contribute() {
       <section className="mt-12">
         <h2 className="display text-3xl">Open problems worth a pull request</h2>
         <ul className="mt-3 grid sm:grid-cols-2 gap-3 text-sm text-ink-2">
-          <li className="card p-4">More analytics providers for Popularity: Matomo, Fathom, Umami, Mixpanel, Cloudflare. Each is one object in <code>analytics.ts</code>.</li>
+          <li className="card p-4">Other analytics products for Popularity: Plausible, PostHog, Matomo, Fathom. Google Analytics is the only one in v0.</li>
           <li className="card p-4">GitLab, Codeberg and self-hosted repos. Everything in v0 is GitHub.</li>
           <li className="card p-4">Better fraud resistance: detecting commit-cadence bots, sock-puppet contributors, issue farms.</li>
           <li className="card p-4">Pull request signals: reviewed merges from outside contributors. Releases were dropped as too cheap; argue for them back with data.</li>

@@ -1,16 +1,15 @@
-/* eslint-disable react-hooks/set-state-in-effect -- owner key is read from localStorage after mount */
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { api, loadOwnerKey, saveOwnerKey, type EntryDetail, type Grade } from "@/lib/api";
+import { api, entryLabel, verdictClass, verdictLabel, type EntryDetail, type Grade } from "@/lib/api";
 import { ScoreTile, VerdictBadge } from "@/components/Score";
-import { verdictClass, verdictLabel } from "@/lib/api";
 import { OwnerPanel } from "./OwnerPanel";
 
 export function EntryView({ id }: { id: string }) {
   const [data, setData] = useState<EntryDetail | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [ownerKey, setOwnerKey] = useState<string | null>(null);
+  const [flash, setFlash] = useState<string | null>(null);
+  const [gaPick, setGaPick] = useState<{ id: string; name: string }[] | null>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -21,33 +20,24 @@ export function EntryView({ id }: { id: string }) {
     }
   }, [id]);
 
-  const [flash, setFlash] = useState<string | null>(null);
-  const [gaPick, setGaPick] = useState<{ id: string; name: string }[] | null>(null);
-
   useEffect(() => {
     reload();
-    // Returning from GitHub: the API puts the result in the URL fragment so it never hits server logs.
+    // Returning from Google: the API puts the result in the URL fragment so it never hits server logs.
     const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
-    if (h.get("github") === "ok") {
-      const k = h.get("ownerKey");
-      if (k) saveOwnerKey(id, k);
-      setFlash(`GitHub connected as ${h.get("login")}.${k ? " You are verified; your owner key is saved in this browser." : ""}`);
-      window.history.replaceState(null, "", window.location.pathname);
-    } else if (h.get("github") === "error") {
-      setFlash(`GitHub: ${h.get("detail")}`);
-      window.history.replaceState(null, "", window.location.pathname);
-    } else if (h.get("google") === "ok") {
-      setFlash(`Google Analytics connected: ${h.get("property")}. ${h.get("detail") ?? `Last 30 days: ${h.get("visitors")} visitors, ${h.get("returning")} came back. Request a grade.`}`);
-      window.history.replaceState(null, "", window.location.pathname);
+    const q = new URLSearchParams(window.location.search);
+    if (h.get("google") === "ok") {
+      setFlash(`Google Analytics connected: ${h.get("property")}. ${h.get("detail") ?? `Last 30 days: ${h.get("visitors")} active users, ${h.get("returning")} returning. Request a grade.`}`);
     } else if (h.get("google") === "pick") {
       try { setGaPick(JSON.parse(h.get("properties") ?? "[]")); } catch { /* ignore */ }
-      setFlash("Google signed in. Pick the GA4 property in the analytics tab.");
-      window.history.replaceState(null, "", window.location.pathname);
+      setFlash("Google signed in. Pick the property in the analytics tab.");
     } else if (h.get("google") === "error") {
       setFlash(`Google: ${h.get("detail")}`);
-      window.history.replaceState(null, "", window.location.pathname);
+    } else if (q.get("signin") === "denied") {
+      setFlash("GitHub sign-in was cancelled.");
+    } else if (q.get("signin") === "error") {
+      setFlash("GitHub sign-in failed. Try again.");
     }
-    setOwnerKey(loadOwnerKey(id));
+    if (window.location.hash || q.has("signin")) window.history.replaceState(null, "", window.location.pathname);
   }, [id, reload]);
 
   if (err) return <div className="mx-auto max-w-5xl px-4 py-16 text-slop">{err}</div>;
@@ -57,54 +47,51 @@ export function EntryView({ id }: { id: string }) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div className="min-w-0">
-          <div className="text-xs uppercase tracking-wider text-muted font-semibold">{entry.kind === "github" ? "GitHub repository" : "Website"}</div>
-          <h1 className="display text-4xl sm:text-5xl leading-tight break-words">{entry.title || entry.domain}</h1>
-          <a href={entry.url} target="_blank" rel="noreferrer nofollow" className="text-sm text-ink-2 underline break-all">
-            {entry.url.replace(/^https?:\/\//, "")}
-          </a>
-          {entry.repoUrl && (
-            <span className="text-sm text-ink-2">
-              {" "}· code: <a href={entry.repoUrl} target="_blank" rel="noreferrer nofollow" className="underline break-all">{entry.repoUrl.replace(/^https?:\/\//, "")}</a>
-            </span>
-          )}
-          {entry.githubLogin && <span className="text-sm text-muted"> · GitHub: {entry.githubLogin}</span>}
-          {entry.analyticsProvider && <span className="text-sm text-muted"> · analytics: {entry.analyticsProvider}</span>}
-        </div>
+      <div className="text-xs uppercase tracking-wider text-muted font-semibold">{entry.kind === "github" ? (entry.repoPrivate ? "Private repository" : "GitHub repository") : "Website"}</div>
+      <h1 className={`display text-5xl sm:text-7xl leading-[0.95] mt-1 ${grade ? verdictClass(grade.verdict).split(" ")[0] : "text-muted"}`}>
+        {grade ? `${verdictLabel(grade.verdict)}.` : entry.verified ? "Not graded yet." : "Unclaimed."}
+      </h1>
+      <div className="mt-4 text-lg">
+        <span className="font-medium">{entryLabel(entry)}</span>
+        {entry.url && (
+          <>
+            {" "}·{" "}
+            <a href={entry.url} target="_blank" rel="noreferrer nofollow" className="text-ink-2 underline break-all">{entry.url.replace(/^https?:\/\//, "")}</a>
+          </>
+        )}
+        {entry.repoUrl && (
+          <span className="text-ink-2"> · code: <a href={entry.repoUrl} target="_blank" rel="noreferrer nofollow" className="underline break-all">{entry.repoUrl.replace(/^https?:\/\/github\.com\//, "")}</a></span>
+        )}
+        {entry.kind === "site" && entry.repoPrivate && <span className="text-muted"> · private repository linked</span>}
       </div>
-
-      <p className="display text-4xl sm:text-5xl mt-8 leading-tight">
-        {grade ? <span className={verdictClass(grade.verdict).split(" ")[0]}>{verdictLabel(grade.verdict)}.</span> : <span className="text-muted">Not graded yet.</span>}
-      </p>
 
       {flash && <div className="mt-4 card p-3 text-sm">{flash}</div>}
 
-      <div className="grid sm:grid-cols-2 gap-4 mt-4">
+      <div className="grid sm:grid-cols-2 gap-4 mt-8">
         <ScoreTile
           label="Quality"
-          question="Is this real, maintained work by more than one person over time?"
+          question="Is this real, maintained work by more than one person over time? Read from the repository."
           value={grade?.quality ?? null}
           sub={grade ? grade.qualityBreakdown.note ?? `Read from ${grade.qualityBreakdown.repo}, rules v${grade.heuristicsVersion}` : "Not graded yet"}
           big
         />
         <ScoreTile
           label="Popularity"
-          question="Do the people who find it actually use it?"
+          question="Do the people who find it actually use it? Read from Google Analytics."
           value={grade?.popularity ?? null}
-          sub={grade ? grade.popularityInput?.note ?? "No analytics connected: unknown." : "Not graded yet"}
+          sub={grade ? grade.popularityInput?.note ?? "Google Analytics not connected: unknown." : "Not graded yet"}
           big
         />
       </div>
 
       {grade && <Breakdown grade={grade} />}
 
-      <OwnerPanel key={gaPick ? "pick" : "panel"} entry={entry} grade={grade} ownerKey={ownerKey} onOwnerKey={(k) => { setOwnerKey(k); saveOwnerKey(id, k); }} onChange={reload} gaPick={gaPick} initialTab={gaPick ? "analytics" : undefined} />
+      <OwnerPanel key={gaPick ? "pick" : "panel"} entry={entry} grade={grade} onChange={reload} gaPick={gaPick} initialTab={gaPick ? "analytics" : undefined} />
 
       <section className="mt-12">
         <h2 className="display text-3xl mb-3">Appeals</h2>
         {appeals.length === 0 ? (
-          <p className="text-sm text-muted">No appeals. Owners can appeal a grade below; appeals and their outcomes are public.</p>
+          <p className="text-sm text-muted">No appeals. Owners can appeal a grade above; appeals and their outcomes are public.</p>
         ) : (
           <ul className="flex flex-col gap-3">
             {appeals.map((a) => (
@@ -182,7 +169,7 @@ function Breakdown({ grade }: { grade: Grade }) {
                   )}
                 </div>
                 <div className="text-right tabular-nums font-semibold text-ink">
-                  {sig.weight === 0 ? `×${sig.score.toFixed(1)}` : <>+{pts} <span className="text-muted font-normal">/ {sig.weight}</span></>}
+                  +{pts} <span className="text-muted font-normal">/ {sig.weight}</span>
                 </div>
               </li>
             );

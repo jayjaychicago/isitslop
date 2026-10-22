@@ -17,7 +17,6 @@ workers_dev = true
 #   TOKEN_KEY             64 hex chars; encrypts stored GitHub tokens and signs OAuth state
 #   GITHUB_TOKEN          optional fallback for anonymous /v1/preview only
 #   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET  OAuth client for "Connect Google Analytics" (scope analytics.readonly)
-#   GA_SERVICE_ACCOUNT_JSON  optional alternative: a service account owners add as Viewer on their property
 
 # Custom domain (the isitslop.org zone is on the same Cloudflare account).
 routes = [{ pattern = "api.isitslop.org", custom_domain = true }]

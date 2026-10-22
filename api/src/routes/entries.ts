@@ -5,8 +5,10 @@ import { normalizeTarget } from '../lib/url.ts';
 import { rateLimit } from '../lib/ratelimit.ts';
 import { requireOwner } from './grade.ts';
 import { collectRepoFacts, scoreQuality } from '../heuristics/quality.ts';
-import { ownerGithubToken } from './github.ts';
-import { repoPermission } from '../lib/github-auth.ts';
+import { userGithubToken } from './github.ts';
+import { repoPermission, repoInfo } from '../lib/github-auth.ts';
+import { currentUser } from '../lib/session.ts';
+import { randomToken, sha256 } from '../lib/crypto.ts';
 import { getEntry, latestGrade, publicAppeal, publicEntry, publicGrade, type AppealRow, type EntryRow, type GradeRow } from '../lib/entries.ts';
 
 export const entries = new Hono<{ Bindings: Env }>();
@@ -23,7 +25,7 @@ entries.get('/entries', async (c) => {
     select e.*, g.quality_score, g.popularity_score, g.overall, g.verdict, g.created_at as graded_at
     from entries e
     left join lateral (select * from grades where entry_id = e.id order by created_at desc limit 1) g on true
-    where ${q} = '' or e.url ilike ${like} or e.domain ilike ${like} or coalesce(e.title,'') ilike ${like}
+    where ${q} = '' or ((e.url ilike ${like} or e.domain ilike ${like}) and not (e.kind = 'github' and e.repo_private)) or coalesce(e.title,'') ilike ${like}
     order by e.created_at desc
     limit ${limit} offset ${offset}
   `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; overall: number | null; verdict: string | null; graded_at: string | null })[];
@@ -68,30 +70,51 @@ entries.get('/entries/:id', async (c) => {
 });
 
 /**
- * Link a GitHub repo to a site entry, so one thing is one entry.
- * Both sides must be proven: the caller holds the site's owner key, and the
- * connected GitHub account has push access to the repo.
+ * Link a GitHub repo to a site entry, so one thing is one entry. The signed-in owner's
+ * GitHub account must have push access to the repo. Private repos are fine; their URL is never published.
  */
 entries.post('/entries/:id/repo', async (c) => {
   const sql = db(c.env.DATABASE_URL);
   const e = await getEntry(sql, c.req.param('id'));
   if (!e) return c.json({ error: 'not found' }, 404);
   if (e.kind !== 'site') return c.json({ error: 'only site entries can link a repo' }, 400);
-  if (!(await requireOwner(c, e))) return c.json({ error: 'invalid owner key' }, 401);
+  const u = await currentUser(c, sql);
+  if (!u || e.owner_user_id !== u.id) return c.json({ error: 'sign in as the owner' }, 401);
   const body = await c.req.json().catch(() => ({}));
   if (body.repoUrl === null) {
-    const rows = (await sql`update entries set repo_url = null where id = ${e.id} returning *`) as EntryRow[];
+    const rows = (await sql`update entries set repo_url = null, repo_private = false where id = ${e.id} returning *`) as EntryRow[];
     return c.json({ entry: publicEntry(rows[0]) });
   }
   const t = normalizeTarget(String(body.repoUrl ?? ''));
-  if (typeof t === 'string' || t.kind !== 'github' || !t.repo) return c.json({ error: 'repoUrl must be a public github.com/owner/repo URL' }, 400);
-  const token = await ownerGithubToken(c.env, sql, e);
-  if (!token) return c.json({ error: 'connect your GitHub account first (GET /v1/github/login?entry=...&ownerKey=...)' }, 428);
-  const perm = await repoPermission(token, t.repo.owner, t.repo.name);
-  if (perm === 'invisible') return c.json({ error: `the isitslop app cannot see ${t.url}; install it on that account at https://github.com/apps/${c.env.GITHUB_APP_SLUG ?? 'isitslop'}/installations/new` }, 422);
-  if (perm !== 'admin' && perm !== 'push') return c.json({ error: `${e.github_login} does not have push access to ${t.url}` }, 403);
-  const rows = (await sql`update entries set repo_url = ${t.url} where id = ${e.id} returning *`) as EntryRow[];
+  if (typeof t === 'string' || t.kind !== 'github' || !t.repo) return c.json({ error: 'repoUrl must be a github.com/owner/repo URL' }, 400);
+  const token = await userGithubToken(c.env, sql, u);
+  if (!token) return c.json({ error: 'your GitHub sign-in has expired; sign in again' }, 428);
+  const info = await repoInfo(token, t.repo.owner, t.repo.name);
+  if (info === 'invisible') return c.json({ error: `the Is It Slop app cannot see ${t.url}; install it on that account at https://github.com/apps/${c.env.GITHUB_APP_SLUG ?? 'is-it-slop'}/installations/new` }, 422);
+  if (info.permission !== 'admin' && info.permission !== 'push') return c.json({ error: `${u.github_login} does not have push access to ${t.url}` }, 403);
+  const rows = (await sql`update entries set repo_url = ${t.url}, repo_private = ${info.isPrivate} where id = ${e.id} returning *`) as EntryRow[];
   return c.json({ entry: publicEntry(rows[0]) });
+});
+
+/** Claim a repository entry: the signed-in user's GitHub account must have push access. This is the ownership proof. */
+entries.post('/entries/:id/claim', async (c) => {
+  const sql = db(c.env.DATABASE_URL);
+  const e = await getEntry(sql, c.req.param('id'));
+  if (!e) return c.json({ error: 'not found' }, 404);
+  if (e.kind !== 'github') return c.json({ error: 'sites are verified by DNS, file or email' }, 400);
+  const u = await currentUser(c, sql);
+  if (!u) return c.json({ error: 'sign in with GitHub first' }, 401);
+  const t = normalizeTarget(e.url);
+  if (typeof t === 'string' || !t.repo) return c.json({ error: 'bad repo url' }, 400);
+  const token = await userGithubToken(c.env, sql, u);
+  if (!token) return c.json({ error: 'your GitHub sign-in has expired; sign in again' }, 428);
+  const info = await repoInfo(token, t.repo.owner, t.repo.name);
+  if (info === 'invisible') return c.json({ error: `the Is It Slop app cannot see ${t.url}; install it on that account at https://github.com/apps/${c.env.GITHUB_APP_SLUG ?? 'is-it-slop'}/installations/new` }, 422);
+  if (info.permission !== 'admin' && info.permission !== 'push') return c.json({ error: `${u.github_login} does not have push access to ${t.url}` }, 403);
+  const ownerKey = `isk_${randomToken(24)}`;
+  await sql`insert into verifications (entry_id, method, token, status) values (${e.id}, 'github', ${u.github_login}, 'verified')`;
+  const rows = (await sql`update entries set verified_at = now(), owner_user_id = ${u.id}, owner_key_hash = ${await sha256(ownerKey)}, repo_private = ${info.isPrivate} where id = ${e.id} returning *`) as EntryRow[];
+  return c.json({ entry: publicEntry(rows[0]), ownerKey, note: 'ownerKey is only needed for API use; the website uses your sign-in.' });
 });
 
 /** Remove an entry and everything attached to it. Owner key or admin token. See terms, section 9. */
@@ -101,7 +124,7 @@ entries.delete('/entries/:id', async (c) => {
   if (!e) return c.json({ error: 'not found' }, 404);
   const auth = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
   const isAdmin = !!c.env.ADMIN_TOKEN && auth === c.env.ADMIN_TOKEN;
-  if (!isAdmin && !(await requireOwner(c, e))) return c.json({ error: 'invalid owner key' }, 401);
+  if (!isAdmin && !(await requireOwner(c, e, sql))) return c.json({ error: 'sign in as the owner' }, 401);
   await sql`delete from entries where id = ${e.id}`;
   return c.json({ deleted: e.id });
 });

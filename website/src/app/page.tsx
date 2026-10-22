@@ -12,10 +12,10 @@ export default function Home() {
         <p className="mt-6 max-w-2xl text-lg text-ink-2 leading-relaxed">
           A sloppiness score for things on the internet. It asks two plain questions. <strong className="text-ink">Quality</strong>: is this real,
           maintained work by more than one person over time? Read from the GitHub repo, using signals you cannot buy like stars. <strong className="text-ink">Popularity</strong>: do
-          the people who find it actually use it? Read from the owner&apos;s connected analytics: who visited, who came back. The verdict is two words, one per axis: Fringe or Popular, Slop or Craft. Nothing connected is unknown, not zero. Every rule is public.
+          the people who find it actually use it? Read from the owner&apos;s Google Analytics: who visited, who came back. The verdict is two words, one per axis: Fringe or Popular, Slop or Craft. Nothing connected is unknown, not zero. Every rule is public.
         </p>
         <p className="mt-4 max-w-2xl text-ink-2 leading-relaxed">
-          Built for founders and open source maintainers who want an honest, public answer to &quot;was this worth building?&quot;. It is not a security
+          Maintained by people who want an honest, public answer to &quot;was this worth building?&quot;. It is not a security
           scanner, not an SEO tool, and not a substitute for talking to users. It is free, and the code is MIT licensed.
         </p>
       </section>
@@ -35,7 +35,7 @@ export default function Home() {
         </div>
         <div className="card p-5">
           <div className="display text-2xl mb-1">3. Ask for a grade</div>
-          <p className="text-sm text-ink-2">Only owners get graded. You accept the <Link href="/terms" className="underline">terms</Link>, we run the rules, the result is public. You can appeal.</p>
+          <p className="text-sm text-ink-2">Only owners get graded. Connect GitHub and Google Analytics, accept the <Link href="/terms" className="underline">terms</Link>, we run the rules, the result is public. You can appeal.</p>
         </div>
       </section>
       <section className="mt-10 card p-6 sm:p-8 border-ink">

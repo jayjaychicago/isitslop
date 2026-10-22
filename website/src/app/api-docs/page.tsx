@@ -6,7 +6,7 @@ export default function ApiDocs() {
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="display text-5xl">API</h1>
       <p className="mt-4 text-ink-2 leading-relaxed">
-        Everything the website does, curl can do. Base URL <code>{base}</code>. JSON in, JSON out. No API keys for reading. Rate limited per IP. Source on{" "}
+        Everything the website does, curl can do. Base URL <code>{base}</code>. JSON in, JSON out. Reading needs nothing. Owner actions need the session cookie from GitHub sign-in, or the owner key a site verification returns. Rate limited per IP. Source on{" "}
         <a className="underline" href="https://github.com/jayjaychicago/isitslop/tree/main/api">GitHub</a>.
       </p>
 
@@ -20,47 +20,41 @@ export default function ApiDocs() {
         <pre>{`curl -X POST ${base}/entries -H 'content-type: application/json' \\
   -d '{"url":"https://example.com"}'`}</pre>
       </Section>
-      <Section title="Verify ownership">
-        <pre>{`# sites: method is dns | file | email
-curl -X POST ${base}/entries/ENTRY_ID/verify/start -H 'content-type: application/json' \\
-  -d '{"method":"dns"}'
-# follow the instructions in the response, then:
-curl -X POST ${base}/entries/ENTRY_ID/verify/check -H 'content-type: application/json' \\
-  -d '{"verificationId":"...","code":"123456 (email only)"}'
-# -> { verified: true, ownerKey: "isk_..." }   shown once
+      <Section title="Sign in and own things">
+        <pre>{`# browser: sign in with GitHub (sets a session cookie on .isitslop.org)
+${base}/auth/github?return=/me
+curl -b cookies ${base}/me
 
-# repos: open this in a browser and sign in with the GitHub account that has push access
-${base}/github/login?entry=ENTRY_ID
-# -> redirects back to the entry page with the owner key in the URL fragment`}</pre>
+# sites: prove the domain with dns | file | email
+curl -b cookies -X POST ${base}/entries/ENTRY_ID/verify/start -H 'content-type: application/json' -d '{"method":"dns"}'
+curl -b cookies -X POST ${base}/entries/ENTRY_ID/verify/check -H 'content-type: application/json' -d '{"verificationId":"..."}'
+# -> { verified: true, ownerKey: "isk_..." }   the ownerKey is only for curl use; the website uses your sign-in
+
+# repositories: your GitHub account must have push access
+curl -b cookies -X POST ${base}/entries/ENTRY_ID/claim`}</pre>
       </Section>
       <Section title="Request a grade (owner only)">
-        <pre>{`curl -X POST ${base}/entries/ENTRY_ID/grade \\
-  -H 'authorization: Bearer isk_...' -H 'content-type: application/json' \\
-  -d '{"acceptTerms":true}'`}</pre>
-        <p className="text-sm text-muted">Sending <code>acceptTerms: true</code> is agreement to the terms at /terms. Quality is read from the connected GitHub account; Popularity from the connected analytics. Nothing connected is zero.</p>
+        <pre>{`curl -b cookies -X POST ${base}/entries/ENTRY_ID/grade \\
+  -H 'content-type: application/json' -d '{"acceptTerms":true}'
+# or, without a browser session: -H 'authorization: Bearer isk_...'`}</pre>
+        <p className="text-sm text-muted">Sending <code>acceptTerms: true</code> is agreement to the terms at /terms. Quality is read from the connected GitHub account; Popularity from the connected Google Analytics property. Nothing connected is unknown.</p>
       </Section>
-      <Section title="Connect analytics (owner only)">
-        <pre>{`curl ${base}/analytics/providers
-curl -X POST ${base}/entries/ENTRY_ID/analytics \\
-  -H 'authorization: Bearer isk_...' -H 'content-type: application/json' \\
-  -d '{"provider":"posthog","apiKey":"phx_...","projectId":"12345"}'
-# tests the key once, stores it encrypted, returns the 30-day reading`}</pre>
+      <Section title="Connect Google Analytics (owner only)">
+        <pre>{`# browser, signed in: Google sign-in with the read-only Analytics scope
+${base}/google/login?entry=ENTRY_ID
+# if the account has several GA4 properties, pick one:
+curl -b cookies -X POST ${base}/entries/ENTRY_ID/analytics -H 'content-type: application/json' -d '{"propertyId":"123456789"}'`}</pre>
       </Section>
       <Section title="Link a repo to a site (owner only)">
-        <pre>{`# first connect GitHub for this site entry (browser):
-${base}/github/login?entry=ENTRY_ID&ownerKey=isk_...
-# then link any repo that account has push access to:
-curl -X POST ${base}/entries/ENTRY_ID/repo \\
-  -H 'authorization: Bearer isk_...' -H 'content-type: application/json' \\
+        <pre>{`curl -b cookies -X POST ${base}/entries/ENTRY_ID/repo -H 'content-type: application/json' \
   -d '{"repoUrl":"https://github.com/owner/repo"}'`}</pre>
-        <p className="text-sm text-muted">One thing, one entry. Quality is then read from that repo. Send <code>repoUrl: null</code> to unlink.</p>
+        <p className="text-sm text-muted">One thing, one entry. Quality is read from that repo. The repo can be private; its URL is never published. Send <code>repoUrl: null</code> to unlink.</p>
       </Section>
       <Section title="Remove an entry (owner or admin)">
-        <pre>{`curl -X DELETE ${base}/entries/ENTRY_ID -H 'authorization: Bearer isk_...'`}</pre>
+        <pre>{`curl -b cookies -X DELETE ${base}/entries/ENTRY_ID`}</pre>
       </Section>
       <Section title="Appeal (owner only)">
-        <pre>{`curl -X POST ${base}/entries/ENTRY_ID/appeals \\
-  -H 'authorization: Bearer isk_...' -H 'content-type: application/json' \\
+        <pre>{`curl -b cookies -X POST ${base}/entries/ENTRY_ID/appeals -H 'content-type: application/json' \\
   -d '{"text":"The contributors rule counted our release bot as a human."}'`}</pre>
       </Section>
       <Section title="Methodology">

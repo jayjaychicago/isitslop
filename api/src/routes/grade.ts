@@ -11,14 +11,19 @@ import { readAnalytics } from './analytics.ts';
 import { overall, verdict } from '../heuristics/verdict.ts';
 import { getEntry, publicGrade, type EntryRow, type GradeRow } from '../lib/entries.ts';
 import { ownerGithubToken } from './github.ts';
+import { currentUser } from '../lib/session.ts';
+import type { Context } from 'hono';
+import type { Sql } from '../lib/db.ts';
 
 export const grade = new Hono<{ Bindings: Env }>();
 
-export async function requireOwner(c: { req: { header: (n: string) => string | undefined } }, e: EntryRow): Promise<boolean> {
+/** The signed-in user owns the entry, or the request carries the entry's owner key (API use). */
+export async function requireOwner(c: Context<{ Bindings: Env }>, e: EntryRow, sql?: Sql): Promise<boolean> {
   const auth = c.req.header('authorization') ?? '';
   const key = auth.replace(/^Bearer\s+/i, '').trim();
-  if (!key || !e.owner_key_hash) return false;
-  return (await sha256(key)) === e.owner_key_hash;
+  if (key && e.owner_key_hash && (await sha256(key)) === e.owner_key_hash) return true;
+  const u = await currentUser(c, sql ?? db(c.env.DATABASE_URL));
+  return !!u && !!e.owner_user_id && u.id === e.owner_user_id;
 }
 
 grade.post('/entries/:id/grade', async (c) => {
@@ -26,7 +31,7 @@ grade.post('/entries/:id/grade', async (c) => {
   const e = await getEntry(sql, c.req.param('id'));
   if (!e) return c.json({ error: 'not found' }, 404);
   if (!e.verified_at) return c.json({ error: 'entry is not verified; only the verified owner can request a grade' }, 403);
-  if (!(await requireOwner(c, e))) return c.json({ error: 'invalid owner key' }, 401);
+  if (!(await requireOwner(c, e, sql))) return c.json({ error: 'sign in as the owner' }, 401);
   if (!(await rateLimit(sql, `grade:${e.id}`, 5, 86400))) return c.json({ error: 'at most 5 grades per entry per day' }, 429);
 
   const body = await c.req.json().catch(() => ({}));
@@ -51,10 +56,11 @@ grade.post('/entries/:id/grade', async (c) => {
     if (typeof t === 'string' || !t.repo) return c.json({ error: 'linked repo is not a valid github.com/owner/repo URL' }, 400);
     // Read with the owner's own GitHub token: their rate limit, their private repos.
     const token = await ownerGithubToken(c.env, sql, e);
-    if (!token) return c.json({ error: 'connect your GitHub account first (GET /v1/github/login?entry=...) so the repo can be read with your token' }, 428);
+    if (!token) return c.json({ error: 'the owner must be signed in with GitHub so the repo can be read with their token' }, 428);
     const facts = await collectRepoFacts(t.repo.owner, t.repo.name, token);
     if (typeof facts === 'string') return c.json({ error: facts }, 422);
     quality = scoreQuality(facts);
+    if (e.repo_private) quality = { ...quality, repo: 'private repository' };
   }
 
   const v = verdict(quality.score, popularityScore);

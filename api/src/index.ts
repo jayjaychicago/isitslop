@@ -9,10 +9,17 @@ import { methodology } from './routes/methodology.ts';
 import { github } from './routes/github.ts';
 import { analytics } from './routes/analytics.ts';
 import { google } from './routes/google.ts';
+import { auth } from './routes/auth.ts';
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use('*', cors({ origin: '*', allowHeaders: ['Content-Type', 'Authorization'], maxAge: 86400 }));
+app.use('*', cors({
+  origin: (origin, c) => (origin === c.env.PUBLIC_SITE_URL || /^http:\/\/localhost:\d+$/.test(origin) ? origin : c.env.PUBLIC_SITE_URL),
+  credentials: true,
+  allowHeaders: ['Content-Type', 'Authorization'],
+  allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  maxAge: 86400,
+}));
 
 app.get('/', (c) =>
   c.json({
@@ -26,15 +33,16 @@ app.get('/', (c) =>
       'GET  /v1/entries/:id',
       'GET  /v1/preview?url=github.com/o/r   dry-run quality score, nothing stored',
       'POST /v1/entries/:id/verify/start {method: dns|file|email}   (sites)',
-      'GET  /v1/github/login?entry=&ownerKey=   connect the owner GitHub account (repo entries: this is the ownership proof)',
+      'GET  /v1/auth/github?return=/   sign in with GitHub (sets a session cookie)',
+      'GET  /v1/me                     who am I and what do I own',
+      'POST /v1/auth/logout',
+      'POST /v1/entries/:id/claim      (signed in) claim a repository entry; your GitHub account must have push access',
       'POST /v1/entries/:id/verify/check {verificationId, code?}',
-      'GET  /v1/analytics/providers',
-      'GET  /v1/google/login?entry=&ownerKey=   connect Google Analytics with Google sign-in (read-only)',
-      'POST /v1/entries/:id/analytics (Bearer owner key) {provider, apiKey, projectId|siteId, host?}   connect analytics; read-only, stored encrypted',
+      'GET  /v1/google/login?entry=     (signed in as owner) connect Google Analytics, read-only',
+      'POST /v1/entries/:id/analytics (Bearer owner key) {propertyId}   pick the GA4 property after sign-in',
       'DELETE /v1/entries/:id/analytics (Bearer owner key)',
-      'POST /v1/entries/:id/grade  (Bearer owner key) {acceptTerms: true}',
-      'POST /v1/entries/:id/repo   (Bearer owner key) {repoUrl}   link a repo to a site entry; the connected GitHub account must have push access',
-      'POST /v1/entries/:id/github/disconnect (Bearer owner key)',
+      'POST /v1/entries/:id/grade  (signed in as owner, or Bearer owner key) {acceptTerms: true}',
+      'POST /v1/entries/:id/repo   (signed in as owner) {repoUrl}   link a repo to a site entry; your GitHub account must have push access',
       'DELETE /v1/entries/:id       (Bearer owner key or admin)  remove the entry',
       'POST /v1/entries/:id/appeals (Bearer owner key) {text}',
       'POST /v1/appeals/:id/resolve (Bearer admin) {status, response}',
@@ -51,6 +59,7 @@ app.route('/v1', appeals);
 app.route('/v1', github);
 app.route('/v1', analytics);
 app.route('/v1', google);
+app.route('/v1', auth);
 
 app.notFound((c) => c.json({ error: 'not found' }, 404));
 app.onError((err, c) => {

@@ -1,122 +1,19 @@
 /**
- * Read-only analytics connections for the Popularity score.
- * Each provider answers the same two questions for the last 30 days:
- *   visitors   unique people
- *   returning  of those, how many came on at least two different days
- * Add a provider by implementing `AnalyticsProvider` and registering it in PROVIDERS.
+ * Popularity is read from the owner's Google Analytics 4 property, connected
+ * with Google sign-in (read-only scope). Two numbers for the last 30 days:
+ *   visitors   active users
+ *   returning  of those, the ones Google classes as returning
  */
-export type AnalyticsConfig = { apiKey: string; host?: string; projectId?: string; siteId?: string; refreshToken?: string };
-export type AnalyticsReading = { provider: string; visitors: number; returning: number; window: string; note?: string };
+export type AnalyticsConfig = { refreshToken: string; propertyId: string; propertyName?: string };
+export type AnalyticsReading = { provider: 'ga4'; visitors: number; returning: number; window: string; property?: string };
+export type GoogleEnv = { GOOGLE_CLIENT_ID?: string; GOOGLE_CLIENT_SECRET?: string };
 
-export type ProviderEnv = { GA_SERVICE_ACCOUNT_JSON?: string; GOOGLE_CLIENT_ID?: string; GOOGLE_CLIENT_SECRET?: string };
+const UA = 'isitslop-bot/0.6 (+https://isitslop.org/methodology)';
 
-export type AnalyticsProvider = {
-  id: string;
-  name: string;
-  /** Which config fields the owner must supply. */
-  fields: { key: keyof AnalyticsConfig; label: string; placeholder: string; required: boolean }[];
-  /** Text shown to the owner before the fields, e.g. which email to grant access to. */
-  instructions?: (env: ProviderEnv) => string;
-  read: (cfg: AnalyticsConfig, env: ProviderEnv) => Promise<AnalyticsReading | string>;
-};
+export const googleEnabled = (env: GoogleEnv) => !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 
-const UA = 'isitslop-bot/0.4 (+https://isitslop.org/methodology)';
-
-const posthog: AnalyticsProvider = {
-  id: 'posthog',
-  name: 'PostHog',
-  fields: [
-    { key: 'apiKey', label: 'Personal API key (phx_…, scope query:read)', placeholder: 'phx_…', required: true },
-    { key: 'projectId', label: 'Project ID (number in the project URL)', placeholder: '12345', required: true },
-    { key: 'host', label: 'Host', placeholder: 'https://us.posthog.com', required: false },
-  ],
-  async read(cfg) {
-    const host = (cfg.host || 'https://us.posthog.com').replace(/\/$/, '');
-    const query = `
-      SELECT count() AS visitors, countIf(days >= 2) AS returning
-      FROM (
-        SELECT person_id, count(DISTINCT toDate(timestamp)) AS days
-        FROM events
-        WHERE event = '$pageview' AND timestamp >= now() - INTERVAL 30 DAY
-        GROUP BY person_id
-      )`;
-    const r = await fetch(`${host}/api/projects/${encodeURIComponent(cfg.projectId ?? '')}/query/`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${cfg.apiKey}`, 'content-type': 'application/json', 'user-agent': UA },
-      body: JSON.stringify({ query: { kind: 'HogQLQuery', query } }),
-    });
-    if (r.status === 401 || r.status === 403) return 'PostHog rejected the key (needs a personal API key with query:read on this project)';
-    if (!r.ok) return `PostHog returned ${r.status}`;
-    const j = (await r.json()) as { results?: [number, number][] };
-    const row = j.results?.[0];
-    if (!row) return 'PostHog returned no rows';
-    return { provider: 'posthog', visitors: Number(row[0]) || 0, returning: Number(row[1]) || 0, window: '30d' };
-  },
-};
-
-const plausible: AnalyticsProvider = {
-  id: 'plausible',
-  name: 'Plausible',
-  fields: [
-    { key: 'apiKey', label: 'Stats API key', placeholder: '…', required: true },
-    { key: 'siteId', label: 'Site ID (your domain as shown in Plausible)', placeholder: 'example.com', required: true },
-    { key: 'host', label: 'Host (self-hosted only)', placeholder: 'https://plausible.io', required: false },
-  ],
-  async read(cfg) {
-    const host = (cfg.host || 'https://plausible.io').replace(/\/$/, '');
-    const r = await fetch(`${host}/api/v2/query`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${cfg.apiKey}`, 'content-type': 'application/json', 'user-agent': UA },
-      body: JSON.stringify({ site_id: cfg.siteId, metrics: ['visitors', 'visits'], date_range: '30d' }),
-    });
-    if (r.status === 401 || r.status === 403) return 'Plausible rejected the key';
-    if (!r.ok) return `Plausible returned ${r.status}: ${(await r.text()).slice(0, 120)}`;
-    const j = (await r.json()) as { results?: { metrics: number[] }[] };
-    const m = j.results?.[0]?.metrics;
-    if (!m) return 'Plausible returned no rows';
-    const visitors = m[0] ?? 0;
-    const visits = m[1] ?? 0;
-    // Plausible has no returning-visitor metric; visits beyond one per visitor is the closest honest proxy.
-    const returning = Math.min(visitors, Math.max(0, visits - visitors));
-    return { provider: 'plausible', visitors, returning, window: '30d', note: 'Plausible has no returning-visitor metric; extra visits per visitor are used as the proxy.' };
-  },
-};
-
-/* ---------------- Google Analytics 4 via a project-owned service account ---------------- */
-
-function b64url(b: ArrayBuffer | Uint8Array): string {
-  return btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
-
-function serviceAccount(env: ProviderEnv): { client_email: string; private_key: string } | null {
-  try {
-    return env.GA_SERVICE_ACCOUNT_JSON ? (JSON.parse(env.GA_SERVICE_ACCOUNT_JSON) as { client_email: string; private_key: string }) : null;
-  } catch {
-    return null;
-  }
-}
-
-/** OAuth2 access token for the service account via a signed JWT. No user consent, no OAuth app. */
-async function googleAccessToken(sa: { client_email: string; private_key: string }): Promise<string | string> {
-  const now = Math.floor(Date.now() / 1000);
-  const header = b64url(new TextEncoder().encode(JSON.stringify({ alg: 'RS256', typ: 'JWT' })));
-  const claims = b64url(new TextEncoder().encode(JSON.stringify({ iss: sa.client_email, scope: 'https://www.googleapis.com/auth/analytics.readonly', aud: 'https://oauth2.googleapis.com/token', iat: now, exp: now + 3600 })));
-  const pem = sa.private_key.replace(/-----[A-Z ]+-----/g, '').replace(/\s+/g, '');
-  const der = Uint8Array.from(atob(pem), (c) => c.charCodeAt(0));
-  const key = await crypto.subtle.importKey('pkcs8', der, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(`${header}.${claims}`));
-  const jwt = `${header}.${claims}.${b64url(sig)}`;
-  const r = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: `grant_type=${encodeURIComponent('urn:ietf:params:oauth:grant-type:jwt-bearer')}&assertion=${jwt}`,
-  });
-  const j = (await r.json().catch(() => ({}))) as { access_token?: string; error_description?: string };
-  return j.access_token ?? `google token error: ${j.error_description ?? r.status}`;
-}
-
-/** Access token from an owner's refresh token (the "Connect Google Analytics" button). */
-export async function googleUserToken(env: ProviderEnv, refreshToken: string): Promise<string | null> {
+/** Short-lived access token from the owner's refresh token. */
+export async function googleUserToken(env: GoogleEnv, refreshToken: string): Promise<string | null> {
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
@@ -126,7 +23,7 @@ export async function googleUserToken(env: ProviderEnv, refreshToken: string): P
   return j.access_token ?? null;
 }
 
-/** GA4 properties the token can see, for the picker after sign-in. */
+/** GA4 properties the signed-in account can see, for the picker. */
 export async function listGa4Properties(token: string): Promise<{ id: string; name: string }[]> {
   const r = await fetch('https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200', { headers: { authorization: `Bearer ${token}`, 'user-agent': UA } });
   if (!r.ok) return [];
@@ -143,7 +40,7 @@ export async function ga4Report(token: string, propertyId: string): Promise<Anal
     body: JSON.stringify({ dateRanges: [{ startDate: '30daysAgo', endDate: 'yesterday' }], dimensions: [{ name: 'newVsReturning' }], metrics: [{ name: 'activeUsers' }] }),
   });
   if (r.status === 403) return `Google Analytics denied access to property ${propertyId}`;
-  if (r.status === 404) return `GA4 property ${propertyId} not found (use the numeric property ID, not the measurement ID)`;
+  if (r.status === 404) return `GA4 property ${propertyId} not found`;
   if (!r.ok) return `Google Analytics returned ${r.status}: ${(await r.text()).slice(0, 120)}`;
   const j = (await r.json()) as { rows?: { dimensionValues: { value: string }[]; metricValues: { value: string }[] }[] };
   let visitors = 0;
@@ -156,32 +53,11 @@ export async function ga4Report(token: string, propertyId: string): Promise<Anal
   return { provider: 'ga4', visitors, returning, window: '30d' };
 }
 
-const ga4: AnalyticsProvider = {
-  id: 'ga4',
-  name: 'Google Analytics 4',
-  fields: [{ key: 'projectId', label: 'GA4 property ID (Admin → Property details, a number)', placeholder: '123456789', required: true }],
-  instructions: (env) => {
-    if (env.GOOGLE_CLIENT_ID) return 'Click "Connect Google Analytics" to sign in with Google and pick the property. Read-only.';
-    const sa = serviceAccount(env);
-    return sa ? `In Google Analytics, Admin → Property access management → Add users, add ${sa.client_email} with the Viewer role. Then enter your property ID.` : 'Google Analytics is not configured on this deployment.';
-  },
-  async read(cfg, env) {
-    let token: string | null = null;
-    if (cfg.refreshToken && env.GOOGLE_CLIENT_ID) token = await googleUserToken(env, cfg.refreshToken);
-    else {
-      const sa = serviceAccount(env);
-      if (!sa) return 'Google Analytics is not configured on this deployment';
-      const t = await googleAccessToken(sa);
-      if (t.startsWith('google token error')) return t;
-      token = t;
-    }
-    if (!token) return 'Google sign-in expired; connect Google Analytics again';
-    return ga4Report(token, cfg.projectId ?? '');
-  },
-};
-
-export const PROVIDERS: Record<string, AnalyticsProvider> = { ga4, posthog, plausible };
-
-export function providerList(env: ProviderEnv) {
-  return Object.values(PROVIDERS).map((p) => ({ id: p.id, name: p.name, fields: p.fields, instructions: p.instructions?.(env) ?? null, available: p.id !== 'ga4' || !!env.GOOGLE_CLIENT_ID || !!serviceAccount(env), oauth: p.id === 'ga4' && !!env.GOOGLE_CLIENT_ID }));
+/** Read a connected property. */
+export async function readGa4(env: GoogleEnv, cfg: AnalyticsConfig): Promise<AnalyticsReading | string> {
+  if (!googleEnabled(env)) return 'Google Analytics is not configured on this deployment';
+  const token = await googleUserToken(env, cfg.refreshToken);
+  if (!token) return 'Google sign-in expired; connect Google Analytics again';
+  const reading = await ga4Report(token, cfg.propertyId);
+  return typeof reading === 'string' ? reading : { ...reading, property: cfg.propertyName };
 }

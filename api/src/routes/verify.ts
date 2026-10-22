@@ -7,6 +7,7 @@ import { fetchText } from '../lib/fetch.ts';
 import { emailEnabled, sendEmail } from '../lib/ses.ts';
 import { rateLimit } from '../lib/ratelimit.ts';
 import { getEntry, publicEntry } from '../lib/entries.ts';
+import { currentUser } from '../lib/session.ts';
 
 export const verify = new Hono<{ Bindings: Env }>();
 
@@ -45,7 +46,7 @@ verify.post('/entries/:id/verify/start', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const method = String(body.method ?? '');
 
-  if (e.kind === 'github') return c.json({ error: 'repositories are verified by connecting the owner GitHub account: GET /v1/github/login?entry=' + e.id }, 400);
+  if (e.kind === 'github') return c.json({ error: 'repositories are claimed by signing in with GitHub: POST /v1/entries/' + e.id + '/claim' }, 400);
   const allowed = ['dns', 'file', 'email'];
   if (!allowed.includes(method)) return c.json({ error: `method must be one of ${allowed.join(', ')}` }, 400);
 
@@ -122,10 +123,11 @@ verify.post('/entries/:id/verify/check', async (c) => {
   }
   if (!ok) return c.json({ verified: false, detail }, 200);
 
-  // Issue the owner key. Shown once. Re-verifying rotates it.
+  // Verified. The signed-in user becomes the owner. An owner key is also issued for API use.
+  const u = await currentUser(c, sql);
   const ownerKey = `isk_${randomToken(24)}`;
   const hash = await sha256(ownerKey);
   await sql`update verifications set status = 'verified' where id = ${v.id}`;
-  const updated = (await sql`update entries set verified_at = now(), owner_key_hash = ${hash} where id = ${e.id} returning *`) as (typeof e)[];
-  return c.json({ verified: true, detail, ownerKey, note: 'Store this key. It is shown once. It is required to request a grade or file an appeal. Re-verifying issues a new key and invalidates this one.', entry: publicEntry(updated[0]) });
+  const updated = (await sql`update entries set verified_at = now(), owner_key_hash = ${hash}, owner_user_id = ${u?.id ?? null} where id = ${e.id} returning *`) as (typeof e)[];
+  return c.json({ verified: true, detail, ownerKey, signedIn: !!u, note: u ? 'You own this entry now. The ownerKey is only needed for API use.' : 'Verified without a sign-in: keep the ownerKey, it is the only way to act on this entry from the API. Sign in with GitHub and re-verify to manage it on the website.', entry: publicEntry(updated[0]) });
 });

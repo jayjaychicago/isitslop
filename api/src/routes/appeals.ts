@@ -11,7 +11,7 @@ appeals.post('/entries/:id/appeals', async (c) => {
   const sql = db(c.env.DATABASE_URL);
   const e = await getEntry(sql, c.req.param('id'));
   if (!e) return c.json({ error: 'not found' }, 404);
-  if (!(await requireOwner(c, e))) return c.json({ error: 'invalid owner key' }, 401);
+  if (!(await requireOwner(c, e, sql))) return c.json({ error: 'sign in as the owner' }, 401);
   if (!(await rateLimit(sql, `appeal:${e.id}`, 3, 86400 * 7))) return c.json({ error: 'at most 3 appeals per entry per week' }, 429);
   const body = await c.req.json().catch(() => ({}));
   const text = String(body.text ?? '').trim();

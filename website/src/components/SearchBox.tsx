@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api, type Entry, type GradeSummary } from "@/lib/api";
-import { MiniScores, VerdictBadge } from "./Score";
+import { api, entryLabel, verdictClass, verdictLabel, type Entry, type GradeSummary } from "@/lib/api";
+import { MiniScores } from "./Score";
 
 type Item = Entry & { grade: GradeSummary | null };
 
@@ -17,7 +17,7 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
   useEffect(() => {
     const t = setTimeout(async () => {
       try {
-        const r = await api<{ items: Item[] }>(`/entries?q=${encodeURIComponent(q)}&limit=20`);
+        const r = await api<{ items: Item[] }>(`/entries?q=${encodeURIComponent(q)}&limit=${q ? 20 : 10}`);
         setItems(r.items);
         setErr(null);
       } catch (e) {
@@ -62,6 +62,7 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
         </button>
       </form>
       {err && <div className="text-sm text-slop">{err}</div>}
+      {!q && items.length > 0 && <div className="text-xs uppercase tracking-wider text-muted font-semibold -mb-2">Recently added</div>}
       <ul className="divide-y divide-line card">
         {items.length === 0 && (
           <li className="p-5 text-sm text-muted">{q ? "Nothing in the index matches. Paste the full URL to add it." : "The index is empty. Add the first URL."}</li>
@@ -70,19 +71,12 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
           <li key={it.id}>
             <Link href={`/s/${it.id}`} className="flex items-center justify-between gap-4 p-4 hover:bg-paper transition-colors">
               <div className="min-w-0">
-                <div className="font-medium truncate">{it.title || it.domain}</div>
-                <div className="text-xs text-muted truncate">{it.url.replace(/^https?:\/\//, "")}</div>
+                <div className={`display text-2xl leading-tight ${it.grade ? verdictClass(it.grade.verdict).split(" ")[0] : "text-muted"}`}>
+                  {it.grade ? verdictLabel(it.grade.verdict) : it.verified ? "Not graded yet" : "Unclaimed"}
+                </div>
+                <div className="text-sm text-ink-2 truncate">{entryLabel(it)}{it.url && it.title ? <span className="text-muted"> · {it.url.replace(/^https?:\/\//, "")}</span> : null}</div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                {it.grade ? (
-                  <>
-                    <MiniScores quality={it.grade.quality} popularity={it.grade.popularity} />
-                    <VerdictBadge verdict={it.grade.verdict} size="sm" />
-                  </>
-                ) : (
-                  <span className="text-xs text-muted">{it.verified ? "verified, not graded" : "not verified"}</span>
-                )}
-              </div>
+              {it.grade && <div className="shrink-0"><MiniScores quality={it.grade.quality} popularity={it.grade.popularity} /></div>}
             </Link>
           </li>
         ))}

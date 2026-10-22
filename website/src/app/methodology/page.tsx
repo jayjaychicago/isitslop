@@ -29,7 +29,7 @@ export default async function MethodologyPage() {
       <p className="mt-4 text-ink-2 leading-relaxed">
         The score has two halves. <strong className="text-ink">Quality</strong> asks whether this is real, maintained work by more than one person
         over time, read from the GitHub repository: a year of pushes, other humans committing, issues being filed. <strong className="text-ink">Popularity</strong> asks
-        whether the people who find it actually use it, read from the owner&apos;s connected analytics. The verdict is two words, one per axis: below the cut on
+        whether the people who find it actually use it, read from the owner&apos;s Google Analytics. The verdict is two words, one per axis: below the cut on
         quality is <strong className="text-ink">Slop</strong>, above is <strong className="text-ink">Craft</strong>; below the cut on popularity is <strong className="text-ink">Fringe</strong>, above is <strong className="text-ink">Popular</strong>. Nothing connected is Unknown, not zero. Connected and empty is zero.
       </p>
       <p className="mt-4 text-ink-2 leading-relaxed">
@@ -77,12 +77,12 @@ export default async function MethodologyPage() {
             <div className="card mt-4 p-4 text-sm grid sm:grid-cols-2 gap-4">
               <div>
                 <div className="font-semibold">Returning (weight {m.popularity.weights.returning})</div>
-                <div className="text-muted">visitors seen on two or more days / visitors</div>
+                <div className="text-muted">returning active users / active users</div>
                 <Bands bands={m.popularity.returnBands} />
               </div>
               <div>
                 <div className="font-semibold">Reach (weight {m.popularity.weights.reach})</div>
-                <div className="text-muted">log10 of unique visitors in 30 days</div>
+                <div className="text-muted">log10 of active users in 30 days</div>
                 <Bands bands={m.popularity.reachBands} pct={false} />
               </div>
             </div>
