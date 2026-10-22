@@ -12,7 +12,7 @@ export function ScoreTile({ label, question, value, sub, big = false }: { label:
       <div className="text-xs uppercase tracking-wider text-muted font-semibold">{label}</div>
       <div className={`score-num ${big ? "text-7xl sm:text-8xl" : "text-5xl"} ${scoreClass(value)}`}>
         {num}
-        {value !== null && value !== undefined && <span className="text-2xl align-top ml-0.5">%</span>}
+        {value !== null && value !== undefined && <span className="text-2xl text-muted ml-1">/100</span>}
       </div>
       <div className="text-sm text-ink-2">{question}</div>
       {sub && <div className="text-xs text-muted">{sub}</div>}
