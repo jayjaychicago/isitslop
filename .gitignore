@@ -10,3 +10,7 @@ out/
 dist/
 *.log
 .DS_Store
+
+# GitHub App private keys never go in the repo
+*.pem
+*.private-key.*
