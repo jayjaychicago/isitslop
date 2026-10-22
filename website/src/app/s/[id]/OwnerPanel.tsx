@@ -19,14 +19,19 @@ export function OwnerPanel({ entry, grade, ownerKey, onOwnerKey, onChange }: { e
       </div>
       <p className="text-sm text-muted mt-1">
         {entry.verified ? "This entry has a verified owner." : "Nobody has verified ownership of this entry yet."}{" "}
-        {ownerKey ? "Your owner key for this entry is stored in this browser." : "If you own it, verify to get an owner key."}
+        {ownerKey ? "Your owner key for this entry is stored in this browser." : "If you own it, verify to get an owner key, or paste the key you already have below."}
       </p>
-      <div className="mt-5">
+      <div className="mt-4 grid sm:grid-cols-[1fr_auto] gap-3 items-end">
+        <KeyField ownerKey={ownerKey} onKey={onOwnerKey} />
+        {ownerKey && !entry.githubLogin && entry.kind === "site" && <GitHubButton entry={entry} ownerKey={ownerKey} label="Connect GitHub" />}
+        {entry.githubLogin && <span className="text-sm text-muted pb-2">GitHub: {entry.githubLogin}</span>}
+      </div>
+      <div className="mt-6 border-t border-line pt-5">
         {tab === "verify" && <Verify entry={entry} onKey={(k) => { onOwnerKey(k); onChange(); setTab("grade"); }} />}
-        {tab === "grade" && <RequestGrade entry={entry} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
-        {tab === "repo" && <LinkRepo entry={entry} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
-        {tab === "analytics" && <Analytics entry={entry} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
-        {tab === "appeal" && <Appeal entry={entry} grade={grade} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
+        {tab === "grade" && <RequestGrade entry={entry} ownerKey={ownerKey} onDone={onChange} />}
+        {tab === "repo" && <LinkRepo entry={entry} ownerKey={ownerKey} onDone={onChange} />}
+        {tab === "analytics" && <Analytics entry={entry} ownerKey={ownerKey} onDone={onChange} />}
+        {tab === "appeal" && <Appeal entry={entry} grade={grade} ownerKey={ownerKey} onDone={onChange} />}
       </div>
     </section>
   );
@@ -138,7 +143,7 @@ function VerifySite({ entry, onKey }: { entry: Entry; onKey: (k: string) => void
   );
 }
 
-function RequestGrade({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: string | null; onKey: (k: string | null) => void; onDone: () => void }) {
+function RequestGrade({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string | null; onDone: () => void }) {
   const [accept, setAccept] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -155,7 +160,6 @@ function RequestGrade({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerK
 
   return (
     <div className="flex flex-col gap-4 text-sm">
-      <KeyField ownerKey={ownerKey} onKey={onKey} />
       {!entry.githubLogin && (
         <div className="card p-3 bg-paper flex flex-col sm:flex-row sm:items-center gap-3">
           <span className="text-ink-2">Quality is read from GitHub with your own login. {entry.kind === "site" ? "Connect GitHub, then link your repo in the repo tab." : "Sign in with GitHub in the verify tab."}</span>
@@ -180,7 +184,7 @@ function RequestGrade({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerK
   );
 }
 
-function LinkRepo({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: string | null; onKey: (k: string | null) => void; onDone: () => void }) {
+function LinkRepo({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string | null; onDone: () => void }) {
   const [repo, setRepo] = useState(entry.repoUrl ?? "");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -195,7 +199,6 @@ function LinkRepo({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: 
   }
   return (
     <div className="flex flex-col gap-4 text-sm">
-      <KeyField ownerKey={ownerKey} onKey={onKey} />
       <p className="text-ink-2">
         One thing, one entry. Link the repo this site is built from and Quality is read from it. The repo can be private. Your connected GitHub
         account must have push access to it, and the isitslop app must be installed on the account that owns it.
@@ -220,7 +223,7 @@ function LinkRepo({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: 
 
 type Provider = { id: string; name: string; fields: { key: string; label: string; placeholder: string; required: boolean }[] };
 
-function Analytics({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: string | null; onKey: (k: string | null) => void; onDone: () => void }) {
+function Analytics({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string | null; onDone: () => void }) {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [provider, setProvider] = useState("posthog");
   const [values, setValues] = useState<Record<string, string>>({});
@@ -246,7 +249,6 @@ function Analytics({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey:
   }
   return (
     <div className="flex flex-col gap-4 text-sm">
-      <KeyField ownerKey={ownerKey} onKey={onKey} />
       <p className="text-ink-2">
         Popularity is read from your analytics, never typed in: unique visitors in the last 30 days and how many of them came back on another day.
         The key is read-only, tested once, and stored encrypted. {entry.analyticsProvider ? `Currently connected: ${entry.analyticsProvider}.` : "Nothing connected yet."}
@@ -276,7 +278,7 @@ function Analytics({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey:
   );
 }
 
-function Appeal({ entry, grade, ownerKey, onKey, onDone }: { entry: Entry; grade: Grade | null; ownerKey: string | null; onKey: (k: string | null) => void; onDone: () => void }) {
+function Appeal({ entry, grade, ownerKey, onDone }: { entry: Entry; grade: Grade | null; ownerKey: string | null; onDone: () => void }) {
   const [text, setText] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -292,7 +294,6 @@ function Appeal({ entry, grade, ownerKey, onKey, onDone }: { entry: Entry; grade
   }
   return (
     <div className="flex flex-col gap-4 text-sm">
-      <KeyField ownerKey={ownerKey} onKey={onKey} />
       <p className="text-ink-2">
         Appeals are public. The best appeal points at a specific rule that misfired on your page. If you are right, the rule gets fixed for everyone and you get re-graded. Nobody gets a private exception.
       </p>
