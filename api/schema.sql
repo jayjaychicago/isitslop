@@ -17,13 +17,17 @@ create table if not exists entries (
   github_login  text,
   github_token  text,
   github_refresh_token text,
-  github_token_expires_at timestamptz
+  github_token_expires_at timestamptz,
+  analytics_provider text,
+  analytics_config text
 );
 alter table entries add column if not exists repo_url text;
 alter table entries add column if not exists github_login text;
 alter table entries add column if not exists github_token text;
 alter table entries add column if not exists github_refresh_token text;
 alter table entries add column if not exists github_token_expires_at timestamptz;
+alter table entries add column if not exists analytics_provider text;
+alter table entries add column if not exists analytics_config text;
 create index if not exists entries_domain_idx on entries (domain);
 create index if not exists entries_created_idx on entries (created_at desc);
 

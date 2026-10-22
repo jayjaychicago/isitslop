@@ -36,8 +36,15 @@ ${base}/github/login?entry=ENTRY_ID
       <Section title="Request a grade (owner only)">
         <pre>{`curl -X POST ${base}/entries/ENTRY_ID/grade \\
   -H 'authorization: Bearer isk_...' -H 'content-type: application/json' \\
-  -d '{"acceptTerms":true,"popularity":{"visitors":1200,"activated":90,"returned":40}}'`}</pre>
-        <p className="text-sm text-muted">Sending <code>acceptTerms: true</code> is agreement to the terms at /terms. The popularity object is optional; leaving it out is a popularity of zero. Quality needs a connected GitHub account.</p>
+  -d '{"acceptTerms":true}'`}</pre>
+        <p className="text-sm text-muted">Sending <code>acceptTerms: true</code> is agreement to the terms at /terms. Quality is read from the connected GitHub account; Popularity from the connected analytics. Nothing connected is zero.</p>
+      </Section>
+      <Section title="Connect analytics (owner only)">
+        <pre>{`curl ${base}/analytics/providers
+curl -X POST ${base}/entries/ENTRY_ID/analytics \\
+  -H 'authorization: Bearer isk_...' -H 'content-type: application/json' \\
+  -d '{"provider":"posthog","apiKey":"phx_...","projectId":"12345"}'
+# tests the key once, stores it encrypted, returns the 30-day reading`}</pre>
       </Section>
       <Section title="Link a repo to a site (owner only)">
         <pre>{`# first connect GitHub for this site entry (browser):

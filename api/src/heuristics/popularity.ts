@@ -1,26 +1,20 @@
 /**
  * POPULARITY: do the people who find it actually use it?
  *
- * Owner-attested from their analytics. The verified owner reports three numbers
- * for the last 30 days. We do not trust them; we label them. Verified analytics
- * connections are the obvious next contribution (GA4, PostHog, Plausible, Stripe).
+ * Read from the owner's connected analytics, never typed in. Two numbers for
+ * the last 30 days, available from any analytics product:
+ *   visitors   unique people who visited
+ *   returning  of those, how many came on at least two different days
  *
- * Conversion carries most of the weight. Return rate is a sanity check so a
- * page that converts but is abandoned the next day does not pass.
+ * Coming back is the cheapest honest definition of "using it". Returning rate
+ * carries most of the weight; absolute reach adds the rest so that two friends
+ * visiting daily does not look like a product.
  */
 import type { PopularityInput, PopularityResult } from './types.ts';
 
-export const POPULARITY_VERSION = '0.3.0';
-export const MIN_VISITORS = 100;
+export const POPULARITY_VERSION = '0.4.0';
 
-/** Piecewise-linear bands. Rates above the last point saturate at 1. */
-const CONVERSION_BANDS: [number, number][] = [
-  [0, 0],
-  [0.005, 0.2],
-  [0.02, 0.5],
-  [0.05, 0.8],
-  [0.1, 1],
-];
+/** Piecewise-linear bands. Values past the last point saturate at 1. */
 const RETURN_BANDS: [number, number][] = [
   [0, 0],
   [0.1, 0.3],
@@ -28,69 +22,43 @@ const RETURN_BANDS: [number, number][] = [
   [0.4, 0.85],
   [0.6, 1],
 ];
-export const CONVERSION_WEIGHT = 0.7;
-export const RETURN_WEIGHT = 0.3;
+/** log10(visitors): 100 -> 0, 1k -> 0.4, 10k -> 0.7, 100k -> 1 */
+const REACH_BANDS: [number, number][] = [
+  [2, 0],
+  [3, 0.4],
+  [4, 0.7],
+  [5, 1],
+];
+export const RETURN_WEIGHT = 0.55;
+export const REACH_WEIGHT = 0.45;
 
-export function band(rate: number, bands: [number, number][]): number {
-  if (rate <= bands[0][0]) return bands[0][1];
-  for (let i = 1; i < bands.length; i++) {
-    const [x0, y0] = bands[i - 1];
-    const [x1, y1] = bands[i];
-    if (rate <= x1) return y0 + ((rate - x0) / (x1 - x0)) * (y1 - y0);
+export function band(x: number, pts: [number, number][]): number {
+  if (x <= pts[0][0]) return pts[0][1];
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1];
+    const [x1, y1] = pts[i];
+    if (x <= x1) return y0 + ((x - x0) / (x1 - x0)) * (y1 - y0);
   }
-  return bands[bands.length - 1][1];
-}
-
-export function validatePopularity(p: unknown): PopularityInput | string {
-  if (!p || typeof p !== 'object') return 'popularity must be an object';
-  const o = p as Record<string, unknown>;
-  const n = (k: string) => {
-    const v = o[k];
-    if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || !Number.isInteger(v)) return null;
-    return v;
-  };
-  const visitors = n('visitors');
-  const activated = n('activated');
-  const returned = n('returned');
-  if (visitors === null || activated === null || returned === null) return 'visitors, activated and returned must be non-negative integers';
-  if (activated > visitors) return 'activated cannot exceed visitors';
-  if (returned > activated) return 'returned cannot exceed activated';
-  return { visitors, activated, returned };
+  return pts[pts.length - 1][1];
 }
 
 export function scorePopularity(p: PopularityInput): PopularityResult {
-  if (p.visitors < MIN_VISITORS) {
-    return {
-      score: 0,
-      conversion: null,
-      returnRate: null,
-      note: `Fewer than ${MIN_VISITORS} visitors in 30 days. That is nobody. Popularity is zero.`,
-      selfReported: true,
-      version: POPULARITY_VERSION,
-    };
-  }
-  const conversion = p.activated / p.visitors;
-  const returnRate = p.activated ? p.returned / p.activated : 0;
-  const score = Math.round(100 * (CONVERSION_WEIGHT * band(conversion, CONVERSION_BANDS) + RETURN_WEIGHT * band(returnRate, RETURN_BANDS)));
-  return {
-    score,
-    conversion,
-    returnRate,
-    note: 'Self-reported by the verified owner. Not independently checked.',
-    selfReported: true,
-    version: POPULARITY_VERSION,
-  };
+  const visitors = Math.max(0, p.visitors);
+  const returning = Math.min(visitors, Math.max(0, p.returning));
+  if (visitors === 0) return { score: 0, returningRate: 0, note: 'No visitors in the last 30 days.', version: POPULARITY_VERSION };
+  const returningRate = returning / visitors;
+  const score = Math.round(100 * (RETURN_WEIGHT * band(returningRate, RETURN_BANDS) + REACH_WEIGHT * band(Math.log10(visitors), REACH_BANDS)));
+  return { score, returningRate, note: `${visitors.toLocaleString()} visitors, ${returning.toLocaleString()} came back on another day, read from ${p.provider}.`, version: POPULARITY_VERSION };
 }
 
 export function methodologyPopularity() {
   return {
     version: POPULARITY_VERSION,
-    source: 'Owner-attested numbers for the last 30 days: visitors, activated (took the core action), returned (activated users who came back at least once).',
-    minVisitors: MIN_VISITORS,
-    weights: { conversion: CONVERSION_WEIGHT, return: RETURN_WEIGHT },
-    conversionBands: CONVERSION_BANDS,
+    source: 'Read from the owner\'s connected analytics (PostHog or Plausible in v0) for the last 30 days: unique visitors, and how many of them came on at least two different days.',
+    weights: { returning: RETURN_WEIGHT, reach: REACH_WEIGHT },
     returnBands: RETURN_BANDS,
-    missing: 'No numbers, or fewer than minVisitors visitors, is a popularity of 0. A thing nobody uses is slop, however well built.',
-    caveat: 'Numbers are labelled self-reported on every page. Verified analytics connections are an open contribution.',
+    reachBands: REACH_BANDS,
+    missing: 'No analytics connected, or no visitors, is a popularity of 0. A thing nobody uses is slop, however well built.',
+    caveat: 'Analytics keys are stored encrypted and used read-only at grading time. Google Analytics and others are open contributions.',
   };
 }

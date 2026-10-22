@@ -15,6 +15,7 @@ export type Entry = {
   verifiedAt: string | null;
   repoUrl: string | null;
   githubLogin: string | null;
+  analyticsProvider: string | null;
 };
 
 export type Signal = { id: string; description: string; weight: number; score: number; evidence: string[] };
@@ -26,7 +27,7 @@ export type Grade = {
   overall: number;
   verdict: Verdict;
   qualityBreakdown: { score: number; signals: Signal[]; repo: string | null; version: string; note?: string };
-  popularityInput: { visitors: number; activated: number; returned: number; conversion: number | null; returnRate: number | null; note: string } | null;
+  popularityInput: { provider?: string; visitors?: number; returning?: number; returningRate?: number; window?: string; note: string } | null;
   heuristicsVersion: string;
   createdAt: string;
 };

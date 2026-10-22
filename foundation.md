@@ -17,7 +17,7 @@ So the score has two halves:
 | Half | Question it answers | How v0 measures it |
 |---|---|---|
 | **Quality** | Is this real, maintained work by more than one person over time? | GitHub repository signals that are expensive to fake, read with the owner's own login. Stars and forks are not used. |
-| **Popularity** | Do the people who find it actually use it? | Conversion and return rates from the owner's analytics, labelled self-reported. |
+| **Popularity** | Do the people who find it actually use it? | Read from the owner's connected analytics: unique visitors in 30 days and how many came back on another day. Never typed in. |
 
 The first attempt at Quality was regex heuristics over landing-page text (does it say what, why, who). It was dropped on day two as complexity without relevance. Repository history is harder to fake than prose.
 
@@ -57,7 +57,7 @@ From the repository, with the owner's token: share of the last 52 weeks with com
 
 ## How v0 scores Popularity
 
-The owner reports three numbers for the last 30 days from their analytics: visitors, visitors who took the core action ("activated"), and activated users who came back at least once. Conversion carries most of the weight; return is a sanity check so a high-converting page nobody returns to does not pass. The page shows the numbers as **self-reported**. Fewer than 100 visitors, or no numbers at all, is a popularity of zero: nobody is using it. Verified analytics connections (GA4, PostHog, Plausible, Stripe) are the obvious next contribution.
+The owner connects their analytics (PostHog or Plausible in v0) with a read-only key, stored encrypted. At grading time the API reads two numbers for the last 30 days: unique visitors, and how many of them were seen on two or more different days. Coming back is the cheapest honest definition of "using it". Returning rate carries most of the weight; reach (log of visitors) adds the rest so that two friends visiting daily does not look like a product. No analytics connected, or no visitors, is a popularity of zero. Self-reported numbers were tried on day one and removed on day two: a number the owner types is not a measurement.
 
 ## Architecture (v0)
 
@@ -67,6 +67,7 @@ api/       Cloudflare Worker (Hono)   -> api.isitslop.org
            Neon Postgres (free tier)  -> the index
            AWS SES                    -> verification email only
            GitHub App "is-it-slop"    -> owners sign in; repos are read with their token
+           PostHog / Plausible API    -> owners connect; visitors are read with their key
 ```
 
 The website is a thin client over the public API. Anything the website can do, `curl` can do.

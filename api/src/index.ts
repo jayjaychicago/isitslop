@@ -7,6 +7,7 @@ import { grade } from './routes/grade.ts';
 import { appeals } from './routes/appeals.ts';
 import { methodology } from './routes/methodology.ts';
 import { github } from './routes/github.ts';
+import { analytics } from './routes/analytics.ts';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -26,7 +27,10 @@ app.get('/', (c) =>
       'POST /v1/entries/:id/verify/start {method: dns|file|email}   (sites)',
       'GET  /v1/github/login?entry=&ownerKey=   connect the owner GitHub account (repo entries: this is the ownership proof)',
       'POST /v1/entries/:id/verify/check {verificationId, code?}',
-      'POST /v1/entries/:id/grade  (Bearer owner key) {acceptTerms: true, popularity?: {visitors, activated, returned}}',
+      'GET  /v1/analytics/providers',
+      'POST /v1/entries/:id/analytics (Bearer owner key) {provider, apiKey, projectId|siteId, host?}   connect analytics; read-only, stored encrypted',
+      'DELETE /v1/entries/:id/analytics (Bearer owner key)',
+      'POST /v1/entries/:id/grade  (Bearer owner key) {acceptTerms: true}',
       'POST /v1/entries/:id/repo   (Bearer owner key) {repoUrl}   link a repo to a site entry; the connected GitHub account must have push access',
       'POST /v1/entries/:id/github/disconnect (Bearer owner key)',
       'DELETE /v1/entries/:id       (Bearer owner key or admin)  remove the entry',
@@ -43,6 +47,7 @@ app.route('/v1', verify);
 app.route('/v1', grade);
 app.route('/v1', appeals);
 app.route('/v1', github);
+app.route('/v1', analytics);
 
 app.notFound((c) => c.json({ error: 'not found' }, 404));
 app.onError((err, c) => {

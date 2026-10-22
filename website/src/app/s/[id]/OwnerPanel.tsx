@@ -1,18 +1,18 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { API, api, type Entry, type Grade } from "@/lib/api";
 
 type StartResp = { verificationId: string; method: string; text: string; record?: { type: string; name: string; value: string }; file?: { url?: string; path?: string; content: string }; email?: string };
 
 export function OwnerPanel({ entry, grade, ownerKey, onOwnerKey, onChange }: { entry: Entry; grade: Grade | null; ownerKey: string | null; onOwnerKey: (k: string | null) => void; onChange: () => void }) {
-  const [tab, setTab] = useState<"verify" | "grade" | "repo" | "appeal">(ownerKey ? "grade" : "verify");
+  const [tab, setTab] = useState<"verify" | "grade" | "repo" | "analytics" | "appeal">(ownerKey ? "grade" : "verify");
   return (
     <section className="mt-12 card p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="display text-3xl">Owner actions</h2>
         <div className="flex gap-1 text-sm">
-          {(["verify", "grade", ...(entry.kind === "site" ? (["repo"] as const) : []), "appeal"] as const).map((t) => (
+          {(["verify", "grade", ...(entry.kind === "site" ? (["repo"] as const) : []), "analytics", "appeal"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-3 py-1 rounded-full capitalize ${tab === t ? "bg-ink text-paper" : "text-ink-2 hover:text-ink"}`}>{t}</button>
           ))}
         </div>
@@ -25,6 +25,7 @@ export function OwnerPanel({ entry, grade, ownerKey, onOwnerKey, onChange }: { e
         {tab === "verify" && <Verify entry={entry} onKey={(k) => { onOwnerKey(k); onChange(); setTab("grade"); }} />}
         {tab === "grade" && <RequestGrade entry={entry} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
         {tab === "repo" && <LinkRepo entry={entry} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
+        {tab === "analytics" && <Analytics entry={entry} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
         {tab === "appeal" && <Appeal entry={entry} grade={grade} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
       </div>
     </section>
@@ -139,18 +140,13 @@ function VerifySite({ entry, onKey }: { entry: Entry; onKey: (k: string) => void
 
 function RequestGrade({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: string | null; onKey: (k: string | null) => void; onDone: () => void }) {
   const [accept, setAccept] = useState(false);
-  const [withPeople, setWithPeople] = useState(false);
-  const [visitors, setVisitors] = useState("");
-  const [activated, setActivated] = useState("");
-  const [returned, setReturned] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function go() {
     setBusy(true); setMsg(null);
     try {
-      const popularity = withPeople ? { visitors: Number(visitors), activated: Number(activated), returned: Number(returned) } : undefined;
-      await api(`/entries/${entry.id}/grade`, { method: "POST", ownerKey: ownerKey ?? undefined, body: JSON.stringify({ acceptTerms: accept, popularity }) });
+      await api(`/entries/${entry.id}/grade`, { method: "POST", ownerKey: ownerKey ?? undefined, body: JSON.stringify({ acceptTerms: accept }) });
       setMsg("Graded.");
       onDone();
     } catch (e) { setMsg((e as Error).message); }
@@ -166,16 +162,8 @@ function RequestGrade({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerK
           {entry.kind === "site" && ownerKey && <GitHubButton entry={entry} ownerKey={ownerKey} label="Connect GitHub" />}
         </div>
       )}
-      <label className="flex items-center gap-2">
-        <input type="checkbox" checked={withPeople} onChange={(e) => setWithPeople(e.target.checked)} />
-        <span>Include usage numbers for the Popularity score (last 30 days, from your analytics, shown publicly as self-reported)</span>
-      </label>
-      {withPeople && (
-        <div className="grid sm:grid-cols-3 gap-3">
-          <label>Visitors<input className="input mt-1" inputMode="numeric" value={visitors} onChange={(e) => setVisitors(e.target.value)} /></label>
-          <label>Took the core action<input className="input mt-1" inputMode="numeric" value={activated} onChange={(e) => setActivated(e.target.value)} /></label>
-          <label>Came back at least once<input className="input mt-1" inputMode="numeric" value={returned} onChange={(e) => setReturned(e.target.value)} /></label>
-        </div>
+      {!entry.analyticsProvider && (
+        <div className="card p-3 bg-paper text-ink-2">Popularity is read from your analytics. Nothing connected means zero. Connect PostHog or Plausible in the analytics tab.</div>
       )}
       <label className="flex items-start gap-2 card p-3 bg-paper">
         <input type="checkbox" className="mt-1" checked={accept} onChange={(e) => setAccept(e.target.checked)} />
@@ -226,6 +214,64 @@ function LinkRepo({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: 
         {entry.repoUrl && <button className="btn btn-ghost" onClick={() => go(true)} disabled={!ownerKey || busy}>Unlink</button>}
       </div>
       {msg && <div className={msg.startsWith("Repo") ? "text-fresh" : "text-slop"}>{msg}</div>}
+    </div>
+  );
+}
+
+type Provider = { id: string; name: string; fields: { key: string; label: string; placeholder: string; required: boolean }[] };
+
+function Analytics({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: string | null; onKey: (k: string | null) => void; onDone: () => void }) {
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [provider, setProvider] = useState("posthog");
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    api<{ providers: Provider[] }>(`/analytics/providers`).then((r) => setProviders(r.providers)).catch(() => {});
+  }, []);
+  const p = providers.find((x) => x.id === provider);
+  async function connect() {
+    setBusy(true); setMsg(null);
+    try {
+      const r = await api<{ reading: { visitors: number; returning: number } }>(`/entries/${entry.id}/analytics`, { method: "POST", ownerKey: ownerKey ?? undefined, body: JSON.stringify({ provider, ...values }) });
+      setMsg(`Connected. Last 30 days: ${r.reading.visitors.toLocaleString()} visitors, ${r.reading.returning.toLocaleString()} came back on another day. Request a grade.`);
+      onDone();
+    } catch (e) { setMsg((e as Error).message); }
+    setBusy(false);
+  }
+  async function disconnect() {
+    setBusy(true); setMsg(null);
+    try { await api(`/entries/${entry.id}/analytics`, { method: "DELETE", ownerKey: ownerKey ?? undefined }); setMsg("Disconnected."); onDone(); } catch (e) { setMsg((e as Error).message); }
+    setBusy(false);
+  }
+  return (
+    <div className="flex flex-col gap-4 text-sm">
+      <KeyField ownerKey={ownerKey} onKey={onKey} />
+      <p className="text-ink-2">
+        Popularity is read from your analytics, never typed in: unique visitors in the last 30 days and how many of them came back on another day.
+        The key is read-only, tested once, and stored encrypted. {entry.analyticsProvider ? `Currently connected: ${entry.analyticsProvider}.` : "Nothing connected yet."}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {providers.map((x) => (
+          <button key={x.id} onClick={() => { setProvider(x.id); setValues({}); }} className={`btn btn-ghost text-sm ${provider === x.id ? "border-ink" : ""}`}>{x.name}</button>
+        ))}
+      </div>
+      {p && (
+        <div className="grid sm:grid-cols-2 gap-3">
+          {p.fields.map((f) => (
+            <label key={f.key} className="block">
+              <span className="text-ink-2">{f.label}{f.required ? "" : " (optional)"}</span>
+              <input className="input mt-1 font-mono text-sm" placeholder={f.placeholder} value={values[f.key] ?? ""} onChange={(e) => setValues({ ...values, [f.key]: e.target.value })} />
+            </label>
+          ))}
+        </div>
+      )}
+      <div className="flex gap-2">
+        <button className="btn" onClick={connect} disabled={!ownerKey || busy || !p}>{busy ? "Testing…" : "Connect and test"}</button>
+        {entry.analyticsProvider && <button className="btn btn-ghost" onClick={disconnect} disabled={!ownerKey || busy}>Disconnect</button>}
+      </div>
+      <p className="text-xs text-muted">Google Analytics and others are an open contribution: one file in <code>api/src/lib/analytics.ts</code>.</p>
+      {msg && <div className={msg.startsWith("Connected") || msg === "Disconnected." ? "text-fresh" : "text-slop"}>{msg}</div>}
     </div>
   );
 }

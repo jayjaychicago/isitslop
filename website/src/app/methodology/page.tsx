@@ -7,7 +7,7 @@ type Methodology = {
   heuristicsVersion: string;
   termsVersion: string;
   quality: { question: string; source: string; maxPoints: number; rules: { id: string; description: string; weight: number }[] };
-  popularity: { question: string; version: string; source: string; minVisitors: number; weights: { conversion: number; return: number }; conversionBands: [number, number][]; returnBands: [number, number][]; caveat: string; missing: string };
+  popularity: { question: string; version: string; source: string; weights: { returning: number; reach: number }; returnBands: [number, number][]; reachBands: [number, number][]; caveat: string; missing: string };
   verdict: { rule: string; thresholds: { notSlop: number; slop: number } };
 };
 
@@ -29,7 +29,7 @@ export default async function MethodologyPage() {
       <p className="mt-4 text-ink-2 leading-relaxed">
         The score has two halves. <strong className="text-ink">Quality</strong> asks whether this is real, maintained work by more than one person
         over time, read from the GitHub repository with signals that are expensive to fake. <strong className="text-ink">Popularity</strong> asks
-        whether the people who find it actually use it, from the owner&apos;s analytics. Both have to be good for something to be Not slop. If either
+        whether the people who find it actually use it, read from the owner&apos;s connected analytics. Both have to be good for something to be Not slop. If either
         one is bad, it is Slop. Anything in between is Mixed. No repo is a quality of zero. No users is a popularity of zero.
       </p>
       <p className="mt-4 text-ink-2 leading-relaxed">
@@ -76,14 +76,14 @@ export default async function MethodologyPage() {
             <p className="text-sm text-muted">{m.popularity.source}</p>
             <div className="card mt-4 p-4 text-sm grid sm:grid-cols-2 gap-4">
               <div>
-                <div className="font-semibold">Conversion (weight {m.popularity.weights.conversion})</div>
-                <div className="text-muted">activated / visitors</div>
-                <Bands bands={m.popularity.conversionBands} />
+                <div className="font-semibold">Returning (weight {m.popularity.weights.returning})</div>
+                <div className="text-muted">visitors seen on two or more days / visitors</div>
+                <Bands bands={m.popularity.returnBands} />
               </div>
               <div>
-                <div className="font-semibold">Return (weight {m.popularity.weights.return})</div>
-                <div className="text-muted">returned / activated</div>
-                <Bands bands={m.popularity.returnBands} />
+                <div className="font-semibold">Reach (weight {m.popularity.weights.reach})</div>
+                <div className="text-muted">log10 of unique visitors in 30 days</div>
+                <Bands bands={m.popularity.reachBands} pct={false} />
               </div>
             </div>
             <p className="mt-2 text-sm text-muted">{m.popularity.missing} {m.popularity.caveat}</p>
@@ -104,12 +104,12 @@ export default async function MethodologyPage() {
   );
 }
 
-function Bands({ bands }: { bands: [number, number][] }) {
+function Bands({ bands, pct = true }: { bands: [number, number][]; pct?: boolean }) {
   return (
     <table className="mt-2 text-xs tabular-nums">
       <tbody>
         {bands.map(([x, y]) => (
-          <tr key={x}><td className="pr-4 text-muted">{(x * 100).toFixed(1)}%</td><td>{Math.round(y * 100)} pts</td></tr>
+          <tr key={x}><td className="pr-4 text-muted">{pct ? `${(x * 100).toFixed(1)}%` : `${Math.round(10 ** x).toLocaleString()} visitors`}</td><td>{Math.round(y * 100)} pts</td></tr>
         ))}
       </tbody>
     </table>

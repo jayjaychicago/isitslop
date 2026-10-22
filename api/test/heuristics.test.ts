@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { scoreQuality, RULES, MAX_POINTS, band, type RepoFacts } from '../src/heuristics/quality.ts';
-import { scorePopularity, validatePopularity } from '../src/heuristics/popularity.ts';
+import { scorePopularity } from '../src/heuristics/popularity.ts';
 import { verdict, overall } from '../src/heuristics/verdict.ts';
 import { normalizeTarget } from '../src/lib/url.ts';
 
@@ -33,15 +33,13 @@ test('archived repos are capped; every rule is described; weights sum to 100', (
   assert.equal(band(2, [[0, 0], [1, 1]]), 1);
 });
 
-test('popularity: thresholds and validation', () => {
-  assert.equal(scorePopularity({ visitors: 50, activated: 10, returned: 5 }).score, 0);
-  const strong = scorePopularity({ visitors: 1000, activated: 120, returned: 80 });
-  const weak = scorePopularity({ visitors: 1000, activated: 3, returned: 0 });
-  assert.ok(strong.score >= 90, String(strong.score));
-  assert.ok(weak.score < 20, String(weak.score));
-  assert.equal(typeof validatePopularity({ visitors: 10, activated: 20, returned: 0 }), 'string');
-  assert.equal(typeof validatePopularity({ visitors: 10.5, activated: 1, returned: 0 }), 'string');
-  assert.deepEqual(validatePopularity({ visitors: 100, activated: 10, returned: 2 }), { visitors: 100, activated: 10, returned: 2 });
+test('popularity: returning rate carries most weight, reach the rest, nobody is zero', () => {
+  const r = (visitors: number, returning: number) => scorePopularity({ provider: 'test', visitors, returning, window: '30d' }).score;
+  assert.equal(r(0, 0), 0);
+  assert.ok(r(50, 40) < 60, 'tiny but loyal audience is not a product');
+  assert.ok(r(20000, 9000) >= 80, String(r(20000, 9000)));
+  assert.ok(r(20000, 200) < 40, 'big reach nobody returns to');
+  assert.ok(r(5000, 2500) > r(5000, 500));
 });
 
 test('verdict: both halves good is not slop, either bad is slop, nothing is unknown', () => {

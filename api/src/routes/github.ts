@@ -27,9 +27,10 @@ github.get('/github/login', async (c) => {
     ownerKeyHash = e.owner_key_hash;
   }
   const state = await signState(c.env, { entry: e.id, ownerKeyHash, nonce: randomToken(8) });
-  const url = new URL('https://github.com/login/oauth/authorize');
-  url.searchParams.set('client_id', c.env.GITHUB_APP_CLIENT_ID!);
-  url.searchParams.set('redirect_uri', `${new URL(c.req.url).origin}/v1/github/callback`);
+  // The app's install page handles both cases: install on an account, or pick an account where it is
+  // already installed. With "request user authorization during installation" on, GitHub then sends the
+  // user to our callback with a code. One click from isitslop.org, no separate authorize step.
+  const url = new URL(`https://github.com/apps/${c.env.GITHUB_APP_SLUG ?? 'is-it-slop'}/installations/new`);
   url.searchParams.set('state', state);
   return c.redirect(url.toString(), 302);
 });
@@ -44,7 +45,9 @@ github.get('/github/callback', async (c) => {
   };
   const state = await verifyState(c.env, c.req.query('state') ?? '');
   const code = c.req.query('code') ?? '';
-  if (!state || !code) return c.json({ error: 'invalid or expired state' }, 400);
+  // Installed straight from GitHub rather than from an entry page: nothing to attach it to.
+  if (!state) return c.redirect(`${c.env.PUBLIC_SITE_URL}/?github=installed`, 302);
+  if (!code) return back(String(state.entry), { github: 'error', detail: 'GitHub did not return an authorization code; check that "request user authorization during installation" is on' });
   const sql = db(c.env.DATABASE_URL);
   const e = await getEntry(sql, String(state.entry));
   if (!e) return c.json({ error: 'entry not found' }, 404);

@@ -13,7 +13,7 @@ export default function Terms() {
       <h2>1. What the Service is</h2>
       <p>
         The Service is a public index of URLs and an automated, heuristic opinion about whether a thing has a clear product definition and whether its
-        owner reports that people use it. Scores are produced by publicly published rules that run without human judgment and without any artificial
+        connected analytics show that people use it. Scores are produced by publicly published rules that run without human judgment and without any artificial
         intelligence model. A score is an <strong>opinion</strong>, not a statement of fact, and not a professional, financial, or business assessment.
       </p>
 
@@ -51,11 +51,12 @@ export default function Terms() {
       </ol>
       <p>If any of this is unacceptable to you, do not request a grade. Nobody is graded without asking.</p>
 
-      <h2>5. Self-reported numbers</h2>
+      <h2>5. Connected accounts</h2>
       <p>
-        If you submit usage numbers for the Popularity score, you represent that they are true and accurate to the best of your knowledge. They are
-        published and labelled as self-reported. Submitting numbers you know to be false is a breach of these terms and may result in removal of the
-        grade and the entry.
+        If you connect a GitHub account or an analytics account, you authorise us to read from it when you request a grade, and you represent that
+        you are entitled to grant that access. We read; we never write. Credentials are stored encrypted and deleted when you disconnect or remove
+        the entry. Feeding the Service fabricated analytics or repository activity is a breach of these terms and may result in removal of the grade
+        and the entry.
       </p>
 
       <h2>6. Appeals</h2>

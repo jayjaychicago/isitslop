@@ -16,6 +16,8 @@ export type EntryRow = {
   github_token: string | null;
   github_refresh_token: string | null;
   github_token_expires_at: string | null;
+  analytics_provider: string | null;
+  analytics_config: string | null;
 };
 
 export type GradeRow = {
@@ -54,6 +56,7 @@ export function publicEntry(e: EntryRow) {
     verifiedAt: e.verified_at,
     repoUrl: e.repo_url,
     githubLogin: e.github_login,
+    analyticsProvider: e.analytics_provider,
   };
 }
 

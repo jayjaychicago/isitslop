@@ -11,7 +11,7 @@ Read `foundation.md` first. It explains why this exists. Then:
 All scoring lives in `api/src/heuristics/`.
 
 - `quality.ts` holds the quality signals and the GitHub collection code. Each rule is `{ id, description, weight, run }`. `run` receives `RepoFacts` (counts and dates collected from the GitHub API with the owner's token) and returns a score in [0, 1] plus evidence strings shown to the owner. If your rule needs a fact that is not collected yet, add it to `collectRepoFacts`.
-- `popularity.ts` holds the popularity score. v0 is owner-attested; verified analytics connections are the obvious next step.
+- `popularity.ts` holds the popularity score: returning rate and reach from the connected analytics. `../lib/analytics.ts` holds the providers (PostHog, Plausible); adding one is one object with a `read` function that returns visitors and returning for 30 days.
 - `verdict.ts` combines the two. Missing data is zero, never "unknown".
 
 When you add or change a rule:
@@ -36,7 +36,7 @@ The response is public. Either fix the rule for everyone and re-grade, or explai
 
 ## Good first contributions
 
-- Verified analytics for Popularity (GA4, PostHog, Plausible, Stripe) via owner-connected read-only access.
+- More analytics providers for Popularity: Google Analytics, Fathom, Umami, Cloudflare Web Analytics.
 - GitLab, Codeberg and self-hosted repositories. Everything in v0 is GitHub.
 - Fraud resistance: cadence bots, sock-puppet contributors, issue farms.
 - Pull request signals: reviewed merges from outside contributors.

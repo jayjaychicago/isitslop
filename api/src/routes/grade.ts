@@ -6,7 +6,8 @@ import { sha256 } from '../lib/crypto.ts';
 import { rateLimit } from '../lib/ratelimit.ts';
 import { normalizeTarget } from '../lib/url.ts';
 import { collectRepoFacts, scoreQuality, QUALITY_VERSION } from '../heuristics/quality.ts';
-import { scorePopularity, validatePopularity } from '../heuristics/popularity.ts';
+import { scorePopularity } from '../heuristics/popularity.ts';
+import { readAnalytics } from './analytics.ts';
 import { overall, verdict } from '../heuristics/verdict.ts';
 import { getEntry, publicGrade, type EntryRow, type GradeRow } from '../lib/entries.ts';
 import { ownerGithubToken } from './github.ts';
@@ -33,16 +34,12 @@ grade.post('/entries/:id/grade', async (c) => {
     return c.json({ error: `you must accept the terms (version ${TERMS_VERSION}) by sending acceptTerms: true`, termsUrl: `${c.env.PUBLIC_SITE_URL}/terms`, termsVersion: TERMS_VERSION }, 400);
   }
 
-  // Popularity: owner-attested analytics. Nothing submitted is nobody, which is zero.
-  let popularityInput = null;
-  let popularity = null;
-  if (body.popularity !== undefined && body.popularity !== null) {
-    const p = validatePopularity(body.popularity);
-    if (typeof p === 'string') return c.json({ error: p }, 400);
-    popularityInput = p;
-    popularity = scorePopularity(p);
-  }
+  // Popularity: read from the owner's connected analytics. Nothing connected is nobody, which is zero.
+  const reading = await readAnalytics(c.env, sql, e);
+  if (typeof reading === 'string') return c.json({ error: `analytics: ${reading}` }, 422);
+  const popularity = reading ? scorePopularity(reading) : null;
   const popularityScore = popularity?.score ?? 0;
+  const popularityInput = reading ? { ...reading, ...popularity, note: popularity?.note } : { note: 'No analytics connected. Nobody using it counts as zero.' };
 
   // Quality: GitHub signals on the repo (the entry itself, or the repo linked to the site). No repo is zero.
   const repoUrl = e.kind === 'github' ? e.url : e.repo_url;
@@ -66,7 +63,7 @@ grade.post('/entries/:id/grade', async (c) => {
   await sql`update entries set terms_version = ${TERMS_VERSION}, terms_accepted_at = now() where id = ${e.id}`;
   const rows = (await sql`
     insert into grades (entry_id, quality_score, popularity_score, overall, verdict, quality_breakdown, popularity_input, heuristics_version)
-    values (${e.id}, ${quality.score}, ${popularityScore}, ${ov}, ${v}, ${JSON.stringify(quality)}::jsonb, ${popularityInput ? JSON.stringify({ ...popularityInput, ...popularity }) : null}::jsonb, ${QUALITY_VERSION})
+    values (${e.id}, ${quality.score}, ${popularityScore}, ${ov}, ${v}, ${JSON.stringify(quality)}::jsonb, ${JSON.stringify(popularityInput)}::jsonb, ${QUALITY_VERSION})
     returning *
   `) as GradeRow[];
   return c.json({ grade: publicGrade(rows[0]) }, 201);

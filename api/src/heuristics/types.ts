@@ -19,17 +19,16 @@ export type QualityResult = {
 };
 
 export type PopularityInput = {
+  provider: string;
   visitors: number;
-  activated: number;
-  returned: number;
+  returning: number;
+  window: string;
 };
 
 export type PopularityResult = {
   score: number;
-  conversion: number | null;
-  returnRate: number | null;
+  returningRate: number;
   note: string;
-  selfReported: true;
   version: string;
 };
 

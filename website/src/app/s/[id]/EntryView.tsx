@@ -58,6 +58,7 @@ export function EntryView({ id }: { id: string }) {
             </span>
           )}
           {entry.githubLogin && <span className="text-sm text-muted"> · GitHub: {entry.githubLogin}</span>}
+          {entry.analyticsProvider && <span className="text-sm text-muted"> · analytics: {entry.analyticsProvider}</span>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <VerdictBadge verdict={grade?.verdict ?? "unrated"} size="lg" />
@@ -78,7 +79,7 @@ export function EntryView({ id }: { id: string }) {
           label="Popularity"
           question="Do the people who find it actually use it?"
           value={grade?.popularity ?? null}
-          sub={grade?.popularityInput ? popularitySub(grade) : grade ? "No usage numbers submitted. Nobody using it counts as zero." : "Not graded yet"}
+          sub={grade ? grade.popularityInput?.note ?? "No analytics connected. Nobody using it counts as zero." : "Not graded yet"}
           big
         />
       </div>
@@ -139,13 +140,6 @@ export function EntryView({ id }: { id: string }) {
       </p>
     </div>
   );
-}
-
-function popularitySub(g: Grade): string {
-  const p = g.popularityInput!;
-  if (p.conversion === null) return `Self-reported: ${p.visitors} visitors. ${p.note}`;
-  const pct = (n: number | null) => (n === null ? "–" : `${(n * 100).toFixed(1)}%`);
-  return `Self-reported: ${p.visitors.toLocaleString()} visitors, ${pct(p.conversion)} converted, ${pct(p.returnRate)} returned. Not independently checked.`;
 }
 
 function Breakdown({ grade }: { grade: Grade }) {
