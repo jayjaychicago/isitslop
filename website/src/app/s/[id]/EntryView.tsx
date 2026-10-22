@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api, loadOwnerKey, saveOwnerKey, type EntryDetail, type Grade } from "@/lib/api";
 import { ScoreTile, VerdictBadge } from "@/components/Score";
+import { verdictClass, verdictLabel } from "@/lib/api";
 import { OwnerPanel } from "./OwnerPanel";
 
 export function EntryView({ id }: { id: string }) {
@@ -60,14 +61,15 @@ export function EntryView({ id }: { id: string }) {
           {entry.githubLogin && <span className="text-sm text-muted"> · GitHub: {entry.githubLogin}</span>}
           {entry.analyticsProvider && <span className="text-sm text-muted"> · analytics: {entry.analyticsProvider}</span>}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <VerdictBadge verdict={grade?.verdict ?? null} size="lg" />
-        </div>
       </div>
+
+      <p className="display text-4xl sm:text-5xl mt-8 leading-tight">
+        {grade ? <span className={verdictClass(grade.verdict).split(" ")[0]}>{verdictLabel(grade.verdict)}.</span> : <span className="text-muted">Not graded yet.</span>}
+      </p>
 
       {flash && <div className="mt-4 card p-3 text-sm">{flash}</div>}
 
-      <div className="grid sm:grid-cols-2 gap-4 mt-8">
+      <div className="grid sm:grid-cols-2 gap-4 mt-4">
         <ScoreTile
           label="Quality"
           question="Is this real, maintained work by more than one person over time?"

@@ -47,8 +47,13 @@ export async function api<T>(path: string, init?: RequestInit & { ownerKey?: str
 }
 
 export function verdictLabel(v: string | null | undefined): string {
-  if (!v || !v.includes("_")) return "Unrated";
-  return v.split("_").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
+  if (!v || !v.includes("_")) return "Not graded";
+  const [p, q] = v.split("_");
+  const cap = (w: string) => w[0].toUpperCase() + w.slice(1);
+  if (p === "unknown" && q === "unknown") return "Nothing connected";
+  if (p === "unknown") return `${cap(q)} of unknown popularity`;
+  if (q === "unknown") return `${cap(p)} stuff of unknown quality`;
+  return `${cap(p)} ${cap(q)}`;
 }
 
 export function verdictClass(v: string | null | undefined): string {
