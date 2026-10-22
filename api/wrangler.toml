@@ -2,6 +2,7 @@ name = "isitslop-api"
 main = "src/index.ts"
 compatibility_date = "2025-10-01"
 compatibility_flags = ["nodejs_compat"]
+workers_dev = true
 
 # Secrets (set with `wrangler secret put <NAME>`):
 #   DATABASE_URL          Neon Postgres connection string
@@ -11,12 +12,11 @@ compatibility_flags = ["nodejs_compat"]
 #   AWS_REGION
 #   SES_FROM              e.g. verify@isitslop.org
 
+# Custom domain (the isitslop.org zone is on the same Cloudflare account).
+routes = [{ pattern = "api.isitslop.org", custom_domain = true }]
+
 [vars]
 PUBLIC_SITE_URL = "https://isitslop.org"
 
 [observability]
 enabled = true
-
-# Custom domain. Requires the isitslop.org zone to be on the same Cloudflare account.
-# Until then the Worker is reachable on its workers.dev URL.
-# routes = [{ pattern = "api.isitslop.org", custom_domain = true }]

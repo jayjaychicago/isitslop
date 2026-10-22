@@ -161,6 +161,9 @@ function Breakdown({ grade }: { grade: Grade }) {
           {grade.criticsBreakdown.source && (
             <li className="p-3 text-xs text-muted">Source analysed: {grade.criticsBreakdown.source}</li>
           )}
+          <li className="p-3 text-xs text-muted">
+            Think a rule misfired? Rules are public code. <Link href="/contribute" className="underline">Change them for everyone</Link>, or file an appeal below.
+          </li>
         </ul>
       )}
     </section>

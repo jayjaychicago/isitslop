@@ -34,9 +34,23 @@ export default function Home() {
           <p className="text-sm text-ink-2">Only owners get graded. You accept the <Link href="/terms" className="underline">terms</Link>, we run the rules, the result is public. You can appeal.</p>
         </div>
       </section>
-      <p className="text-sm text-muted pb-4">
-        The rules are crude on purpose and will get better. Read the <Link href="/methodology" className="underline">methodology</Link> or{" "}
-        <a href="https://github.com/jayjaychicago/isitslop" className="underline">change it</a>.
+      <section className="mt-10 card p-6 sm:p-8 border-ink">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+          <div>
+            <h2 className="display text-3xl sm:text-4xl leading-tight">The rules are a pull request away.</h2>
+            <p className="mt-2 text-ink-2 max-w-xl">
+              Every score on this site is computed by a handful of readable rules in one public file. No model, no secret weighting. If a rule is wrong,
+              fix it and it changes for everyone. The rules are crude on purpose; smarter people are expected to show up.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 shrink-0">
+            <Link href="/contribute" className="btn">Change the rules</Link>
+            <a href="https://github.com/jayjaychicago/isitslop" className="btn btn-ghost">github.com/jayjaychicago/isitslop</a>
+          </div>
+        </div>
+      </section>
+      <p className="mt-6 text-sm text-muted pb-4">
+        Read the <Link href="/methodology" className="underline">methodology</Link> to see exactly what the score is made of today.
       </p>
     </div>
   );

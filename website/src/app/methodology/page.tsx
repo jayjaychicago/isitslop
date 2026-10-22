@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { API } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
@@ -28,8 +29,14 @@ export default async function MethodologyPage() {
       <p className="mt-4 text-ink-2 leading-relaxed">
         This page is generated from the code that computes the score, so it is always current. Every rule is a plain function anyone can read in{" "}
         <a className="underline" href="https://github.com/jayjaychicago/isitslop/tree/main/api/src/heuristics">api/src/heuristics</a>. No LLMs, no paid data.
-        If a rule is wrong, change it for everyone.
       </p>
+      <div className="mt-5 card p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <span className="text-ink-2">Think a rule is wrong? It is one file. Change it for everyone.</span>
+        <div className="flex gap-2 shrink-0">
+          <Link href="/contribute" className="btn text-sm">How to change the rules</Link>
+          <a className="btn btn-ghost text-sm" href="https://github.com/jayjaychicago/isitslop/blob/main/api/src/heuristics/critics.ts">critics.ts</a>
+        </div>
+      </div>
 
       {!m ? (
         <p className="mt-8 text-slop">The API is unreachable right now. The rules live at the link above.</p>
@@ -45,7 +52,7 @@ export default async function MethodologyPage() {
             <ul className="card mt-4 divide-y divide-line">
               {m.critics.rules.map((r) => (
                 <li key={r.id} className="p-4 grid grid-cols-[6rem_1fr_4rem] gap-3 items-start">
-                  <code className="text-sm">{r.id}</code>
+                  <a className="text-sm underline decoration-line hover:decoration-ink" href={`https://github.com/jayjaychicago/isitslop/blob/main/api/src/heuristics/critics.ts`} title="View this rule's source"><code>{r.id}</code></a>
                   <span className="text-sm text-ink-2">{r.description}</span>
                   <span className={`text-right font-semibold tabular-nums ${r.weight < 0 ? "text-slop" : ""}`}>{r.weight > 0 ? "+" : ""}{r.weight}</span>
                 </li>
