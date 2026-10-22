@@ -74,7 +74,7 @@ entries.get('/score', async (c) => {
   return c.json({
     found: true,
     url: privateRepo ? null : e.url,
-    sloppiness: e.overall,
+    overall: e.overall,
     popularity: e.popularity_score,
     quality: e.quality_score,
     verdict: e.verdict,

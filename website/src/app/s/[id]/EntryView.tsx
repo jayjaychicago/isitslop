@@ -75,7 +75,7 @@ export function EntryView({ id }: { id: string }) {
           </div>
           {grade && (
             <div className="sm:text-right shrink-0">
-              <div className="text-xs uppercase tracking-wider text-muted font-semibold">Sloppiness score</div>
+              <div className="text-xs uppercase tracking-wider text-muted font-semibold">Overall score</div>
               <div className={`score-num text-5xl sm:text-6xl leading-none mt-1 ${scoreClass(grade.overall)}`}>
                 {grade.overall ?? "?"}
                 {grade.overall !== null && <span className="text-xl text-muted ml-1">/100</span>}
@@ -142,7 +142,7 @@ export function EntryView({ id }: { id: string }) {
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <table className="w-full text-sm whitespace-nowrap">
               <thead className="text-xs uppercase tracking-wider text-muted">
-                <tr><th className="text-left py-1">Date</th><th className="text-right pl-4">Sloppiness</th><th className="text-right pl-4">Popularity</th><th className="text-right pl-4">Quality</th><th className="text-right pl-4">Verdict</th><th className="text-right pl-4">Rules</th></tr>
+                <tr><th className="text-left py-1">Date</th><th className="text-right pl-4">Overall</th><th className="text-right pl-4">Popularity</th><th className="text-right pl-4">Quality</th><th className="text-right pl-4">Verdict</th><th className="text-right pl-4">Rules</th></tr>
               </thead>
               <tbody>
                 {history.map((h) => (

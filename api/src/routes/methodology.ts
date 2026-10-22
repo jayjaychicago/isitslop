@@ -22,7 +22,7 @@ methodology.get('/methodology', (c) =>
     verdict: {
       rule: 'Two words, one per axis. Quality below the cut is Slop, at or above is Craft. Popularity below the cut is Fringe, at or above is Popular. Nothing connected is Unknown, not zero. Connected and empty (no history, no visitors) is zero.',
       thresholds: VERDICT_THRESHOLDS,
-      sloppiness: 'The sloppiness score is Popularity and Quality averaged, 0 to 100, higher is better. It is unknown if either half is unknown.',
+      overall: 'The overall score is Popularity and Quality averaged, 0 to 100, higher is better. It is unknown if either half is unknown.',
     },
   }),
 );

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, type Entry, type GradeSummary } from "@/lib/api";
 import { MiniScores, VerdictWords } from "./Score";
+import { scoreClass } from "@/lib/api";
 
 type Item = Entry & { grade: GradeSummary | null };
 
@@ -82,16 +83,24 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
         )}
         {items.map((it) => (
           <li key={it.id}>
-            <Link href={`/s/${it.id}`} className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-8 p-5 sm:p-6 hover:bg-paper transition-colors">
-              <div className="min-w-0">
-                <div className="display text-4xl sm:text-5xl lg:text-6xl leading-none break-words">{it.url ? it.url.replace(/^https?:\/\//, "") : "Private repository"}</div>
-                {it.title && it.url && <div className="mt-1.5 text-sm sm:text-base text-ink-2 truncate">{it.title}</div>}
+            <Link href={`/s/${it.id}`} className="flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-8 p-5 sm:p-6 hover:bg-paper transition-colors">
+              <div className="flex items-center gap-4 sm:gap-6 min-w-0 lg:flex-1">
+                {it.grade && (
+                  <div className="shrink-0 text-center w-20 sm:w-28" title="Overall score: Popularity and Quality averaged, higher is better">
+                    <div className={`score-num text-5xl sm:text-7xl lg:text-8xl leading-none ${scoreClass(it.grade.overall)}`}>{it.grade.overall ?? "?"}</div>
+                    <div className="text-[10px] sm:text-xs uppercase tracking-wider text-muted font-semibold mt-1 whitespace-nowrap">Overall /100</div>
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="display text-4xl sm:text-5xl lg:text-6xl leading-none break-words">{it.url ? it.url.replace(/^https?:\/\//, "") : "Private repository"}</div>
+                  {it.title && it.url && <div className="mt-1.5 text-sm sm:text-base text-ink-2 truncate">{it.title}</div>}
+                </div>
               </div>
-              <div className="shrink-0 flex flex-col lg:items-end gap-1.5">
+              <div className="shrink-0 flex flex-col lg:items-end gap-1.5 min-w-0">
                 <div className="display text-4xl sm:text-5xl lg:text-6xl leading-none">
                   <VerdictWords verdict={it.grade?.verdict} fallback={it.verified ? "Not graded yet" : "Unclaimed"} />
                 </div>
-                {it.grade && <MiniScores overall={it.grade.overall} quality={it.grade.quality} popularity={it.grade.popularity} />}
+                {it.grade && <MiniScores quality={it.grade.quality} popularity={it.grade.popularity} />}
               </div>
             </Link>
           </li>

@@ -14,7 +14,7 @@ export function verdict(quality: number | null, popularity: number | null): Verd
 }
 
 /**
- * The sloppiness score: Popularity and Quality averaged, 0 to 100, higher is better.
+ * The overall score: Popularity and Quality averaged, 0 to 100, higher is better.
  * Unknown (null) if either half is unknown, so a missing connection is never read as zero.
  */
 export function overall(quality: number | null, popularity: number | null): number | null {

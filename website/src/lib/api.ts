@@ -3,7 +3,7 @@ export const API = (process.env.NEXT_PUBLIC_API_URL ?? "https://internalapi.isit
 /** `${popularity}_${quality}`: fringe|popular|unknown _ slop|craft|unknown */
 export type Verdict = string;
 
-/** `overall` is the sloppiness score: Popularity and Quality averaged, null if either is unknown. */
+/** `overall` is the overall score: Popularity and Quality averaged, null if either is unknown. */
 export type GradeSummary = { quality: number | null; popularity: number | null; overall: number | null; verdict: string; createdAt: string };
 
 export type Entry = {

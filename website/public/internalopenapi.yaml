@@ -188,7 +188,7 @@ paths:
                 properties:
                   found: { type: boolean, const: true }
                   url: { type: [string, "null"] }
-                  sloppiness: { type: [integer, "null"], description: Popularity and Quality averaged; null if either is unknown. }
+                  overall: { type: [integer, "null"], description: Popularity and Quality averaged; null if either is unknown. }
                   quality: { type: [integer, "null"] }
                   popularity: { type: [integer, "null"] }
                   verdict: { $ref: "#/components/schemas/Verdict" }
