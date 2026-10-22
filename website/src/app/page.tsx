@@ -14,6 +14,11 @@ export default function Home() {
           whether there is a real product definition: what it is, why it must exist, who it is for. <strong className="text-ink">People</strong> asks
           whether the people who find it actually use it. Heuristics only, no LLMs, every rule public.
         </p>
+        <p className="mt-4 max-w-2xl text-ink-2 leading-relaxed">
+          Built for founders and open source maintainers who want an honest, public answer to &quot;was this worth building?&quot;, because AI made the
+          &quot;what&quot; cheap and nobody was measuring the &quot;why&quot;. It is not a security scanner, not an SEO tool, and not a substitute for
+          talking to users. It is free, and the code is MIT licensed.
+        </p>
       </section>
 
       <section className="pb-14">
