@@ -16,6 +16,7 @@ workers_dev = true
 #   GITHUB_APP_SLUG       for the install link, https://github.com/apps/<slug>
 #   TOKEN_KEY             64 hex chars; encrypts stored GitHub tokens and signs OAuth state
 #   GITHUB_TOKEN          optional fallback for anonymous /v1/preview only
+#   GA_SERVICE_ACCOUNT_JSON  Google service account key (JSON) for reading GA4 properties owners share with it
 
 # Custom domain (the isitslop.org zone is on the same Cloudflare account).
 routes = [{ pattern = "api.isitslop.org", custom_domain = true }]

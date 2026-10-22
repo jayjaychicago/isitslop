@@ -57,7 +57,7 @@ From the repository, with the owner's token. Three signals, weights 60/25/15: a 
 
 ## How v0 scores Popularity
 
-The owner connects their analytics (PostHog or Plausible in v0) with a read-only key, stored encrypted. At grading time the API reads two numbers for the last 30 days: unique visitors, and how many of them were seen on two or more different days. Coming back is the cheapest honest definition of "using it". Returning rate carries most of the weight; reach (log of visitors) adds the rest so that two friends visiting daily does not look like a product. No analytics connected, or no visitors, is a popularity of zero. Self-reported numbers were tried on day one and removed on day two: a number the owner types is not a measurement.
+The owner connects their analytics (Google Analytics, PostHog or Plausible in v0) with a read-only key, stored encrypted. At grading time the API reads two numbers for the last 30 days: unique visitors, and how many of them were seen on two or more different days. Coming back is the cheapest honest definition of "using it". Returning rate carries most of the weight; reach (log of visitors) adds the rest so that two friends visiting daily does not look like a product. No analytics connected, or no visitors, is a popularity of zero. Self-reported numbers were tried on day one and removed on day two: a number the owner types is not a measurement.
 
 ## Architecture (v0)
 

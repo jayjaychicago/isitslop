@@ -54,7 +54,7 @@ export function scorePopularity(p: PopularityInput): PopularityResult {
 export function methodologyPopularity() {
   return {
     version: POPULARITY_VERSION,
-    source: 'Read from the owner\'s connected analytics (PostHog or Plausible in v0) for the last 30 days: unique visitors, and how many of them came on at least two different days.',
+    source: 'Read from the owner\'s connected analytics (Google Analytics, PostHog or Plausible in v0) for the last 30 days: unique visitors, and how many of them came on at least two different days.',
     weights: { returning: RETURN_WEIGHT, reach: REACH_WEIGHT },
     returnBands: RETURN_BANDS,
     reachBands: REACH_BANDS,

@@ -11,6 +11,7 @@ export type Env = {
   GITHUB_APP_CLIENT_SECRET?: string;
   GITHUB_APP_SLUG?: string;
   TOKEN_KEY?: string;
+  GA_SERVICE_ACCOUNT_JSON?: string;
 };
 
 export const TERMS_VERSION = '2026-10-21';

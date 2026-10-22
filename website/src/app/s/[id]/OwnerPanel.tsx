@@ -229,11 +229,11 @@ function LinkRepo({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string 
   );
 }
 
-type Provider = { id: string; name: string; fields: { key: string; label: string; placeholder: string; required: boolean }[] };
+type Provider = { id: string; name: string; fields: { key: string; label: string; placeholder: string; required: boolean }[]; instructions: string | null; available: boolean };
 
 function Analytics({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string | null; onDone: () => void }) {
   const [providers, setProviders] = useState<Provider[]>([]);
-  const [provider, setProvider] = useState("posthog");
+  const [provider, setProvider] = useState("ga4");
   const [values, setValues] = useState<Record<string, string>>({});
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -266,6 +266,7 @@ function Analytics({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string
           <button key={x.id} onClick={() => { setProvider(x.id); setValues({}); }} className={`btn btn-ghost text-sm ${provider === x.id ? "border-ink" : ""}`}>{x.name}</button>
         ))}
       </div>
+      {p?.instructions && <p className="text-ink-2 card p-3 bg-paper">{p.instructions}</p>}
       {p && (
         <div className="grid sm:grid-cols-2 gap-3">
           {p.fields.map((f) => (
@@ -277,10 +278,10 @@ function Analytics({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string
         </div>
       )}
       <div className="flex gap-2">
-        <button className="btn" onClick={connect} disabled={!ownerKey || busy || !p}>{busy ? "Testing…" : "Connect and test"}</button>
+        <button className="btn" onClick={connect} disabled={!ownerKey || busy || !p || !p.available}>{busy ? "Testing…" : "Connect and test"}</button>
         {entry.analyticsProvider && <button className="btn btn-ghost" onClick={disconnect} disabled={!ownerKey || busy}>Disconnect</button>}
       </div>
-      <p className="text-xs text-muted">Google Analytics and others are an open contribution: one file in <code>api/src/lib/analytics.ts</code>.</p>
+      <p className="text-xs text-muted">Matomo, Fathom, Umami, Mixpanel and others are an open contribution: one object in <code>api/src/lib/analytics.ts</code>.</p>
       {msg && <div className={msg.startsWith("Connected") || msg === "Disconnected." ? "text-fresh" : "text-slop"}>{msg}</div>}
     </div>
   );

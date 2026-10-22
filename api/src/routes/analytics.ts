@@ -9,7 +9,7 @@ import type { Sql } from '../lib/db.ts';
 
 export const analytics = new Hono<{ Bindings: Env }>();
 
-analytics.get('/analytics/providers', (c) => c.json({ providers: providerList() }));
+analytics.get('/analytics/providers', (c) => c.json({ providers: providerList(c.env) }));
 
 /** Connect analytics. The key is tested once, then stored encrypted. Owner key required. */
 analytics.post('/entries/:id/analytics', async (c) => {
@@ -27,7 +27,7 @@ analytics.post('/entries/:id/analytics', async (c) => {
     if (typeof v === 'string' && v.trim()) cfg[f.key] = v.trim();
     else if (f.required) return c.json({ error: `${f.key} is required for ${provider.name}` }, 400);
   }
-  const reading = await provider.read(cfg);
+  const reading = await provider.read(cfg, c.env);
   if (typeof reading === 'string') return c.json({ error: reading }, 422);
   await sql`update entries set analytics_provider = ${provider.id}, analytics_config = ${await seal(c.env, JSON.stringify(cfg))} where id = ${e.id}`;
   return c.json({ entry: publicEntry({ ...e, analytics_provider: provider.id }), reading, note: 'Connected. Request a grade to use it.' });
@@ -49,5 +49,5 @@ export async function readAnalytics(env: Env, _sql: Sql, e: EntryRow): Promise<A
   if (!provider) return `unknown provider ${e.analytics_provider}`;
   const raw = await open(env, e.analytics_config);
   if (!raw) return 'could not decrypt analytics config';
-  return provider.read(JSON.parse(raw) as AnalyticsConfig);
+  return provider.read(JSON.parse(raw) as AnalyticsConfig, env);
 }
