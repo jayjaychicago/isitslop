@@ -7,6 +7,9 @@ import { MiniScores, VerdictWords } from "./Score";
 
 type Item = Entry & { grade: GradeSummary | null };
 
+/** What the home page shows before anyone types: the two reference entries, always. */
+const FEATURED = ["isitslop.org", "apiblaze.com"];
+
 export function SearchBox({ initial = [] }: { initial?: Item[] }) {
   const router = useRouter();
   const [q, setQ] = useState("");
@@ -17,8 +20,13 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
   useEffect(() => {
     const t = setTimeout(async () => {
       try {
-        const r = await api<{ items: Item[] }>(`/entries?q=${encodeURIComponent(q)}&limit=${q ? 20 : 10}`);
-        setItems(r.items);
+        if (q.trim()) {
+          const r = await api<{ items: Item[] }>(`/entries?q=${encodeURIComponent(q)}&limit=20`);
+          setItems(r.items);
+        } else {
+          const found = await Promise.all(FEATURED.map((d) => api<{ items: Item[] }>(`/entries?q=${encodeURIComponent(d)}&limit=5`).then((r) => r.items.find((i) => i.domain === d)).catch(() => undefined)));
+          setItems(found.filter((x): x is Item => !!x));
+        }
         setErr(null);
       } catch (e) {
         setErr((e as Error).message);
@@ -57,15 +65,18 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
           onChange={(e) => setQ(e.target.value)}
           autoFocus
         />
+        <button className="btn btn-ghost" type="button" onClick={() => setQ(q.trim())} title="Results appear as you type">
+          Search
+        </button>
         <button className="btn" type="submit" disabled={!looksLikeUrl || busy}>
           {busy ? "Adding…" : "Add"}
         </button>
       </form>
       {err && <div className="text-sm text-slop">{err}</div>}
-      {!q && items.length > 0 && <div className="text-xs uppercase tracking-wider text-muted font-semibold -mb-2">Recently added</div>}
+
       <ul className="divide-y divide-line card">
         {items.length === 0 && (
-          <li className="p-5 text-sm text-muted">{q ? "Nothing in the index matches. Paste the full URL to add it." : "The index is empty. Add the first URL."}</li>
+          <li className="p-5 text-sm text-muted">{q ? "Nothing in the index matches. Paste the full URL to add it." : "Loading…"}</li>
         )}
         {items.map((it) => (
           <li key={it.id}>
