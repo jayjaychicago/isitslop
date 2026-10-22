@@ -7,7 +7,7 @@ A sloppiness score for things on the internet. It asks two plain questions:
 
 The verdict is two words, one per axis: **Fringe** or **Popular**, **Slop** or **Craft**. Nothing connected is unknown, not zero. Connected and empty is zero.
 
-Built for founders and open source maintainers who want an honest, public answer to "was this worth building?", and for the contributors who think the rules could be better. It exists because AI made the "what" cheap: anyone can ship a spec in an afternoon, so the thing that separates a product from slop is the definition behind it, and nobody was measuring that.
+Built for founders and open source maintainers who want an honest, public answer to "was it worth building?", and for the contributors who think the rules could be better. It exists because AI made the "what" cheap: anyone can ship a spec in an afternoon, so the thing that separates a product from slop is the definition behind it, and nobody was measuring that.
 
 Heuristics only. No LLMs. Every rule is public and generated into the website's methodology page from the code. The API is a Cloudflare Worker written in TypeScript with Hono, the index is Neon Postgres, the website is Next.js on Vercel. Owners sign in with GitHub through the Is It Slop GitHub App, claim their repositories, link their sites, and connect Google Analytics; repositories are read with the owner's own access, so private repos work and nobody shares a rate limit. A private repository's URL is never published. It is not a security scanner, an SEO tool, or a replacement for talking to users.
 

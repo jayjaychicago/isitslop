@@ -7,7 +7,7 @@ export default function Home() {
       <section className="pt-12 pb-8 sm:pt-20 sm:pb-10">
         <h1 className="display text-5xl sm:text-7xl leading-[0.95] max-w-3xl">
           AI can build anything. <br />
-          <em>Was this worth building?</em>
+          <em>Was it worth building?</em>
         </h1>
         <p className="mt-5 max-w-2xl text-lg sm:text-xl text-ink-2 leading-relaxed">
           A sloppiness score for anything built with AI (so everything).

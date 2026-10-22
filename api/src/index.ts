@@ -10,6 +10,7 @@ import { github } from './routes/github.ts';
 import { analytics } from './routes/analytics.ts';
 import { google } from './routes/google.ts';
 import { auth } from './routes/auth.ts';
+import { feedback } from './routes/feedback.ts';
 import { scheduledRefresh } from './scheduled.ts';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -29,6 +30,7 @@ app.get('/', (c) =>
     endpoints: [
       'GET  /v1/health',
       'GET  /v1/methodology',
+      'POST /v1/feedback',
       'GET  /v1/score?url=example.com   (Authorization: Bearer API key) the current score of a URL, nothing else',
       'GET  /v1/entries?q=&limit=&offset=',
       'POST /v1/entries {url}',
@@ -60,6 +62,7 @@ app.route('/v1', grade);
 app.route('/v1', appeals);
 app.route('/v1', github);
 app.route('/v1', analytics);
+app.route('/v1', feedback);
 app.route('/v1', google);
 app.route('/v1', auth);
 

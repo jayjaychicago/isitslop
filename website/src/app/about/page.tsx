@@ -46,14 +46,14 @@ export default function AboutPage() {
       <section className="mt-8">
         <h2 className="display text-3xl">Who</h2>
         <p className="mt-2 text-ink-2 leading-relaxed">
-          Maintained by you, a community that wants a public answer to &quot;was this worth building?&quot;. Operated by API Blaze, LLC, a bunch of people who were bitter that years of craft was getting lost in all the slop.
+          Maintained by you, a community that wants a public answer to &quot;was it worth building?&quot;. Operated by <a className="underline" href="https://apiblaze.com" target="_blank" rel="noreferrer">API Blaze, LLC</a>, a bunch of people who were bitter that years of craft was getting lost in all the slop.
         </p>
         <p className="mt-2 text-ink-2 leading-relaxed">
           Free to use, the code is MIT licensed, and the rules are a pull request away:{" "}
           <Link href="/contribute" className="underline">change them</Link>. Heuristics only, no LLMs, no paid data. The API is self-sustaining by design, so it runs on free tiers and modest hosting.
         </p>
         <p className="mt-2 text-ink-2 leading-relaxed">
-          Questions: <a className="underline" href="mailto:support@isitslop.org">support@isitslop.org</a>. The founding brief is in{" "}
+          Questions or complaints: the <Link href="/feedback" className="underline">feedback form</Link> or <a className="underline" href="mailto:support@isitslop.org">support@isitslop.org</a>. The founding brief is in{" "}
           <a className="underline" href="https://github.com/jayjaychicago/isitslop/blob/main/foundation.md">foundation.md</a>.
         </p>
       </section>

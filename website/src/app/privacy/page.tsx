@@ -6,7 +6,7 @@ export default function Privacy() {
       <h1 className="display text-5xl">Privacy Policy</h1>
       <p className="text-muted">Version 2026-10-22. Effective October 22, 2026.</p>
       <p>
-        This policy describes what isitslop.org and api.isitslop.org (the <strong>Service</strong>), operated by <strong>API Blaze, LLC</strong>,
+        This policy describes what isitslop.org and api.isitslop.org (the <strong>Service</strong>), operated by <strong><a className="underline" href="https://apiblaze.com">API Blaze, LLC</a></strong>,
         collect and why. The short version: as little as possible, most of it is public by design, and what you connect is read-only and yours to
         disconnect.
       </p>

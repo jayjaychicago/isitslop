@@ -6,7 +6,7 @@ export default function Terms() {
       <h1 className="display text-5xl">Terms of Service</h1>
       <p className="text-muted">Version 2026-10-22. Effective October 22, 2026.</p>
       <p>
-        isitslop.org and api.isitslop.org (the <strong>Service</strong>) are operated by <strong>API Blaze, LLC</strong>, a Michigan limited liability
+        isitslop.org and api.isitslop.org (the <strong>Service</strong>) are operated by <strong><a className="underline" href="https://apiblaze.com">API Blaze, LLC</a></strong>, a Michigan limited liability
         company (<strong>we</strong>, <strong>us</strong>). By using the Service you agree to these terms. If you do not agree, do not use it.
       </p>
 
