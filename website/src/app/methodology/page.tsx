@@ -28,7 +28,7 @@ export default async function MethodologyPage() {
       <h1 className="display text-5xl">What the score is made of</h1>
       <p className="mt-4 text-ink-2 leading-relaxed">
         The score has two halves. <strong className="text-ink">Quality</strong> asks whether this is real, maintained work by more than one person
-        over time, read from the GitHub repository with signals that are expensive to fake. <strong className="text-ink">Popularity</strong> asks
+        over time, read from the GitHub repository: a year of pushes, other humans committing, strangers filing issues that get closed. <strong className="text-ink">Popularity</strong> asks
         whether the people who find it actually use it, read from the owner&apos;s connected analytics. Both have to be good for something to be Not slop. If either
         one is bad, it is Slop. Anything in between is Mixed. No repo is a quality of zero. No users is a popularity of zero.
       </p>
@@ -64,7 +64,7 @@ export default async function MethodologyPage() {
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-sm text-muted">Only things that take time score points; weights sum to {m.quality.maxPoints}. Things that take a minute (README, license, CI, tests) are a multiplier between 0.6 and 1: they can only lower the score. A repo born today with one author scores 0. Archived repos are capped at 20. Read with the owner&apos;s own GitHub login, so private repos work and nothing is shared.</p>
+            <p className="mt-2 text-sm text-muted">Three things, all of which take time; weights sum to {m.quality.maxPoints}. Nothing that can be scaffolded in an afternoon counts: no README, license, CI, tests, stars or forks. A repo born today with one author scores 0, and full credit on history needs twelve months of pushes. Archived repos are capped at 20. Read with the owner&apos;s own GitHub login, so private repos work and nothing is shared.</p>
           </section>
 
           <section className="mt-10">

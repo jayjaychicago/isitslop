@@ -1,9 +1,9 @@
 /**
  * QUALITY: is this real, maintained work by more than one person over time?
  *
- * Measured from the public GitHub repository with signals that are expensive
- * to fake: you cannot buy months of commit history, closed issues from other
- * people, or releases the way you can buy stars. Stars and forks are not used.
+ * Measured from the GitHub repository with three signals that take time to
+ * fake: a year of pushes, other humans committing, strangers filing issues that
+ * get closed. Nothing that can be scaffolded in an afternoon counts.
  *
  * Every signal is a plain function over GitHub REST responses. Add a signal,
  * describe it in one sentence, bump QUALITY_VERSION. No LLMs. No paid APIs.
@@ -12,7 +12,7 @@
  */
 import type { QualityResult, Signal } from './types.ts';
 
-export const QUALITY_VERSION = '0.4.0';
+export const QUALITY_VERSION = '0.5.0';
 
 const UA = 'isitslop-bot/0.3 (+https://isitslop.org/methodology)';
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -42,11 +42,6 @@ export type RepoFacts = {
   issuesTotal: number; // excluding pull requests
   issuesClosed: number;
   issueAuthorsOutsideOwner: number;
-  releases: number;
-  lastReleaseAt: string | null;
-  hasWorkflows: boolean;
-  hasTests: boolean;
-  readmeWords: number;
 };
 
 type Rule = {
@@ -59,20 +54,19 @@ type Rule = {
 };
 
 /**
- * Only things that take time score points. Things that take a minute (a README,
- * a license, a CI file, a tests folder) are multipliers: missing them costs you,
- * having them earns nothing. A repo born today with one author scores 0.
+ * Three things, all of which take time. Nothing that can be scaffolded in an
+ * afternoon counts: no README, license, CI, tests, stars or forks.
  */
 export const RULES: Rule[] = [
   {
-    id: 'activity',
+    id: 'history',
     kind: 'points',
     description:
-      'Sustained work over time: the share of the last 52 weeks with at least one commit, times how long the repo has existed (nothing under one month, full credit from six months). Months of history cannot be bought.',
-    weight: 35,
+      'A year of pushes. The share of the last 52 weeks with at least one commit, times the age of the repo: nothing under one month, 40% at six months, full credit only at twelve months of history.',
+    weight: 60,
     run: (f) => {
       const ageMonths = days(f.createdAt) / 30;
-      const ageFactor = band(ageMonths, [[1, 0], [3, 0.5], [6, 1]]);
+      const ageFactor = band(ageMonths, [[1, 0], [6, 0.4], [12, 1]]);
       const cadence = f.weeksWithCommits / 52;
       return { score: clamp01(cadence * ageFactor), evidence: [`${f.weeksWithCommits} of 52 weeks with commits`, `${ageMonths.toFixed(1)} months old`] };
     },
@@ -81,7 +75,7 @@ export const RULES: Rule[] = [
     id: 'contributors',
     kind: 'points',
     description:
-      'People other than the author have put real work in: humans (not bots) with at least two commits, not counting the first one. One person is zero.',
+      'Other humans have put real work in: people (not bots) with at least two commits, not counting the author. One person is zero.',
     weight: 25,
     run: (f) => ({ score: band(Math.max(0, f.humansWithTwoPlusCommits - 1), [[0, 0], [1, 0.4], [3, 0.75], [7, 1]]), evidence: [`${f.humansWithTwoPlusCommits} humans with 2+ commits`] }),
   },
@@ -89,43 +83,13 @@ export const RULES: Rule[] = [
     id: 'issues',
     kind: 'points',
     description:
-      'Other people file issues and they get resolved: share of issues closed, times whether outsiders file them. Fewer than three issues, or no outside authors, is zero.',
-    weight: 25,
+      'Strangers file issues and they get closed: share of issues closed, times how many outside authors filed them. Fewer than three issues, or none from outside, is zero.',
+    weight: 15,
     run: (f) => {
       if (f.issuesTotal < 3 || f.issueAuthorsOutsideOwner === 0) return { score: 0, evidence: [`${f.issuesTotal} issues, ${f.issueAuthorsOutsideOwner} from outside`] };
       const ratio = f.issuesClosed / f.issuesTotal;
       const outside = band(f.issueAuthorsOutsideOwner, [[1, 0.5], [3, 0.8], [10, 1]]);
       return { score: clamp01(ratio * outside), evidence: [`${f.issuesClosed} of ${f.issuesTotal} issues closed`, `${f.issueAuthorsOutsideOwner} outside issue authors`] };
-    },
-  },
-  {
-    id: 'releases',
-    kind: 'points',
-    description: 'Versions get cut and shipped: number of releases or tags, with a cut if the latest is over six months old.',
-    weight: 15,
-    run: (f) => {
-      const count = band(f.releases, [[0, 0], [1, 0.3], [3, 0.6], [10, 1]]);
-      const recent = f.lastReleaseAt && days(f.lastReleaseAt) < 180 ? 1 : 0.6;
-      const ev = [`${f.releases} releases/tags`];
-      if (f.lastReleaseAt) ev.push(`latest ${Math.round(days(f.lastReleaseAt))} days ago`);
-      return { score: clamp01(count * recent), evidence: ev };
-    },
-  },
-  {
-    id: 'hygiene',
-    kind: 'multiplier',
-    description:
-      'Multiplier, 0.6 to 1.0: a CI workflow, a tests directory, a README of at least 300 words, and a license each add 0.1. These take minutes, so they earn nothing on their own; missing them cuts the score.',
-    weight: 0,
-    run: (f) => {
-      const parts: [boolean, string][] = [
-        [f.hasWorkflows, 'CI workflows'],
-        [f.hasTests, 'tests directory'],
-        [f.readmeWords >= 300, `README ~${f.readmeWords} words`],
-        [!!f.license, f.license ? `license: ${f.license}` : 'license'],
-      ];
-      const have = parts.filter(([ok]) => ok).length;
-      return { score: 0.6 + 0.1 * have, evidence: parts.map(([ok, label]) => `${ok ? '✓' : '✗'} ${label}`) };
     },
   },
 ];
@@ -165,7 +129,7 @@ async function gh(path: string, token?: string): Promise<{ status: number; json:
 
 type Issue = { pull_request?: unknown; state: string; user?: { login?: string; type?: string } };
 
-/** Collect the facts a quality score needs. Roughly 8 requests. Returns a string error on failure. */
+/** Collect the facts a quality score needs. Five requests. Returns a string error on failure. */
 export async function collectRepoFacts(owner: string, name: string, token?: string): Promise<RepoFacts | string> {
   const repo = await gh(`/repos/${owner}/${name}`, token);
   if (repo.status === 404) return 'repository not found (private repos are not supported)';
@@ -215,30 +179,6 @@ export async function collectRepoFacts(owner: string, name: string, token?: stri
   }
   const issueAuthorsOutsideOwner = new Set(issues.map((i) => i.user?.login).filter((l) => l && l.toLowerCase() !== r.owner.login.toLowerCase())).size;
 
-  let releases = 0;
-  let lastReleaseAt: string | null = null;
-  const rel = await gh(`/repos/${owner}/${name}/releases?per_page=100`, token);
-  if (Array.isArray(rel.json) && (rel.json as unknown[]).length) {
-    const list = rel.json as { published_at: string | null; draft: boolean }[];
-    releases = list.filter((x) => !x.draft).length;
-    lastReleaseAt = list.map((x) => x.published_at).filter(Boolean).sort().pop() ?? null;
-  } else {
-    const tags = await gh(`/repos/${owner}/${name}/tags?per_page=100`, token);
-    releases = Array.isArray(tags.json) ? (tags.json as unknown[]).length : 0;
-  }
-
-  const root = await gh(`/repos/${owner}/${name}/contents/?ref=${encodeURIComponent(r.default_branch)}`, token);
-  const names = Array.isArray(root.json) ? (root.json as { name: string; type: string }[]) : [];
-  const hasTests = names.some((n) => n.type === 'dir' && /^(test|tests|spec|specs|__tests__|e2e)$/i.test(n.name)) || names.some((n) => /\.(test|spec)\.[cm]?[jt]sx?$/.test(n.name));
-  let hasWorkflows = false;
-  if (names.some((n) => n.name === '.github')) {
-    const wf = await gh(`/repos/${owner}/${name}/contents/.github/workflows?ref=${encodeURIComponent(r.default_branch)}`, token);
-    hasWorkflows = Array.isArray(wf.json) && (wf.json as unknown[]).length > 0;
-  }
-
-  const readme = await gh(`/repos/${owner}/${name}/readme`, token);
-  const readmeWords = readme.status === 200 && readme.json ? Math.round(((readme.json as { size: number }).size ?? 0) / 6) : 0;
-
   return {
     fullName: r.full_name,
     createdAt: r.created_at,
@@ -252,10 +192,5 @@ export async function collectRepoFacts(owner: string, name: string, token?: stri
     issuesTotal,
     issuesClosed,
     issueAuthorsOutsideOwner,
-    releases,
-    lastReleaseAt,
-    hasWorkflows,
-    hasTests,
-    readmeWords,
   };
 }

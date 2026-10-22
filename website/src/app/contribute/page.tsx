@@ -24,7 +24,7 @@ export default function Contribute() {
         <h2 className="display text-3xl">How a score is made</h2>
         <ol className="mt-3 space-y-3 text-ink-2">
           <li className="card p-4"><strong className="text-ink">1. Read the repo.</strong> At grading time the API reads the GitHub repository with the owner&apos;s own login: commit history, contributors, issues, releases, the file tree, the README. About ten API calls, nothing stored but the result.</li>
-          <li className="card p-4"><strong className="text-ink">2. Run the rules.</strong> Each rule in <code>quality.ts</code> turns those facts into a number between 0 and 1 plus the evidence it saw. Only things that take time score points, with weights summing to 100; a README, license, CI and tests are a multiplier that can only lower the score. That is the Quality score: real, maintained work by more than one person over time.</li>
+          <li className="card p-4"><strong className="text-ink">2. Run the rules.</strong> Each rule in <code>quality.ts</code> turns those facts into a number between 0 and 1 plus the evidence it saw. Three signals, weights summing to 100, all of which take time: a year of pushes, other humans committing, strangers filing issues that get closed. That is the Quality score.</li>
           <li className="card p-4"><strong className="text-ink">3. Popularity.</strong> The API reads the owner&apos;s connected analytics (<code>analytics.ts</code>): unique visitors in 30 days and how many came back on another day. The bands in <code>popularity.ts</code> turn that into the score. This answers: do the people who find it use it?</li>
           <li className="card p-4"><strong className="text-ink">4. Verdict.</strong> <code>verdict.ts</code> combines the two halves: both good is Not slop, either bad is Slop, anything else is Mixed. The <Link href="/methodology" className="underline">methodology page</Link> is generated from these files.</li>
         </ol>
@@ -32,17 +32,20 @@ export default function Contribute() {
 
       <section className="mt-12">
         <h2 className="display text-3xl">A rule, in full</h2>
-        <p className="mt-2 text-ink-2">This is the real <code>contributors</code> rule as of v0.3. A sentence, a weight, and a few lines of arithmetic. That is the level of sophistication we are at, on purpose.</p>
+        <p className="mt-2 text-ink-2">This is the real <code>history</code> rule, worth 60 of the 100 points. A sentence, a weight, and a few lines of arithmetic. That is the level of sophistication we are at, on purpose.</p>
         <pre className="mt-3">{`{
-  id: 'contributors',
+  id: 'history',
   description:
-    'People other than the author have put real work in: humans (not bots) ' +
-    'with at least two commits, not counting the first one. One person is zero.',
-  weight: 25,
-  run: (f) => ({
-    score: band(Math.max(0, f.humansWithTwoPlusCommits - 1), [[0, 0], [1, 0.4], [3, 0.75], [7, 1]]),
-    evidence: [\`\${f.humansWithTwoPlusCommits} humans with 2+ commits\`],
-  }),
+    'A year of pushes. The share of the last 52 weeks with at least one commit, ' +
+    'times the age of the repo: nothing under one month, 40% at six months, ' +
+    'full credit only at twelve months of history.',
+  weight: 60,
+  run: (f) => {
+    const ageMonths = days(f.createdAt) / 30;
+    const ageFactor = band(ageMonths, [[1, 0], [6, 0.4], [12, 1]]);
+    const cadence = f.weeksWithCommits / 52;
+    return { score: clamp01(cadence * ageFactor), evidence: [...] };
+  },
 }`}</pre>
       </section>
 
@@ -71,7 +74,7 @@ export default function Contribute() {
           <li className="card p-4">More analytics providers for Popularity: Google Analytics, Fathom, Umami, Cloudflare. Each is one object in <code>analytics.ts</code>.</li>
           <li className="card p-4">GitLab, Codeberg and self-hosted repos. Everything in v0 is GitHub.</li>
           <li className="card p-4">Better fraud resistance: detecting commit-cadence bots, sock-puppet contributors, issue farms.</li>
-          <li className="card p-4">Pull request signals: reviewed merges from outside contributors.</li>
+          <li className="card p-4">Pull request signals: reviewed merges from outside contributors. Releases were dropped as too cheap; argue for them back with data.</li>
           <li className="card p-4">A badge endpoint so owners can show their score in a README.</li>
           <li className="card p-4">Signals for things that are not code at all.</li>
         </ul>

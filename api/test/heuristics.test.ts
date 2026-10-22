@@ -10,23 +10,23 @@ const ago = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
 const HEALTHY: RepoFacts = {
   fullName: 'a/b', createdAt: ago(900), pushedAt: ago(2), archived: false, isFork: false, defaultBranch: 'main', license: 'MIT',
   weeksWithCommits: 40, humansWithTwoPlusCommits: 6, issuesTotal: 80, issuesClosed: 70, issueAuthorsOutsideOwner: 25,
-  releases: 20, lastReleaseAt: ago(30), hasWorkflows: true, hasTests: true, readmeWords: 900,
 };
 const FRESH: RepoFacts = {
   fullName: 'a/new', createdAt: ago(1), pushedAt: ago(0), archived: false, isFork: false, defaultBranch: 'main', license: 'MIT',
   weeksWithCommits: 1, humansWithTwoPlusCommits: 1, issuesTotal: 0, issuesClosed: 0, issueAuthorsOutsideOwner: 0,
-  releases: 0, lastReleaseAt: null, hasWorkflows: true, hasTests: true, readmeWords: 400,
 };
 
 test('a long-lived, multi-contributor repo scores high; a day-old solo repo scores zero', () => {
   const h = scoreQuality(HEALTHY);
   const f = scoreQuality(FRESH);
-  assert.ok(h.score >= 85, `healthy=${h.score} ${JSON.stringify(h.signals.map((s) => [s.id, s.score]))}`);
+  assert.ok(h.score >= 80, `healthy=${h.score} ${JSON.stringify(h.signals.map((s) => [s.id, s.score]))}`);
   assert.equal(f.score, 0, `fresh=${f.score} ${JSON.stringify(f.signals.map((s) => [s.id, s.score]))}`);
-  // Scaffolding earns nothing: README, license, CI, tests on a fresh solo repo still zero.
-  assert.equal(scoreQuality({ ...FRESH, readmeWords: 5000, hasTests: true, hasWorkflows: true, license: 'MIT' }).score, 0);
-  // But missing them costs a real project.
-  assert.ok(scoreQuality({ ...HEALTHY, hasTests: false, hasWorkflows: false, license: null, readmeWords: 10 }).score < h.score * 0.7);
+  // Six months of solid pushes, solo, no issues: not yet good.
+  const six = scoreQuality({ ...FRESH, createdAt: ago(185), weeksWithCommits: 26 });
+  assert.ok(six.score < 40, `six months solo=${six.score}`);
+  // A year of weekly pushes alone gets you to the edge of good; people and issues take you over.
+  const year = scoreQuality({ ...FRESH, createdAt: ago(370), weeksWithCommits: 52 });
+  assert.ok(year.score >= 55 && year.score < 65, `year solo=${year.score}`);
 });
 
 test('archived repos are capped; every rule is described; weights sum to 100', () => {

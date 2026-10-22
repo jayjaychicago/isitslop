@@ -2,7 +2,7 @@
 
 A sloppiness score for things on the internet. It asks two plain questions:
 
-- **Quality**: is this real, maintained work by more than one person over time? Read from the GitHub repository with the owner's own login, using signals that are expensive to fake: months of commit history, humans with more than one commit, issues closed, releases, tests and CI, a README and a license. Stars and forks are not used.
+- **Quality**: is this real, maintained work by more than one person over time? Read from the GitHub repository with the owner's own login. Three signals, all of which take time: a year of pushes, other humans committing, strangers filing issues that get closed. Nothing that can be scaffolded in an afternoon counts: no README, license, CI, tests, stars or forks.
 - **Popularity**: do the people who find it actually use it? Read from the owner's connected analytics (PostHog or Plausible in v0): unique visitors in 30 days and how many came back on another day. Nothing is typed in.
 
 Both have to be good to be not slop. If either is bad, it is slop. Anything in between is mixed. No repo is a quality of zero and no users is a popularity of zero.
