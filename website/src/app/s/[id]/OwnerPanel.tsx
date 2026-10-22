@@ -160,15 +160,23 @@ function RequestGrade({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: str
 
   return (
     <div className="flex flex-col gap-4 text-sm">
-      {!entry.githubLogin && (
-        <div className="card p-3 bg-paper flex flex-col sm:flex-row sm:items-center gap-3">
-          <span className="text-ink-2">Quality is read from GitHub with your own login. {entry.kind === "site" ? "Connect GitHub, then link your repo in the repo tab." : "Sign in with GitHub in the verify tab."}</span>
-          {entry.kind === "site" && ownerKey && <GitHubButton entry={entry} ownerKey={ownerKey} label="Connect GitHub" />}
-        </div>
-      )}
-      {!entry.analyticsProvider && (
-        <div className="card p-3 bg-paper text-ink-2">Popularity is read from your analytics. Nothing connected means zero. Connect PostHog or Plausible in the analytics tab.</div>
-      )}
+      <ul className="card p-3 bg-paper flex flex-col gap-1.5">
+        <li className={entry.githubLogin ? "text-fresh" : "text-slop"}>
+          {entry.githubLogin ? `✓ GitHub connected as ${entry.githubLogin}` : "✗ GitHub not connected"}
+          {!entry.githubLogin && entry.kind === "site" && ownerKey && <span className="ml-2"><GitHubButton entry={entry} ownerKey={ownerKey} label="Connect GitHub" /></span>}
+          {!entry.githubLogin && entry.kind === "github" && <span className="text-muted ml-2">(verify tab)</span>}
+        </li>
+        {entry.kind === "site" && (
+          <li className={entry.repoUrl ? "text-fresh" : "text-slop"}>
+            {entry.repoUrl ? `✓ Repo linked: ${entry.repoUrl.replace(/^https?:\/\/github\.com\//, "")}` : "✗ No repo linked: Quality will be 0"}
+            {!entry.repoUrl && <span className="text-muted ml-2">(repo tab)</span>}
+          </li>
+        )}
+        <li className={entry.analyticsProvider ? "text-fresh" : "text-slop"}>
+          {entry.analyticsProvider ? `✓ Analytics connected: ${entry.analyticsProvider}` : "✗ No analytics connected: Popularity will be 0"}
+          {!entry.analyticsProvider && <span className="text-muted ml-2">(analytics tab)</span>}
+        </li>
+      </ul>
       <label className="flex items-start gap-2 card p-3 bg-paper">
         <input type="checkbox" className="mt-1" checked={accept} onChange={(e) => setAccept(e.target.checked)} />
         <span>

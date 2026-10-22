@@ -45,7 +45,7 @@ grade.post('/entries/:id/grade', async (c) => {
   const repoUrl = e.kind === 'github' ? e.url : e.repo_url;
   let quality: { score: number; signals: unknown[]; repo: string | null; version: string; note?: string };
   if (!repoUrl) {
-    quality = { score: 0, signals: [], repo: null, version: QUALITY_VERSION, note: 'No public repository linked. No visible work means a quality of zero. Link a repo to be scored.' };
+    quality = { score: 0, signals: [], repo: null, version: QUALITY_VERSION, note: 'No repository linked. No visible work means a quality of zero. Link a repo to be scored.' };
   } else {
     const t = normalizeTarget(repoUrl);
     if (typeof t === 'string' || !t.repo) return c.json({ error: 'linked repo is not a valid github.com/owner/repo URL' }, 400);
