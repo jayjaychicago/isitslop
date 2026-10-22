@@ -24,7 +24,7 @@ export default function MePage() {
         {me.entries.length === 0 && <li className="p-5 text-sm text-muted">Nothing yet.</li>}
         {me.entries.map((e) => (
           <li key={e.id}>
-            <Link href={`/s/${e.id}`} className="flex items-center justify-between gap-4 p-4 hover:bg-paper">
+            <Link href={`/s/${e.id}`} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 p-4 hover:bg-paper">
               <div className="min-w-0">
                 <div className="display text-3xl leading-tight truncate">{e.url ? e.url.replace(/^https?:\/\//, "") : "Private repository"}</div>
                 {e.title && e.url && <div className="text-sm text-ink-2 truncate">{e.title}</div>}

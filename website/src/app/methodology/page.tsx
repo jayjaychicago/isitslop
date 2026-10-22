@@ -58,10 +58,10 @@ export default async function MethodologyPage() {
             <p className="text-sm text-muted">{m.quality.source}</p>
             <ul className="card mt-4 divide-y divide-line">
               {m.quality.rules.map((r) => (
-                <li key={r.id} className="p-4 grid grid-cols-[6rem_1fr_4rem] gap-3 items-start">
+                <li key={r.id} className="p-4 grid grid-cols-[1fr_auto] sm:grid-cols-[6rem_1fr_4rem] gap-x-3 gap-y-1 items-start">
                   <a className="text-sm underline decoration-line hover:decoration-ink" href={`https://github.com/jayjaychicago/isitslop/blob/main/api/src/heuristics/quality.ts`} title="View this rule's source"><code>{r.id}</code></a>
-                  <span className="text-sm text-ink-2">{r.description}</span>
-                  <span className="text-right font-semibold tabular-nums">{r.kind === "multiplier" ? "×" : `+${r.weight}`}</span>
+                  <span className="text-sm text-ink-2 order-3 sm:order-none col-span-2 sm:col-span-1">{r.description}</span>
+                  <span className="text-right font-semibold tabular-nums order-2 sm:order-none">{r.kind === "multiplier" ? "×" : `+${r.weight}`}</span>
                 </li>
               ))}
             </ul>

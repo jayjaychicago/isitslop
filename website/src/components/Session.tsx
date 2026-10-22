@@ -22,7 +22,7 @@ export function SignIn() {
   const { me: s, reload } = useSession();
   const path = usePathname();
   if (!s) return null;
-  if (!s.user) return <a className="btn btn-ghost text-sm" href={signInUrl(path || "/")}>Sign in with GitHub</a>;
+  if (!s.user) return <a className="btn btn-ghost text-sm whitespace-nowrap" href={signInUrl(path || "/")}><span className="sm:hidden">Sign in</span><span className="hidden sm:inline">Sign in with GitHub</span></a>;
   return (
     <span className="flex items-center gap-3 text-sm">
       <Link href="/me" className="hover:text-ink">{s.user.githubLogin}</Link>

@@ -12,10 +12,10 @@ Colours: ink #17140f, paper #f7f3ec, accent #e3845f. Wordmark is Instrument Seri
 
 ## Verdict icons (`icons/`)
 
-One glyph per verdict word, 24×24, stroke `currentColor` so they take the colour of the word next to them. Generated from `src/components/Icons.tsx` with `node scripts/icons.mjs`.
+One glyph per verdict word, 24×24, filled with `currentColor` so they take the colour of the word next to them. Traced from `sheet.png` (the generated master sheet) into `src/components/Icons.tsx`; the SVG files are written from that file with `node scripts/icons.mjs`.
 
-- `slop.svg` — a dripping blob (filled).
-- `craft.svg` — a hammer.
-- `popular.svg` — a crowd.
-- `fringe.svg` — one figure alone inside a dashed ring.
+- `slop.svg` — a dog bowl heaped with dog food.
+- `craft.svg` — a palette and paintbrush.
+- `popular.svg` — three people raising the roof.
+- `fringe.svg` — a tumbleweed.
 - `unknown.svg` — the question mark from the mark.

@@ -125,6 +125,7 @@ body {
 .prose-legal strong { color: var(--ink); }
 
 code, pre { font-family: var(--font-mono); }
+code { overflow-wrap: anywhere; }
 pre {
   background: var(--paper-2);
   border: 1px solid var(--line);
@@ -134,3 +135,7 @@ pre {
   font-size: 0.85rem;
   line-height: 1.5;
 }
+@media (max-width: 640px) {
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.8rem; }
+}
+html, body { overflow-x: hidden; }

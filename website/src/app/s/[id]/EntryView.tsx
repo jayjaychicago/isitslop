@@ -126,22 +126,24 @@ export function EntryView({ id }: { id: string }) {
       {history.length > 1 && (
         <section className="mt-12">
           <h2 className="display text-3xl mb-3">History</h2>
-          <table className="w-full text-sm">
-            <thead className="text-xs uppercase tracking-wider text-muted">
-              <tr><th className="text-left py-1">Date</th><th className="text-right">Quality</th><th className="text-right">Popularity</th><th className="text-right">Verdict</th><th className="text-right">Rules</th></tr>
-            </thead>
-            <tbody>
-              {history.map((h) => (
-                <tr key={h.id} className="border-t border-line">
-                  <td className="py-1.5">{new Date(h.createdAt).toLocaleString()}</td>
-                  <td className="text-right tabular-nums">{h.quality ?? "?"}</td>
-                  <td className="text-right tabular-nums">{h.popularity ?? "?"}</td>
-                  <td className="text-right"><VerdictBadge verdict={h.verdict} size="sm" /></td>
-                  <td className="text-right text-muted">v{h.heuristicsVersion}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full text-sm whitespace-nowrap">
+              <thead className="text-xs uppercase tracking-wider text-muted">
+                <tr><th className="text-left py-1">Date</th><th className="text-right pl-4">Quality</th><th className="text-right pl-4">Popularity</th><th className="text-right pl-4">Verdict</th><th className="text-right pl-4">Rules</th></tr>
+              </thead>
+              <tbody>
+                {history.map((h) => (
+                  <tr key={h.id} className="border-t border-line">
+                    <td className="py-1.5">{new Date(h.createdAt).toLocaleString()}</td>
+                    <td className="text-right tabular-nums pl-4">{h.quality ?? "?"}</td>
+                    <td className="text-right tabular-nums pl-4">{h.popularity ?? "?"}</td>
+                    <td className="text-right pl-4"><VerdictBadge verdict={h.verdict} size="sm" /></td>
+                    <td className="text-right text-muted pl-4">v{h.heuristicsVersion}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
 

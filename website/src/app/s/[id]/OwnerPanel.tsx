@@ -45,7 +45,7 @@ export function OwnerPanel({ entry, grade, onChange, gaPick, onGaPicked, initial
     <section className="mt-12 card p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="display text-3xl">Your entry</h2>
-        <div className="flex gap-1 text-sm">
+        <div className="flex flex-wrap gap-1 text-sm">
           {tabs.map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-3 py-1 rounded-full capitalize ${tab === t ? "bg-ink text-paper" : "text-ink-2 hover:text-ink"}`}>{t === "verify" ? "re-verify" : t}</button>
           ))}

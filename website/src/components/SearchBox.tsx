@@ -52,25 +52,27 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
   return (
     <div className="flex flex-col gap-4">
       <form
-        className="flex gap-2"
+        className="flex flex-col sm:flex-row gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           if (looksLikeUrl) add();
         }}
       >
         <input
-          className="input text-base"
+          className="input text-base w-full min-w-0"
           placeholder="Search the index, or paste a URL or github.com/owner/repo to add it"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           autoFocus
         />
-        <button className="btn btn-ghost" type="button" onClick={() => setQ(q.trim())} title="Results appear as you type">
-          Search
-        </button>
-        <button className="btn" type="submit" disabled={!looksLikeUrl || busy}>
-          {busy ? "Adding…" : "Add"}
-        </button>
+        <div className="flex gap-2">
+          <button className="btn btn-ghost flex-1 sm:flex-none" type="button" onClick={() => setQ(q.trim())} title="Results appear as you type">
+            Search
+          </button>
+          <button className="btn flex-1 sm:flex-none" type="submit" disabled={!looksLikeUrl || busy}>
+            {busy ? "Adding…" : "Add"}
+          </button>
+        </div>
       </form>
       {err && <div className="text-sm text-slop">{err}</div>}
 
