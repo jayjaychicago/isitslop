@@ -12,7 +12,8 @@ export const metadata: Metadata = {
   title: "Is it slop?",
   description: "A sloppiness score for things on the internet. Quality: real, maintained work? Popularity: do the people who find it use it?",
   metadataBase: new URL("https://isitslop.org"),
-  openGraph: { title: "Is it slop?", description: "A sloppiness score for things on the internet.", url: "https://isitslop.org" },
+  openGraph: { title: "Is it slop?", description: "A sloppiness score for things on the internet.", url: "https://isitslop.org", images: [{ url: "/og.png", width: 1200, height: 630 }] },
+  twitter: { card: "summary_large_image", images: ["/og.png"] },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -22,8 +23,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SessionProvider>
         <header className="border-b border-line">
           <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between gap-4">
-            <Link href="/" className="display text-2xl leading-none">
-              is it <em>slop</em>?
+            <Link href="/" className="flex items-center gap-2.5 display text-2xl leading-none">
+              <img src="/brand/mark.svg" alt="" width={28} height={28} className="rounded-md" />
+              <span>is it <em>slop</em>?</span>
             </Link>
             <nav className="flex items-center gap-5 text-sm text-ink-2">
               <Link href="/methodology" className="hover:text-ink">Methodology</Link>
