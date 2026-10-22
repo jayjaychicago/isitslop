@@ -15,6 +15,17 @@ export const QUALITY_VERSION = '0.5.1';
 
 const UA = 'isitslop-bot/0.3 (+https://isitslop.org/methodology)';
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
+/** ISO year-week key, e.g. 2026-W42. */
+function isoWeek(iso: string): string {
+  const d = new Date(iso);
+  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  const w = Math.ceil(((t.getTime() - y0.getTime()) / 86_400_000 + 1) / 7);
+  return `${t.getUTCFullYear()}-W${w}`;
+}
+
 const days = (iso: string | null | undefined) => (iso ? (Date.now() - new Date(iso).getTime()) / 86_400_000 : Infinity);
 
 /** Piecewise-linear interpolation through [x, y] points; saturates at the ends. */
@@ -130,23 +141,28 @@ export async function collectRepoFacts(owner: string, name: string, token?: stri
   if (repo.status !== 200 || !repo.json) return `GitHub returned ${repo.status}`;
   const r = repo.json as { full_name: string; created_at: string; pushed_at: string | null; archived: boolean; fork: boolean; default_branch: string; license: { spdx_id?: string; name?: string } | null; owner: { login: string } };
 
-  // Commit cadence over the last 52 weeks. GitHub computes this lazily (202 = not ready yet).
+  // Commit cadence over the last 52 weeks. GitHub computes this lazily (202 = not ready yet); it is
+  // usually ready within a few seconds, so wait up to ~15 s before falling back.
   let weeks: { total: number }[] | null = null;
-  for (let attempt = 0; attempt < 3 && !weeks; attempt++) {
-    const s = await gh(`/repos/${owner}/${name}/stats/commit_activity`, token);
-    if (s.status === 200 && Array.isArray(s.json)) weeks = s.json as { total: number }[];
-    else if (s.status === 202) await new Promise((res) => setTimeout(res, 1500));
+  for (let attempt = 0; attempt < 7 && !weeks; attempt++) {
+    const st = await gh(`/repos/${owner}/${name}/stats/commit_activity`, token);
+    if (st.status === 200 && Array.isArray(st.json) && (st.json as unknown[]).length) weeks = st.json as { total: number }[];
+    else if (st.status === 202) await new Promise((res) => setTimeout(res, 2000));
     else break;
   }
   let weeksWithCommits = 0;
   if (weeks) weeksWithCommits = weeks.filter((w) => w.total > 0).length;
   else {
-    // Fallback: distinct ISO weeks among the last 100 commits in the past year.
+    // Fallback: walk every commit of the last year (up to 2,000) and count distinct ISO weeks.
     const since = new Date(Date.now() - 365 * 86_400_000).toISOString();
-    const c = await gh(`/repos/${owner}/${name}/commits?per_page=100&since=${since}`, token);
     const set = new Set<string>();
-    if (Array.isArray(c.json)) for (const x of c.json as { commit: { author: { date: string } } }[]) set.add(x.commit.author.date.slice(0, 10).replace(/-\d\d$/, ''));
-    weeksWithCommits = Math.min(52, set.size * 4);
+    for (let page = 1; page <= 20; page++) {
+      const cm = await gh(`/repos/${owner}/${name}/commits?per_page=100&since=${since}&page=${page}`, token);
+      if (!Array.isArray(cm.json) || !(cm.json as unknown[]).length) break;
+      for (const x of cm.json as { commit: { author: { date: string } } }[]) set.add(isoWeek(x.commit.author.date));
+      if ((cm.json as unknown[]).length < 100) break;
+    }
+    weeksWithCommits = Math.min(52, set.size);
   }
 
   const contrib = await gh(`/repos/${owner}/${name}/contributors?per_page=100`, token);
