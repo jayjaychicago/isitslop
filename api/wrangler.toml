@@ -11,6 +11,11 @@ workers_dev = true
 #   AWS_SECRET_ACCESS_KEY
 #   AWS_REGION
 #   SES_FROM              e.g. verify@isitslop.org
+#   GITHUB_APP_CLIENT_ID  the isitslop GitHub App; owners connect their account and we read repos with their token
+#   GITHUB_APP_CLIENT_SECRET
+#   GITHUB_APP_SLUG       for the install link, https://github.com/apps/<slug>
+#   TOKEN_KEY             64 hex chars; encrypts stored GitHub tokens and signs OAuth state
+#   GITHUB_TOKEN          optional fallback for anonymous /v1/preview only
 
 # Custom domain (the isitslop.org zone is on the same Cloudflare account).
 routes = [{ pattern = "api.isitslop.org", custom_domain = true }]

@@ -5,11 +5,11 @@ import { db } from '../lib/db.ts';
 import { sha256 } from '../lib/crypto.ts';
 import { rateLimit } from '../lib/ratelimit.ts';
 import { normalizeTarget } from '../lib/url.ts';
-import { fetchTargetText, mergeExtracted } from '../lib/fetch.ts';
-import { scoreCritics } from '../heuristics/critics.ts';
-import { scorePeople, validatePeople } from '../heuristics/people.ts';
+import { collectRepoFacts, scoreQuality, QUALITY_VERSION } from '../heuristics/quality.ts';
+import { scorePopularity, validatePopularity } from '../heuristics/popularity.ts';
 import { overall, verdict } from '../heuristics/verdict.ts';
 import { getEntry, publicGrade, type EntryRow, type GradeRow } from '../lib/entries.ts';
+import { ownerGithubToken } from './github.ts';
 
 export const grade = new Hono<{ Bindings: Env }>();
 
@@ -33,42 +33,40 @@ grade.post('/entries/:id/grade', async (c) => {
     return c.json({ error: `you must accept the terms (version ${TERMS_VERSION}) by sending acceptTerms: true`, termsUrl: `${c.env.PUBLIC_SITE_URL}/terms`, termsVersion: TERMS_VERSION }, 400);
   }
 
-  let peopleInput = null;
-  let people = null;
-  if (body.people !== undefined && body.people !== null) {
-    const p = validatePeople(body.people);
+  // Popularity: owner-attested analytics. Nothing submitted is nobody, which is zero.
+  let popularityInput = null;
+  let popularity = null;
+  if (body.popularity !== undefined && body.popularity !== null) {
+    const p = validatePopularity(body.popularity);
     if (typeof p === 'string') return c.json({ error: p }, 400);
-    peopleInput = p;
-    people = scorePeople(p);
+    popularityInput = p;
+    popularity = scorePopularity(p);
+  }
+  const popularityScore = popularity?.score ?? 0;
+
+  // Quality: GitHub signals on the repo (the entry itself, or the repo linked to the site). No repo is zero.
+  const repoUrl = e.kind === 'github' ? e.url : e.repo_url;
+  let quality: { score: number; signals: unknown[]; repo: string | null; version: string; note?: string };
+  if (!repoUrl) {
+    quality = { score: 0, signals: [], repo: null, version: QUALITY_VERSION, note: 'No public repository linked. No visible work means a quality of zero. Link a repo to be scored.' };
+  } else {
+    const t = normalizeTarget(repoUrl);
+    if (typeof t === 'string' || !t.repo) return c.json({ error: 'linked repo is not a valid github.com/owner/repo URL' }, 400);
+    // Read with the owner's own GitHub token: their rate limit, their private repos.
+    const token = await ownerGithubToken(c.env, sql, e);
+    if (!token) return c.json({ error: 'connect your GitHub account first (GET /v1/github/login?entry=...) so the repo can be read with your token' }, 428);
+    const facts = await collectRepoFacts(t.repo.owner, t.repo.name, token);
+    if (typeof facts === 'string') return c.json({ error: facts }, 422);
+    quality = scoreQuality(facts);
   }
 
-  const t = normalizeTarget(e.url);
-  if (typeof t === 'string') return c.json({ error: t }, 400);
-  const fetched = await fetchTargetText(t);
-  if ('error' in fetched) return c.json({ error: fetched.error }, 422);
-  let extracted = fetched.extracted;
-  let source = fetched.source;
-  if (e.kind === 'site' && e.repo_url) {
-    // A site with a linked repo is graded on the landing page plus the README.
-    const rt = normalizeTarget(e.repo_url);
-    if (typeof rt !== 'string') {
-      const rf = await fetchTargetText(rt);
-      if (!('error' in rf)) {
-        extracted = mergeExtracted(fetched.extracted, rf.extracted);
-        source = `${fetched.source} + ${rf.source}`;
-      }
-    }
-  }
-  const critics = scoreCritics(extracted);
-  // No usage numbers is not "unknown". Nobody using it is a zero.
-  const peopleScore = people?.score ?? 0;
-  const v = verdict(critics.score, peopleScore);
-  const ov = overall(critics.score, peopleScore);
+  const v = verdict(quality.score, popularityScore);
+  const ov = overall(quality.score, popularityScore);
 
-  await sql`update entries set terms_version = ${TERMS_VERSION}, terms_accepted_at = now(), title = ${extracted.title || e.title} where id = ${e.id}`;
+  await sql`update entries set terms_version = ${TERMS_VERSION}, terms_accepted_at = now() where id = ${e.id}`;
   const rows = (await sql`
-    insert into grades (entry_id, critics_score, people_score, overall, verdict, critics_breakdown, people_input, heuristics_version)
-    values (${e.id}, ${critics.score}, ${peopleScore}, ${ov}, ${v}, ${JSON.stringify({ ...critics, source })}::jsonb, ${peopleInput ? JSON.stringify({ ...peopleInput, ...people }) : null}::jsonb, ${critics.version})
+    insert into grades (entry_id, quality_score, popularity_score, overall, verdict, quality_breakdown, popularity_input, heuristics_version)
+    values (${e.id}, ${quality.score}, ${popularityScore}, ${ov}, ${v}, ${JSON.stringify(quality)}::jsonb, ${popularityInput ? JSON.stringify({ ...popularityInput, ...popularity }) : null}::jsonb, ${QUALITY_VERSION})
     returning *
   `) as GradeRow[];
   return c.json({ grade: publicGrade(rows[0]) }, 201);

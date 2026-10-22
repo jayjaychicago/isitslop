@@ -26,8 +26,8 @@ export default function Terms() {
       <h2>3. Grades are only produced on the owner's request</h2>
       <p>
         We only produce a grade for a URL when a person who has verified ownership of that domain or repository (the <strong>Owner</strong>) explicitly
-        requests one and accepts these terms. Verification is done by DNS record, a well-known file, a file in the repository, or an email to a
-        standard administrative address at the domain. You represent that you have the authority to verify and to request a grade on behalf of the
+        requests one and accepts these terms. Verification is done by DNS record, a well-known file, or an email to a standard administrative address at the domain, or for
+        repositories by signing in with the GitHub account that has push access. You represent that you have the authority to verify and to request a grade on behalf of the
         domain or repository.
       </p>
 
@@ -53,7 +53,7 @@ export default function Terms() {
 
       <h2>5. Self-reported numbers</h2>
       <p>
-        If you submit usage numbers for the Usage score, you represent that they are true and accurate to the best of your knowledge. They are
+        If you submit usage numbers for the Popularity score, you represent that they are true and accurate to the best of your knowledge. They are
         published and labelled as self-reported. Submitting numbers you know to be false is a breach of these terms and may result in removal of the
         grade and the entry.
       </p>

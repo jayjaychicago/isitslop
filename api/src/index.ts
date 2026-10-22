@@ -6,6 +6,7 @@ import { verify } from './routes/verify.ts';
 import { grade } from './routes/grade.ts';
 import { appeals } from './routes/appeals.ts';
 import { methodology } from './routes/methodology.ts';
+import { github } from './routes/github.ts';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -21,11 +22,13 @@ app.get('/', (c) =>
       'GET  /v1/entries?q=&limit=&offset=',
       'POST /v1/entries {url}',
       'GET  /v1/entries/:id',
-      'GET  /v1/preview?url=            dry-run definition score, nothing stored',
-      'POST /v1/entries/:id/verify/start {method: dns|file|email|repo_file, email?}',
+      'GET  /v1/preview?url=github.com/o/r   dry-run quality score, nothing stored',
+      'POST /v1/entries/:id/verify/start {method: dns|file|email}   (sites)',
+      'GET  /v1/github/login?entry=&ownerKey=   connect the owner GitHub account (repo entries: this is the ownership proof)',
       'POST /v1/entries/:id/verify/check {verificationId, code?}',
-      'POST /v1/entries/:id/grade  (Bearer owner key) {acceptTerms: true, people?: {visitors, activated, returned}}',
-      'POST /v1/entries/:id/repo   (Bearer owner key) {repoUrl}   link a public repo to a site entry; repo must contain .isitslop with isitslop-site=<id>',
+      'POST /v1/entries/:id/grade  (Bearer owner key) {acceptTerms: true, popularity?: {visitors, activated, returned}}',
+      'POST /v1/entries/:id/repo   (Bearer owner key) {repoUrl}   link a repo to a site entry; the connected GitHub account must have push access',
+      'POST /v1/entries/:id/github/disconnect (Bearer owner key)',
       'DELETE /v1/entries/:id       (Bearer owner key or admin)  remove the entry',
       'POST /v1/entries/:id/appeals (Bearer owner key) {text}',
       'POST /v1/appeals/:id/resolve (Bearer admin) {status, response}',
@@ -39,6 +42,7 @@ app.route('/v1', entries);
 app.route('/v1', verify);
 app.route('/v1', grade);
 app.route('/v1', appeals);
+app.route('/v1', github);
 
 app.notFound((c) => c.json({ error: 'not found' }, 404));
 app.onError((err, c) => {

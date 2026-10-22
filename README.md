@@ -2,14 +2,14 @@
 
 A sloppiness score for things on the internet. It asks two plain questions:
 
-- **Definition**: does the thing say clearly what it is, why it needs to exist, who it is for, and what it is not?
-- **Usage**: do the people who find it actually use it?
+- **Quality**: is this real, maintained work by more than one person over time? Read from the GitHub repository with the owner's own login, using signals that are expensive to fake: months of commit history, humans with more than one commit, issues closed, releases, tests and CI, a README and a license. Stars and forks are not used.
+- **Popularity**: do the people who find it actually use it? Conversion and return rate from the owner's analytics, labelled self-reported.
 
-Both have to be good to be not slop. If either is bad, it is slop. Anything in between is mixed. No users counts as zero: an unused thing is slop however well defined.
+Both have to be good to be not slop. If either is bad, it is slop. Anything in between is mixed. No repo is a quality of zero and no users is a popularity of zero.
 
 Built for founders and open source maintainers who want an honest, public answer to "was this worth building?", and for the contributors who think the rules could be better. It exists because AI made the "what" cheap: anyone can ship a spec in an afternoon, so the thing that separates a product from slop is the definition behind it, and nobody was measuring that.
 
-Heuristics only. No LLMs. Every rule is public and generated into the website's methodology page from the code. The API is a Cloudflare Worker written in TypeScript with Hono, the index is Neon Postgres, the website is Next.js on Vercel. A grade takes one HTTP fetch of your landing page or README and about 50 ms of regex. It is not an invoicing tool, a security scanner, or a replacement for talking to users.
+Heuristics only. No LLMs. Every rule is public and generated into the website's methodology page from the code. The API is a Cloudflare Worker written in TypeScript with Hono, the index is Neon Postgres, the website is Next.js on Vercel. Owners connect GitHub through the isitslop GitHub App, so private repos work and nobody shares a rate limit. It is not a security scanner, an SEO tool, or a replacement for talking to users.
 
 Live at [isitslop.org](https://isitslop.org). API at [api.isitslop.org](https://api.isitslop.org). Read [foundation.md](foundation.md) first: it is the "why" for this repo.
 
@@ -45,10 +45,10 @@ npm run dev                           # http://localhost:3000
 
 Note the API base URL includes `/v1`.
 
-## Try the rules on anything, without storing anything
+## Try the quality rules on any public repo, without storing anything
 
 ```sh
-curl "https://api.isitslop.org/v1/preview?url=example.com"
+curl "https://api.isitslop.org/v1/preview?url=github.com/honojs/hono"
 ```
 
 ## Contributing

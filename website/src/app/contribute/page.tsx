@@ -15,7 +15,7 @@ export default function Contribute() {
         editorial desk. If a rule is wrong, the fix is a pull request, and it applies to everyone.
       </p>
       <div className="mt-6 flex flex-wrap gap-3">
-        <a className="btn" href={`${REPO}/blob/main/api/src/heuristics/critics.ts`}>Read the rules (critics.ts)</a>
+        <a className="btn" href={`${REPO}/blob/main/api/src/heuristics/quality.ts`}>Read the rules (quality.ts)</a>
         <a className="btn btn-ghost" href={REPO}>Open the repo</a>
         <a className="btn btn-ghost" href={`${REPO}/blob/main/foundation.md`}>Read foundation.md</a>
       </div>
@@ -23,26 +23,26 @@ export default function Contribute() {
       <section className="mt-12">
         <h2 className="display text-3xl">How a score is made</h2>
         <ol className="mt-3 space-y-3 text-ink-2">
-          <li className="card p-4"><strong className="text-ink">1. Fetch.</strong> At grading time the API fetches your landing page or README once, as <code>isitslop-bot</code>. Scripts, styles and code blocks are stripped; what is left is the text a visitor would read.</li>
-          <li className="card p-4"><strong className="text-ink">2. Run the rules.</strong> Each rule in <code>critics.ts</code> gets the text and returns a number between 0 and 1 plus the phrases it matched. Rules have weights. The weighted sum, clamped to 0 to 100, is the Definition score: does it say what it is, why it exists, who it is for, what it is not.</li>
-          <li className="card p-4"><strong className="text-ink">3. Usage.</strong> The owner&apos;s self-reported conversion and return rate go through the bands in <code>people.ts</code>. This answers: do the people who find it use it?</li>
+          <li className="card p-4"><strong className="text-ink">1. Read the repo.</strong> At grading time the API reads the GitHub repository with the owner&apos;s own login: commit history, contributors, issues, releases, the file tree, the README. About ten API calls, nothing stored but the result.</li>
+          <li className="card p-4"><strong className="text-ink">2. Run the rules.</strong> Each rule in <code>quality.ts</code> turns those facts into a number between 0 and 1 plus the evidence it saw. Rules have weights that sum to 100. That is the Quality score: real, maintained work by more than one person over time.</li>
+          <li className="card p-4"><strong className="text-ink">3. Popularity.</strong> The owner&apos;s conversion and return rate from their analytics go through the bands in <code>popularity.ts</code>. This answers: do the people who find it use it?</li>
           <li className="card p-4"><strong className="text-ink">4. Verdict.</strong> <code>verdict.ts</code> combines the two halves: both good is Not slop, either bad is Slop, anything else is Mixed. The <Link href="/methodology" className="underline">methodology page</Link> is generated from these files.</li>
         </ol>
       </section>
 
       <section className="mt-12">
         <h2 className="display text-3xl">A rule, in full</h2>
-        <p className="mt-2 text-ink-2">This is the real <code>who</code> rule as of v0. It is a regex and a sentence. That is the level of sophistication we are at, on purpose.</p>
+        <p className="mt-2 text-ink-2">This is the real <code>contributors</code> rule as of v0.3. A sentence, a weight, and a few lines of arithmetic. That is the level of sophistication we are at, on purpose.</p>
         <pre className="mt-3">{`{
-  id: 'who',
+  id: 'contributors',
   description:
-    'It names who it is for. "For everyone" is for no one. We look for an explicit ' +
-    'audience ("for indie developers", "built for clinics", "if you are a landlord").',
-  weight: 15,
-  run: (_x, lead) => {
-    const ev = matches(WHO, lead);
-    return { score: clamp01(ev.length / 1.5), evidence: ev };
-  },
+    'People other than a single author have put real work in: humans (not bots) ' +
+    'with at least two commits. Sock puppets are possible but cost effort.',
+  weight: 20,
+  run: (f) => ({
+    score: band(f.humansWithTwoPlusCommits, [[0, 0], [1, 0.25], [2, 0.55], [4, 0.8], [8, 1]]),
+    evidence: [\`\${f.humansWithTwoPlusCommits} humans with 2+ commits\`],
+  }),
 }`}</pre>
       </section>
 
@@ -50,8 +50,8 @@ export default function Contribute() {
         <h2 className="display text-3xl">Change a rule in four steps</h2>
         <ol className="mt-3 space-y-3 text-ink-2">
           <li className="card p-4"><strong className="text-ink">Fork and clone.</strong> <code>git clone {REPO}.git</code>, then <code>cd api && npm install</code>. The tests need no database and no network.</li>
-          <li className="card p-4"><strong className="text-ink">Edit <code>api/src/heuristics/critics.ts</code>.</strong> Add a rule or change one. Write the <code>description</code> for a non-programmer; it appears verbatim on the methodology page. Bump <code>HEURISTICS_VERSION</code>.</li>
-          <li className="card p-4"><strong className="text-ink">Prove it.</strong> Add a case to <code>api/test/heuristics.test.ts</code> showing a page that should score differently and why. Run <code>npm test</code>. Try it on real pages with <code>npm run dev</code> and <code>GET /v1/preview?url=…</code>.</li>
+          <li className="card p-4"><strong className="text-ink">Edit <code>api/src/heuristics/quality.ts</code>.</strong> Add a signal or change one. If it needs a fact we do not collect yet, add it to <code>collectRepoFacts</code>. Write the <code>description</code> for a non-programmer; it appears verbatim on the methodology page. Bump <code>QUALITY_VERSION</code>.</li>
+          <li className="card p-4"><strong className="text-ink">Prove it.</strong> Add a case to <code>api/test/heuristics.test.ts</code> showing a repo shape that should score differently and why. Run <code>npm test</code>. Try it on real repos with <code>npm run dev</code> and <code>GET /v1/preview?url=github.com/owner/repo</code>.</li>
           <li className="card p-4"><strong className="text-ink">Open a pull request.</strong> Say which kind of page the rule helps and which kind it might hurt. Merged rules deploy to everyone, and old grades keep the version they were computed with.</li>
         </ol>
       </section>
@@ -68,12 +68,12 @@ export default function Contribute() {
       <section className="mt-12">
         <h2 className="display text-3xl">Open problems worth a pull request</h2>
         <ul className="mt-3 grid sm:grid-cols-2 gap-3 text-sm text-ink-2">
-          <li className="card p-4">Verified analytics for the Usage score (GA4, PostHog, Plausible, Stripe) with owner-supplied read-only credentials, so numbers stop being self-reported.</li>
-          <li className="card p-4">Private GitHub repos through a GitHub App or a fine-grained token.</li>
-          <li className="card p-4">Text extraction for JavaScript-rendered landing pages without a headless browser.</li>
-          <li className="card p-4">Rules in languages other than English. Everything in v0 is an English regex.</li>
+          <li className="card p-4">Verified analytics for Popularity (GA4, PostHog, Plausible, Stripe) with owner-connected read-only access, so numbers stop being self-reported.</li>
+          <li className="card p-4">GitLab, Codeberg and self-hosted repos. Everything in v0 is GitHub.</li>
+          <li className="card p-4">Better fraud resistance: detecting commit-cadence bots, sock-puppet contributors, issue farms.</li>
+          <li className="card p-4">Pull request signals: reviewed merges from outside contributors.</li>
           <li className="card p-4">A badge endpoint so owners can show their score in a README.</li>
-          <li className="card p-4">A &quot;why&quot; detector that is smarter than looking for the word &quot;because&quot;.</li>
+          <li className="card p-4">Signals for things that are not code at all.</li>
         </ul>
         <p className="mt-4 text-sm text-muted">
           Appeals are the other way in. Every appeal on an entry page is public, and an accepted appeal becomes a rule change. See <a className="underline" href={`${REPO}/blob/main/CONTRIBUTING.md`}>CONTRIBUTING.md</a>.

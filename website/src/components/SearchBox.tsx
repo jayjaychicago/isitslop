@@ -76,7 +76,7 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
               <div className="flex items-center gap-3 shrink-0">
                 {it.grade ? (
                   <>
-                    <MiniScores critics={it.grade.critics} people={it.grade.people} />
+                    <MiniScores quality={it.grade.quality} popularity={it.grade.popularity} />
                     <VerdictBadge verdict={it.grade.verdict} size="sm" />
                   </>
                 ) : (

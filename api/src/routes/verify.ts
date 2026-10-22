@@ -3,7 +3,7 @@ import type { Env } from '../lib/env.ts';
 import { db } from '../lib/db.ts';
 import { randomCode, randomToken, sha256 } from '../lib/crypto.ts';
 import { lookupTxt } from '../lib/dns.ts';
-import { fetchText, rawGithub } from '../lib/fetch.ts';
+import { fetchText } from '../lib/fetch.ts';
 import { emailEnabled, sendEmail } from '../lib/ses.ts';
 import { rateLimit } from '../lib/ratelimit.ts';
 import { getEntry, publicEntry } from '../lib/entries.ts';
@@ -15,7 +15,7 @@ export const EMAIL_LOCALPARTS = ['admin', 'webmaster', 'postmaster', 'hostmaster
 type VerificationRow = {
   id: string;
   entry_id: string;
-  method: 'dns' | 'file' | 'email' | 'repo_file';
+  method: 'dns' | 'file' | 'email';
   token: string;
   email: string | null;
   code_hash: string | null;
@@ -24,14 +24,12 @@ type VerificationRow = {
   expires_at: string;
 };
 
-function instructions(method: string, domain: string, token: string, url: string, email?: string) {
+function instructions(method: string, domain: string, token: string, email?: string) {
   switch (method) {
     case 'dns':
       return { record: { type: 'TXT', name: `_isitslop.${domain}`, value: `isitslop-verify=${token}` }, text: `Add a TXT record at _isitslop.${domain} with the value isitslop-verify=${token}, then call check. DNS can take a few minutes to propagate.` };
     case 'file':
       return { file: { url: `https://${domain}/.well-known/isitslop.txt`, content: `isitslop-verify=${token}` }, text: `Serve a plain-text file at https://${domain}/.well-known/isitslop.txt containing isitslop-verify=${token}, then call check.` };
-    case 'repo_file':
-      return { file: { path: '.isitslop', content: `isitslop-verify=${token}` }, text: `Commit a file named .isitslop to the root of the default branch of ${url} containing isitslop-verify=${token}, then call check.` };
     case 'email':
       return { email, text: `A 6-digit code was sent to ${email}. Call check with the code within 24 hours.` };
   }
@@ -47,7 +45,8 @@ verify.post('/entries/:id/verify/start', async (c) => {
   const body = await c.req.json().catch(() => ({}));
   const method = String(body.method ?? '');
 
-  const allowed = e.kind === 'github' ? ['repo_file'] : ['dns', 'file', 'email'];
+  if (e.kind === 'github') return c.json({ error: 'repositories are verified by connecting the owner GitHub account: GET /v1/github/login?entry=' + e.id }, 400);
+  const allowed = ['dns', 'file', 'email'];
   if (!allowed.includes(method)) return c.json({ error: `method must be one of ${allowed.join(', ')}` }, 400);
 
   const token = randomToken(16);
@@ -77,7 +76,7 @@ verify.post('/entries/:id/verify/start', async (c) => {
     returning id, expires_at
   `) as { id: string; expires_at: string }[];
 
-  return c.json({ verificationId: rows[0].id, method, expiresAt: rows[0].expires_at, ...instructions(method, e.domain, token, e.url, email ?? undefined) }, 201);
+  return c.json({ verificationId: rows[0].id, method, expiresAt: rows[0].expires_at, ...instructions(method, e.domain, token, email ?? undefined) }, 201);
 });
 
 verify.post('/entries/:id/verify/check', async (c) => {
@@ -111,17 +110,6 @@ verify.post('/entries/:id/verify/check', async (c) => {
       const body = await fetchText(`https://${e.domain}/.well-known/isitslop.txt`);
       ok = !!body && body.includes(expected);
       detail = ok ? 'file found' : body === null ? 'file not reachable' : 'file reachable but token not found';
-      break;
-    }
-    case 'repo_file': {
-      const m = e.url.match(/github\.com\/([^/]+)\/([^/]+)/)!;
-      let found: string | null = null;
-      for (const br of ['main', 'master']) {
-        found = await fetchText(rawGithub(m[1], m[2], br, '.isitslop'));
-        if (found) break;
-      }
-      ok = !!found && found.includes(expected);
-      detail = ok ? '.isitslop file found' : found === null ? '.isitslop not found on main or master' : 'file found but token does not match';
       break;
     }
     case 'email': {

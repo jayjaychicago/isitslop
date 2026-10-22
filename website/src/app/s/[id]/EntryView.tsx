@@ -20,8 +20,21 @@ export function EntryView({ id }: { id: string }) {
     }
   }, [id]);
 
+  const [flash, setFlash] = useState<string | null>(null);
+
   useEffect(() => {
     reload();
+    // Returning from GitHub: the API puts the result in the URL fragment so it never hits server logs.
+    const h = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    if (h.get("github") === "ok") {
+      const k = h.get("ownerKey");
+      if (k) saveOwnerKey(id, k);
+      setFlash(`GitHub connected as ${h.get("login")}.${k ? " You are verified; your owner key is saved in this browser." : ""}`);
+      window.history.replaceState(null, "", window.location.pathname);
+    } else if (h.get("github") === "error") {
+      setFlash(`GitHub: ${h.get("detail")}`);
+      window.history.replaceState(null, "", window.location.pathname);
+    }
     setOwnerKey(loadOwnerKey(id));
   }, [id, reload]);
 
@@ -44,25 +57,28 @@ export function EntryView({ id }: { id: string }) {
               {" "}· code: <a href={entry.repoUrl} target="_blank" rel="noreferrer nofollow" className="underline break-all">{entry.repoUrl.replace(/^https?:\/\//, "")}</a>
             </span>
           )}
+          {entry.githubLogin && <span className="text-sm text-muted"> · GitHub: {entry.githubLogin}</span>}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <VerdictBadge verdict={grade?.verdict ?? "unrated"} size="lg" />
         </div>
       </div>
 
+      {flash && <div className="mt-4 card p-3 text-sm">{flash}</div>}
+
       <div className="grid sm:grid-cols-2 gap-4 mt-8">
         <ScoreTile
-          label="Definition"
-          question="Does it say clearly what it is, why it needs to exist, who it is for, and what it is not?"
-          value={grade?.critics ?? null}
-          sub={grade ? `Heuristics v${grade.heuristicsVersion}, confidence ${grade.criticsBreakdown.confidence}, ${grade.criticsBreakdown.words} words analysed` : "Not graded yet"}
+          label="Quality"
+          question="Is this real, maintained work by more than one person over time?"
+          value={grade?.quality ?? null}
+          sub={grade ? grade.qualityBreakdown.note ?? `Read from ${grade.qualityBreakdown.repo}, rules v${grade.heuristicsVersion}` : "Not graded yet"}
           big
         />
         <ScoreTile
-          label="Usage"
+          label="Popularity"
           question="Do the people who find it actually use it?"
-          value={grade?.people ?? null}
-          sub={grade?.peopleInput ? peopleSub(grade) : grade ? "No usage numbers submitted. Nobody using it counts as zero." : "Not graded yet"}
+          value={grade?.popularity ?? null}
+          sub={grade?.popularityInput ? popularitySub(grade) : grade ? "No usage numbers submitted. Nobody using it counts as zero." : "Not graded yet"}
           big
         />
       </div>
@@ -101,14 +117,14 @@ export function EntryView({ id }: { id: string }) {
           <h2 className="display text-3xl mb-3">History</h2>
           <table className="w-full text-sm">
             <thead className="text-xs uppercase tracking-wider text-muted">
-              <tr><th className="text-left py-1">Date</th><th className="text-right">Definition</th><th className="text-right">Usage</th><th className="text-right">Verdict</th><th className="text-right">Rules</th></tr>
+              <tr><th className="text-left py-1">Date</th><th className="text-right">Quality</th><th className="text-right">Popularity</th><th className="text-right">Verdict</th><th className="text-right">Rules</th></tr>
             </thead>
             <tbody>
               {history.map((h) => (
                 <tr key={h.id} className="border-t border-line">
                   <td className="py-1.5">{new Date(h.createdAt).toLocaleString()}</td>
-                  <td className="text-right tabular-nums">{h.critics}</td>
-                  <td className="text-right tabular-nums">{h.people ?? "–"}</td>
+                  <td className="text-right tabular-nums">{h.quality}</td>
+                  <td className="text-right tabular-nums">{h.popularity}</td>
                   <td className="text-right"><VerdictBadge verdict={h.verdict} size="sm" /></td>
                   <td className="text-right text-muted">v{h.heuristicsVersion}</td>
                 </tr>
@@ -125,8 +141,8 @@ export function EntryView({ id }: { id: string }) {
   );
 }
 
-function peopleSub(g: Grade): string {
-  const p = g.peopleInput!;
+function popularitySub(g: Grade): string {
+  const p = g.popularityInput!;
   if (p.conversion === null) return `Self-reported: ${p.visitors} visitors. ${p.note}`;
   const pct = (n: number | null) => (n === null ? "–" : `${(n * 100).toFixed(1)}%`);
   return `Self-reported: ${p.visitors.toLocaleString()} visitors, ${pct(p.conversion)} converted, ${pct(p.returnRate)} returned. Not independently checked.`;
@@ -134,11 +150,12 @@ function peopleSub(g: Grade): string {
 
 function Breakdown({ grade }: { grade: Grade }) {
   const [open, setOpen] = useState(false);
-  const s = grade.criticsBreakdown.signals;
+  const s = grade.qualityBreakdown.signals;
+  if (!s.length) return null;
   return (
     <section className="mt-6">
       <button className="btn btn-ghost text-sm" onClick={() => setOpen(!open)}>
-        {open ? "Hide" : "Show"} how the Definition score was computed
+        {open ? "Hide" : "Show"} how the Quality score was computed
       </button>
       {open && (
         <ul className="card mt-3 divide-y divide-line">
@@ -163,8 +180,8 @@ function Breakdown({ grade }: { grade: Grade }) {
               </li>
             );
           })}
-          {grade.criticsBreakdown.source && (
-            <li className="p-3 text-xs text-muted">Source analysed: {grade.criticsBreakdown.source}</li>
+          {grade.qualityBreakdown.repo && (
+            <li className="p-3 text-xs text-muted">Repository read: {grade.qualityBreakdown.repo}</li>
           )}
           <li className="p-3 text-xs text-muted">
             Think a rule misfired? Rules are public code. <Link href="/contribute" className="underline">Change them for everyone</Link>, or file an appeal below.

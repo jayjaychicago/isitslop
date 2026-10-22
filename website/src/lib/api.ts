@@ -2,7 +2,7 @@ export const API = (process.env.NEXT_PUBLIC_API_URL ?? "https://api.isitslop.org
 
 export type Verdict = "not_slop" | "mixed" | "slop" | "unrated";
 
-export type GradeSummary = { critics: number; people: number | null; overall: number | null; verdict: string; createdAt: string };
+export type GradeSummary = { quality: number; popularity: number; overall: number; verdict: string; createdAt: string };
 
 export type Entry = {
   id: string;
@@ -14,18 +14,19 @@ export type Entry = {
   verified: boolean;
   verifiedAt: string | null;
   repoUrl: string | null;
+  githubLogin: string | null;
 };
 
 export type Signal = { id: string; description: string; weight: number; score: number; evidence: string[] };
 
 export type Grade = {
   id: string;
-  critics: number;
-  people: number | null;
-  overall: number | null;
+  quality: number;
+  popularity: number;
+  overall: number;
   verdict: Verdict;
-  criticsBreakdown: { score: number; signals: Signal[]; confidence: string; words: number; version: string; source?: string };
-  peopleInput: { visitors: number; activated: number; returned: number; conversion: number | null; returnRate: number | null; note: string } | null;
+  qualityBreakdown: { score: number; signals: Signal[]; repo: string | null; version: string; note?: string };
+  popularityInput: { visitors: number; activated: number; returned: number; conversion: number | null; returnRate: number | null; note: string } | null;
   heuristicsVersion: string;
   createdAt: string;
 };

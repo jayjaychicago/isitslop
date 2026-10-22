@@ -6,6 +6,11 @@ export type Env = {
   AWS_SECRET_ACCESS_KEY?: string;
   AWS_REGION?: string;
   SES_FROM?: string;
+  GITHUB_TOKEN?: string;
+  GITHUB_APP_CLIENT_ID?: string;
+  GITHUB_APP_CLIENT_SECRET?: string;
+  GITHUB_APP_SLUG?: string;
+  TOKEN_KEY?: string;
 };
 
 export const TERMS_VERSION = '2026-10-21';

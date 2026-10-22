@@ -10,14 +10,13 @@ export default function Home() {
           <em>Was this worth building?</em>
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-ink-2 leading-relaxed">
-          A sloppiness score for things on the internet. It asks two plain questions. <strong className="text-ink">Definition</strong>: does the
-          thing say clearly what it is, why it needs to exist, who it is for, and what it is not? <strong className="text-ink">Usage</strong>: do
-          the people who find it actually use it? Both have to be good to be not slop. If either is bad, it is slop. Nobody using it counts as zero. Heuristics only, no LLMs, every rule public.
+          A sloppiness score for things on the internet. It asks two plain questions. <strong className="text-ink">Quality</strong>: is this real,
+          maintained work by more than one person over time? Read from the GitHub repo, using signals you cannot buy like stars. <strong className="text-ink">Popularity</strong>: do
+          the people who find it actually use it? From the owner&apos;s own analytics. Both have to be good to be not slop. If either is bad, it is slop. No repo and no users both count as zero. Every rule is public.
         </p>
         <p className="mt-4 max-w-2xl text-ink-2 leading-relaxed">
-          Built for founders and open source maintainers who want an honest, public answer to &quot;was this worth building?&quot;, because AI made the
-          &quot;what&quot; cheap and nobody was measuring the &quot;why&quot;. It is not a security scanner, not an SEO tool, and not a substitute for
-          talking to users. It is free, and the code is MIT licensed.
+          Built for founders and open source maintainers who want an honest, public answer to &quot;was this worth building?&quot;. It is not a security
+          scanner, not an SEO tool, and not a substitute for talking to users. It is free, and the code is MIT licensed.
         </p>
       </section>
 
@@ -32,7 +31,7 @@ export default function Home() {
         </div>
         <div className="card p-5">
           <div className="display text-2xl mb-1">2. Prove you own it</div>
-          <p className="text-sm text-ink-2">DNS record, a well-known file, an email to admin@ your domain, or a file in your repo. You get an owner key.</p>
+          <p className="text-sm text-ink-2">For a site: a DNS record, a well-known file, or an email to admin@ your domain. For a repo: sign in with GitHub. You get an owner key.</p>
         </div>
         <div className="card p-5">
           <div className="display text-2xl mb-1">3. Ask for a grade</div>

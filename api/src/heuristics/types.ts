@@ -1,31 +1,31 @@
 export type Signal = {
   id: string;
-  /** What this rule looks for and why it matters for product definition. Shown on /methodology. */
+  /** What this signal measures and why it is hard to fake. Shown on /methodology. */
   description: string;
-  /** Max points this rule can contribute. Negative for penalties. */
+  /** Max points this signal can contribute. */
   weight: number;
   /** Returned score in [0, 1]; multiplied by weight. */
   score: number;
-  /** Short human-readable evidence, e.g. matched phrases. */
+  /** Short human-readable evidence, e.g. "31 of 52 weeks with commits". */
   evidence: string[];
 };
 
-export type CriticsResult = {
+export type QualityResult = {
   score: number; // 0..100
   signals: Signal[];
-  confidence: 'low' | 'medium' | 'high';
-  words: number;
+  repo: string;
   version: string;
+  note?: string;
 };
 
-export type PeopleInput = {
+export type PopularityInput = {
   visitors: number;
   activated: number;
   returned: number;
 };
 
-export type PeopleResult = {
-  score: number | null; // null = not enough data
+export type PopularityResult = {
+  score: number;
   conversion: number | null;
   returnRate: number | null;
   note: string;
@@ -33,4 +33,4 @@ export type PeopleResult = {
   version: string;
 };
 
-export type Verdict = 'not_slop' | 'mixed' | 'slop' | 'unrated';
+export type Verdict = 'not_slop' | 'mixed' | 'slop';

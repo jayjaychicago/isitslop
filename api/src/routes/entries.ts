@@ -3,9 +3,10 @@ import type { Env } from '../lib/env.ts';
 import { db } from '../lib/db.ts';
 import { normalizeTarget } from '../lib/url.ts';
 import { rateLimit } from '../lib/ratelimit.ts';
-import { fetchTargetText, fetchText, rawGithub } from '../lib/fetch.ts';
 import { requireOwner } from './grade.ts';
-import { scoreCritics } from '../heuristics/critics.ts';
+import { collectRepoFacts, scoreQuality } from '../heuristics/quality.ts';
+import { ownerGithubToken } from './github.ts';
+import { repoPermission } from '../lib/github-auth.ts';
 import { getEntry, latestGrade, publicAppeal, publicEntry, publicGrade, type AppealRow, type EntryRow, type GradeRow } from '../lib/entries.ts';
 
 export const entries = new Hono<{ Bindings: Env }>();
@@ -19,17 +20,17 @@ entries.get('/entries', async (c) => {
   const offset = Math.max(0, Number(c.req.query('offset') ?? 0) || 0);
   const like = `%${q.replace(/[%_]/g, '')}%`;
   const rows = (await sql`
-    select e.*, g.critics_score, g.people_score, g.overall, g.verdict, g.created_at as graded_at
+    select e.*, g.quality_score, g.popularity_score, g.overall, g.verdict, g.created_at as graded_at
     from entries e
     left join lateral (select * from grades where entry_id = e.id order by created_at desc limit 1) g on true
     where ${q} = '' or e.url ilike ${like} or e.domain ilike ${like} or coalesce(e.title,'') ilike ${like}
     order by e.created_at desc
     limit ${limit} offset ${offset}
-  `) as (EntryRow & { critics_score: number | null; people_score: number | null; overall: number | null; verdict: string | null; graded_at: string | null })[];
+  `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; overall: number | null; verdict: string | null; graded_at: string | null })[];
   return c.json({
     items: rows.map((r) => ({
       ...publicEntry(r),
-      grade: r.verdict ? { critics: r.critics_score, people: r.people_score, overall: r.overall, verdict: r.verdict, createdAt: r.graded_at } : null,
+      grade: r.verdict ? { quality: r.quality_score, popularity: r.popularity_score, overall: r.overall, verdict: r.verdict, createdAt: r.graded_at } : null,
     })),
     limit,
     offset,
@@ -56,20 +57,20 @@ entries.get('/entries/:id', async (c) => {
   const e = await getEntry(sql, c.req.param('id'));
   if (!e) return c.json({ error: 'not found' }, 404);
   const g = await latestGrade(sql, e.id);
-  const history = (await sql`select id, critics_score, people_score, overall, verdict, heuristics_version, created_at from grades where entry_id = ${e.id} order by created_at desc limit 20`) as GradeRow[];
+  const history = (await sql`select id, quality_score, popularity_score, overall, verdict, heuristics_version, created_at from grades where entry_id = ${e.id} order by created_at desc limit 20`) as GradeRow[];
   const appeals = (await sql`select * from appeals where entry_id = ${e.id} order by created_at desc`) as AppealRow[];
   return c.json({
     entry: publicEntry(e),
     grade: g ? publicGrade(g) : null,
-    history: history.map((h) => ({ id: h.id, critics: h.critics_score, people: h.people_score, overall: h.overall, verdict: h.verdict, heuristicsVersion: h.heuristics_version, createdAt: h.created_at })),
+    history: history.map((h) => ({ id: h.id, quality: h.quality_score, popularity: h.popularity_score, overall: h.overall, verdict: h.verdict, heuristicsVersion: h.heuristics_version, createdAt: h.created_at })),
     appeals: appeals.map(publicAppeal),
   });
 });
 
 /**
- * Link a public GitHub repo to a site entry, so one thing is one entry.
- * Both sides must be proven: the caller holds the site's owner key, and the repo's
- * default branch contains a `.isitslop` file with the line `isitslop-site=<entry id>`.
+ * Link a GitHub repo to a site entry, so one thing is one entry.
+ * Both sides must be proven: the caller holds the site's owner key, and the
+ * connected GitHub account has push access to the repo.
  */
 entries.post('/entries/:id/repo', async (c) => {
   const sql = db(c.env.DATABASE_URL);
@@ -84,15 +85,11 @@ entries.post('/entries/:id/repo', async (c) => {
   }
   const t = normalizeTarget(String(body.repoUrl ?? ''));
   if (typeof t === 'string' || t.kind !== 'github' || !t.repo) return c.json({ error: 'repoUrl must be a public github.com/owner/repo URL' }, 400);
-  const expected = `isitslop-site=${e.id}`;
-  let found: string | null = null;
-  for (const br of ['main', 'master']) {
-    found = await fetchText(rawGithub(t.repo.owner, t.repo.name, br, '.isitslop'));
-    if (found) break;
-  }
-  if (!found || !found.includes(expected)) {
-    return c.json({ error: `commit a .isitslop file to the root of ${t.url} containing the line ${expected}, then retry`, file: { path: '.isitslop', line: expected } }, 422);
-  }
+  const token = await ownerGithubToken(c.env, sql, e);
+  if (!token) return c.json({ error: 'connect your GitHub account first (GET /v1/github/login?entry=...&ownerKey=...)' }, 428);
+  const perm = await repoPermission(token, t.repo.owner, t.repo.name);
+  if (perm === 'invisible') return c.json({ error: `the isitslop app cannot see ${t.url}; install it on that account at https://github.com/apps/${c.env.GITHUB_APP_SLUG ?? 'isitslop'}/installations/new` }, 422);
+  if (perm !== 'admin' && perm !== 'push') return c.json({ error: `${e.github_login} does not have push access to ${t.url}` }, 403);
   const rows = (await sql`update entries set repo_url = ${t.url} where id = ${e.id} returning *`) as EntryRow[];
   return c.json({ entry: publicEntry(rows[0]) });
 });
@@ -109,14 +106,14 @@ entries.delete('/entries/:id', async (c) => {
   return c.json({ deleted: e.id });
 });
 
-/** Dry run: anyone can see what the definition heuristics think of any URL. Nothing is stored. */
+/** Dry run: anyone can see the quality signals for any public GitHub repo. Nothing is stored. */
 entries.get('/preview', async (c) => {
   const sql = db(c.env.DATABASE_URL);
-  if (!(await rateLimit(sql, `preview:${ip(c)}`, 30, 3600))) return c.json({ error: 'rate limited' }, 429);
+  if (!(await rateLimit(sql, `preview:${ip(c)}`, 20, 3600))) return c.json({ error: 'rate limited' }, 429);
   const t = normalizeTarget(c.req.query('url') ?? '');
   if (typeof t === 'string') return c.json({ error: t }, 400);
-  const r = await fetchTargetText(t);
-  if ('error' in r) return c.json({ error: r.error }, 422);
-  const critics = scoreCritics(r.extracted);
-  return c.json({ target: t, source: r.source, title: r.extracted.title, critics, preview: true });
+  if (t.kind !== 'github' || !t.repo) return c.json({ error: 'preview takes a public github.com/owner/repo URL; sites are scored on their linked repo' }, 400);
+  const facts = await collectRepoFacts(t.repo.owner, t.repo.name, c.env.GITHUB_TOKEN); // anonymous preview: shared, optional token
+  if (typeof facts === 'string') return c.json({ error: facts }, 422);
+  return c.json({ target: t, quality: scoreQuality(facts), facts, preview: true });
 });

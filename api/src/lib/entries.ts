@@ -12,17 +12,21 @@ export type EntryRow = {
   terms_version: string | null;
   terms_accepted_at: string | null;
   repo_url: string | null;
+  github_login: string | null;
+  github_token: string | null;
+  github_refresh_token: string | null;
+  github_token_expires_at: string | null;
 };
 
 export type GradeRow = {
   id: string;
   entry_id: string;
-  critics_score: number;
-  people_score: number | null;
-  overall: number | null;
+  quality_score: number;
+  popularity_score: number;
+  overall: number;
   verdict: string;
-  critics_breakdown: unknown;
-  people_input: unknown;
+  quality_breakdown: unknown;
+  popularity_input: unknown;
   heuristics_version: string;
   created_at: string;
 };
@@ -49,18 +53,19 @@ export function publicEntry(e: EntryRow) {
     verified: !!e.verified_at,
     verifiedAt: e.verified_at,
     repoUrl: e.repo_url,
+    githubLogin: e.github_login,
   };
 }
 
 export function publicGrade(g: GradeRow) {
   return {
     id: g.id,
-    critics: g.critics_score,
-    people: g.people_score,
+    quality: g.quality_score,
+    popularity: g.popularity_score,
     overall: g.overall,
     verdict: g.verdict,
-    criticsBreakdown: g.critics_breakdown,
-    peopleInput: g.people_input,
+    qualityBreakdown: g.quality_breakdown,
+    popularityInput: g.popularity_input,
     heuristicsVersion: g.heuristics_version,
     createdAt: g.created_at,
   };

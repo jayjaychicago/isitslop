@@ -20,16 +20,16 @@ export function ScoreTile({ label, question, value, sub, big = false }: { label:
   );
 }
 
-export function MiniScores({ critics, people }: { critics: number | null | undefined; people: number | null | undefined }) {
+export function MiniScores({ quality, popularity }: { quality: number | null | undefined; popularity: number | null | undefined }) {
   return (
     <div className="flex items-center gap-3 text-sm tabular-nums">
-      <span title="Definition: does it say what, why, who">
-        <span className="text-muted mr-1">D</span>
-        <span className={`font-semibold ${scoreClass(critics)}`}>{critics ?? "–"}</span>
+      <span title="Quality: real, maintained work by more than one person">
+        <span className="text-muted mr-1">Q</span>
+        <span className={`font-semibold ${scoreClass(quality)}`}>{quality ?? "–"}</span>
       </span>
-      <span title="Usage: do people who find it use it">
-        <span className="text-muted mr-1">U</span>
-        <span className={`font-semibold ${scoreClass(people)}`}>{people ?? "–"}</span>
+      <span title="Popularity: do people who find it use it">
+        <span className="text-muted mr-1">P</span>
+        <span className={`font-semibold ${scoreClass(popularity)}`}>{popularity ?? "–"}</span>
       </span>
     </div>
   );

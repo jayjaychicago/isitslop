@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { api, type Entry, type Grade } from "@/lib/api";
+import { API, api, type Entry, type Grade } from "@/lib/api";
 
 type StartResp = { verificationId: string; method: string; text: string; record?: { type: string; name: string; value: string }; file?: { url?: string; path?: string; content: string }; email?: string };
 
@@ -40,8 +40,31 @@ function KeyField({ ownerKey, onKey }: { ownerKey: string | null; onKey: (k: str
   );
 }
 
+function GitHubButton({ entry, ownerKey, label }: { entry: Entry; ownerKey: string | null; label: string }) {
+  const href = `${API}/github/login?entry=${entry.id}${ownerKey ? `&ownerKey=${encodeURIComponent(ownerKey)}` : ""}`;
+  return <a className="btn" href={href}>{label}</a>;
+}
+
 function Verify({ entry, onKey }: { entry: Entry; onKey: (k: string) => void }) {
-  const methods = entry.kind === "github" ? (["repo_file"] as const) : (["dns", "file", "email"] as const);
+  if (entry.kind === "github") {
+    return (
+      <div className="flex flex-col gap-3 text-sm">
+        <p className="text-ink-2">
+          Repositories are verified by signing in with a GitHub account that has push access. The isitslop GitHub App reads your repo with your own
+          login: your rate limit, your private repos, nothing shared. If the app cannot see the repo yet, install it on that account first.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <GitHubButton entry={entry} ownerKey={null} label="Sign in with GitHub" />
+          <a className="btn btn-ghost" href="https://github.com/apps/is-it-slop/installations/new">Install the app</a>
+        </div>
+      </div>
+    );
+  }
+  return <VerifySite entry={entry} onKey={onKey} />;
+}
+
+function VerifySite({ entry, onKey }: { entry: Entry; onKey: (k: string) => void }) {
+  const methods = ["dns", "file", "email"] as const;
   const [method, setMethod] = useState<string>(methods[0]);
   const [email, setEmail] = useState(`admin@${entry.domain}`);
   const [started, setStarted] = useState<StartResp | null>(null);
@@ -83,7 +106,7 @@ function Verify({ entry, onKey }: { entry: Entry; onKey: (k: string) => void }) 
       <div className="flex flex-wrap gap-2">
         {methods.map((m) => (
           <button key={m} onClick={() => { setMethod(m); setStarted(null); }} className={`btn btn-ghost text-sm ${method === m ? "border-ink" : ""}`}>
-            {m === "dns" ? "DNS TXT record" : m === "file" ? "Well-known file" : m === "email" ? "Email to the domain" : "File in repo"}
+            {m === "dns" ? "DNS TXT record" : m === "file" ? "Well-known file" : "Email to the domain"}
           </button>
         ))}
       </div>
@@ -126,8 +149,8 @@ function RequestGrade({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerK
   async function go() {
     setBusy(true); setMsg(null);
     try {
-      const people = withPeople ? { visitors: Number(visitors), activated: Number(activated), returned: Number(returned) } : undefined;
-      await api(`/entries/${entry.id}/grade`, { method: "POST", ownerKey: ownerKey ?? undefined, body: JSON.stringify({ acceptTerms: accept, people }) });
+      const popularity = withPeople ? { visitors: Number(visitors), activated: Number(activated), returned: Number(returned) } : undefined;
+      await api(`/entries/${entry.id}/grade`, { method: "POST", ownerKey: ownerKey ?? undefined, body: JSON.stringify({ acceptTerms: accept, popularity }) });
       setMsg("Graded.");
       onDone();
     } catch (e) { setMsg((e as Error).message); }
@@ -137,9 +160,15 @@ function RequestGrade({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerK
   return (
     <div className="flex flex-col gap-4 text-sm">
       <KeyField ownerKey={ownerKey} onKey={onKey} />
+      {!entry.githubLogin && (
+        <div className="card p-3 bg-paper flex flex-col sm:flex-row sm:items-center gap-3">
+          <span className="text-ink-2">Quality is read from GitHub with your own login. {entry.kind === "site" ? "Connect GitHub, then link your repo in the repo tab." : "Sign in with GitHub in the verify tab."}</span>
+          {entry.kind === "site" && ownerKey && <GitHubButton entry={entry} ownerKey={ownerKey} label="Connect GitHub" />}
+        </div>
+      )}
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={withPeople} onChange={(e) => setWithPeople(e.target.checked)} />
-        <span>Include usage numbers for the Usage score (last 30 days, self-reported, shown publicly)</span>
+        <span>Include usage numbers for the Popularity score (last 30 days, from your analytics, shown publicly as self-reported)</span>
       </label>
       {withPeople && (
         <div className="grid sm:grid-cols-3 gap-3">
@@ -171,7 +200,7 @@ function LinkRepo({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: 
     setBusy(true); setMsg(null);
     try {
       await api(`/entries/${entry.id}/repo`, { method: "POST", ownerKey: ownerKey ?? undefined, body: JSON.stringify({ repoUrl: unlink ? null : repo.trim() }) });
-      setMsg(unlink ? "Repo unlinked." : "Repo linked. Request a grade to include the README.");
+      setMsg(unlink ? "Repo unlinked." : "Repo linked. Request a grade.");
       onDone();
     } catch (e) { setMsg((e as Error).message); }
     setBusy(false);
@@ -180,13 +209,20 @@ function LinkRepo({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: 
     <div className="flex flex-col gap-4 text-sm">
       <KeyField ownerKey={ownerKey} onKey={onKey} />
       <p className="text-ink-2">
-        One thing, one entry. If this site has a public GitHub repo, link it here and the README is graded together with the landing page.
-        To prove the repo is yours, commit a file named <code>.isitslop</code> to its root containing the line below, then link.
+        One thing, one entry. Link the repo this site is built from and Quality is read from it. The repo can be private. Your connected GitHub
+        account must have push access to it, and the isitslop app must be installed on the account that owns it.
       </p>
-      <pre className="select-all">{`isitslop-site=${entry.id}`}</pre>
+      {entry.githubLogin ? (
+        <div className="text-muted">Connected as {entry.githubLogin}.</div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <GitHubButton entry={entry} ownerKey={ownerKey} label="Connect GitHub" />
+          <a className="btn btn-ghost" href="https://github.com/apps/is-it-slop/installations/new">Install the app</a>
+        </div>
+      )}
       <input className="input" placeholder="https://github.com/owner/repo" value={repo} onChange={(e) => setRepo(e.target.value)} />
       <div className="flex gap-2">
-        <button className="btn" onClick={() => go(false)} disabled={!ownerKey || !repo.trim() || busy}>{busy ? "Linking…" : "Link repo"}</button>
+        <button className="btn" onClick={() => go(false)} disabled={!ownerKey || !repo.trim() || busy || !entry.githubLogin}>{busy ? "Linking…" : "Link repo"}</button>
         {entry.repoUrl && <button className="btn btn-ghost" onClick={() => go(true)} disabled={!ownerKey || busy}>Unlink</button>}
       </div>
       {msg && <div className={msg.startsWith("Repo") ? "text-fresh" : "text-slop"}>{msg}</div>}

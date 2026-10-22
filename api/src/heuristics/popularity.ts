@@ -1,16 +1,16 @@
 /**
- * USAGE (called "people" in code and API): do the people who find it use it?
+ * POPULARITY: do the people who find it actually use it?
  *
- * v0 is owner-attested. The verified owner reports three numbers for the last
- * 30 days. We do not trust them; we label them. Verified analytics connections
- * are the obvious next contribution (GA4, PostHog, Plausible, Stripe).
+ * Owner-attested from their analytics. The verified owner reports three numbers
+ * for the last 30 days. We do not trust them; we label them. Verified analytics
+ * connections are the obvious next contribution (GA4, PostHog, Plausible, Stripe).
  *
  * Conversion carries most of the weight. Return rate is a sanity check so a
  * page that converts but is abandoned the next day does not pass.
  */
-import type { PeopleInput, PeopleResult } from './types.ts';
+import type { PopularityInput, PopularityResult } from './types.ts';
 
-export const PEOPLE_VERSION = '0.2.0';
+export const POPULARITY_VERSION = '0.3.0';
 export const MIN_VISITORS = 100;
 
 /** Piecewise-linear bands. Rates above the last point saturate at 1. */
@@ -41,8 +41,8 @@ export function band(rate: number, bands: [number, number][]): number {
   return bands[bands.length - 1][1];
 }
 
-export function validatePeople(p: unknown): PeopleInput | string {
-  if (!p || typeof p !== 'object') return 'people must be an object';
+export function validatePopularity(p: unknown): PopularityInput | string {
+  if (!p || typeof p !== 'object') return 'popularity must be an object';
   const o = p as Record<string, unknown>;
   const n = (k: string) => {
     const v = o[k];
@@ -58,15 +58,15 @@ export function validatePeople(p: unknown): PeopleInput | string {
   return { visitors, activated, returned };
 }
 
-export function scorePeople(p: PeopleInput): PeopleResult {
+export function scorePopularity(p: PopularityInput): PopularityResult {
   if (p.visitors < MIN_VISITORS) {
     return {
       score: 0,
       conversion: null,
       returnRate: null,
-      note: `Fewer than ${MIN_VISITORS} visitors in 30 days. That is nobody. Usage is zero.`,
+      note: `Fewer than ${MIN_VISITORS} visitors in 30 days. That is nobody. Popularity is zero.`,
       selfReported: true,
-      version: PEOPLE_VERSION,
+      version: POPULARITY_VERSION,
     };
   }
   const conversion = p.activated / p.visitors;
@@ -78,19 +78,19 @@ export function scorePeople(p: PeopleInput): PeopleResult {
     returnRate,
     note: 'Self-reported by the verified owner. Not independently checked.',
     selfReported: true,
-    version: PEOPLE_VERSION,
+    version: POPULARITY_VERSION,
   };
 }
 
-export function methodologyPeople() {
+export function methodologyPopularity() {
   return {
-    version: PEOPLE_VERSION,
+    version: POPULARITY_VERSION,
     source: 'Owner-attested numbers for the last 30 days: visitors, activated (took the core action), returned (activated users who came back at least once).',
     minVisitors: MIN_VISITORS,
     weights: { conversion: CONVERSION_WEIGHT, return: RETURN_WEIGHT },
     conversionBands: CONVERSION_BANDS,
     returnBands: RETURN_BANDS,
-    missing: 'No usage numbers, or fewer than minVisitors visitors, counts as a usage score of 0. A thing nobody uses is slop, however well defined.',
+    missing: 'No numbers, or fewer than minVisitors visitors, is a popularity of 0. A thing nobody uses is slop, however well built.',
     caveat: 'Numbers are labelled self-reported on every page. Verified analytics connections are an open contribution.',
   };
 }
