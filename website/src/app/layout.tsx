@@ -27,13 +27,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SessionProvider>
         <header className="border-b border-line">
           <div className="mx-auto max-w-5xl px-4 py-3 sm:py-4 flex flex-wrap items-center gap-x-5 gap-y-2">
-            <div className="order-1 flex flex-col gap-0.5">
-              <Link href="/" className="flex items-center gap-2.5 display text-2xl leading-none whitespace-nowrap">
-                <WordIcon word="slop" size={30} className="text-slop inline-block shrink-0" />
-                <span>is it <em>slop</em>?</span>
-              </Link>
-              <a href="https://apiblaze.com" target="_blank" rel="noreferrer" className="text-[11px] text-muted hover:text-ink whitespace-nowrap pl-[2.5rem]">Powered by APIblaze</a>
-            </div>
+            <Link href="/" className="order-1 flex items-center gap-2.5 display text-2xl leading-none whitespace-nowrap">
+              <WordIcon word="slop" size={30} className="text-slop inline-block shrink-0" />
+              <span>is it <em>slop</em>?</span>
+            </Link>
             <div className="order-2 sm:order-3 ml-auto sm:ml-0 shrink-0"><SignIn /></div>
             <nav className="order-3 sm:order-2 w-full sm:w-auto sm:ml-auto flex items-center gap-4 sm:gap-5 text-sm text-ink-2 overflow-x-auto whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none]">
               <Link href="/about" className="hover:text-ink">About</Link>
