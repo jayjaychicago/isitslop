@@ -33,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <div className="order-2 sm:order-3 ml-auto sm:ml-0 shrink-0"><SignIn /></div>
             <nav className="order-3 sm:order-2 w-full sm:w-auto sm:ml-auto flex items-center gap-4 sm:gap-5 text-sm text-ink-2 overflow-x-auto whitespace-nowrap -mx-4 px-4 sm:mx-0 sm:px-0 [scrollbar-width:none]">
+              <Link href="/about" className="hover:text-ink">About</Link>
               <Link href="/methodology" className="hover:text-ink">Methodology</Link>
               <Link href="/contribute" className="hover:text-ink font-semibold text-ink">Change the rules</Link>
               <Link href="/api-docs" className="hover:text-ink">API</Link>
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               An open index operated by API Blaze, LLC. Heuristics only. No LLMs. Opinions, not facts.
             </div>
             <div className="flex gap-4">
+              <Link href="/about" className="hover:text-ink">About</Link>
               <Link href="/terms" className="hover:text-ink">Terms</Link>
               <Link href="/privacy" className="hover:text-ink">Privacy</Link>
               <a href="https://github.com/jayjaychicago/isitslop/blob/main/foundation.md" className="hover:text-ink">Foundation</a>
