@@ -37,6 +37,7 @@ paths:
                 properties:
                   found: { type: boolean, const: true }
                   url: { type: [string, "null"], description: Null for private repositories; their URL is never published. }
+                  sloppiness: { type: [integer, "null"], minimum: 0, maximum: 100, description: The total, Popularity and Quality averaged, higher is better. Null when either half is unknown. }
                   quality: { type: [integer, "null"], minimum: 0, maximum: 100, description: Null when no repository is connected. }
                   popularity: { type: [integer, "null"], minimum: 0, maximum: 100, description: Null when no analytics is connected. }
                   verdict: { type: string, description: "`${popularity}_${quality}`: fringe|popular|unknown _ slop|craft|unknown", examples: [fringe_craft] }
@@ -46,6 +47,7 @@ paths:
               example:
                 found: true
                 url: https://apiblaze.com
+                sloppiness: 55
                 quality: 79
                 popularity: 32
                 verdict: fringe_craft

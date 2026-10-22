@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api, type EntryDetail, type Grade } from "@/lib/api";
 import { ScoreTile, VerdictBadge, VerdictWords, popularityWord, qualityWord } from "@/components/Score";
+import { scoreClass } from "@/lib/api";
 import { OwnerPanel } from "./OwnerPanel";
 
 export function EntryView({ id }: { id: string }) {
@@ -64,12 +65,24 @@ export function EntryView({ id }: { id: string }) {
       {flash && <div className="mt-4 card p-3 text-sm">{flash}</div>}
 
       <div className="card mt-8 overflow-hidden">
-        <div className="p-5 sm:p-6 border-b border-line">
-          <div className="text-xs uppercase tracking-wider text-muted font-semibold">Verdict</div>
-          <div className="display text-4xl sm:text-6xl leading-[1.05] mt-1">
-            <VerdictWords verdict={grade?.verdict} fallback={entry.verified ? "Not graded yet" : "Unclaimed"} />
+        <div className="p-5 sm:p-6 border-b border-line flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted font-semibold">Verdict</div>
+            <div className="display text-4xl sm:text-6xl leading-[1.05] mt-1">
+              <VerdictWords verdict={grade?.verdict} fallback={entry.verified ? "Not graded yet" : "Unclaimed"} />
+            </div>
+            {grade && <div className="text-sm text-muted mt-2">Two words, one per score below. The cut is 50 on each.</div>}
           </div>
-          {grade && <div className="text-sm text-muted mt-2">Two words, one per score below. The cut is 50 on each.</div>}
+          {grade && (
+            <div className="sm:text-right shrink-0">
+              <div className="text-xs uppercase tracking-wider text-muted font-semibold">Sloppiness score</div>
+              <div className={`score-num text-5xl sm:text-6xl leading-none mt-1 ${scoreClass(grade.overall)}`}>
+                {grade.overall ?? "?"}
+                {grade.overall !== null && <span className="text-xl text-muted ml-1">/100</span>}
+              </div>
+              <div className="text-xs text-muted mt-1">{grade.overall === null ? "Unknown until both halves are connected" : "Popularity and Quality averaged. Higher is better."}</div>
+            </div>
+          )}
         </div>
         <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-line">
           <ScoreTile
@@ -129,12 +142,13 @@ export function EntryView({ id }: { id: string }) {
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <table className="w-full text-sm whitespace-nowrap">
               <thead className="text-xs uppercase tracking-wider text-muted">
-                <tr><th className="text-left py-1">Date</th><th className="text-right pl-4">Popularity</th><th className="text-right pl-4">Quality</th><th className="text-right pl-4">Verdict</th><th className="text-right pl-4">Rules</th></tr>
+                <tr><th className="text-left py-1">Date</th><th className="text-right pl-4">Sloppiness</th><th className="text-right pl-4">Popularity</th><th className="text-right pl-4">Quality</th><th className="text-right pl-4">Verdict</th><th className="text-right pl-4">Rules</th></tr>
               </thead>
               <tbody>
                 {history.map((h) => (
                   <tr key={h.id} className="border-t border-line">
                     <td className="py-1.5">{new Date(h.createdAt).toLocaleString()}</td>
+                    <td className="text-right tabular-nums pl-4 font-semibold">{h.overall ?? "?"}</td>
                     <td className="text-right tabular-nums pl-4">{h.popularity ?? "?"}</td>
                     <td className="text-right tabular-nums pl-4">{h.quality ?? "?"}</td>
                     <td className="text-right pl-4"><VerdictBadge verdict={h.verdict} size="sm" /></td>

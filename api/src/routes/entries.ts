@@ -60,13 +60,13 @@ entries.get('/score', async (c) => {
   const t = normalizeTarget(c.req.query('url') ?? '');
   if (typeof t === 'string') return c.json({ error: t }, 400);
   const rows = (await sql`
-    select e.*, g.quality_score, g.popularity_score, g.verdict, g.created_at as graded_at
+    select e.*, g.quality_score, g.popularity_score, g.overall, g.verdict, g.created_at as graded_at
     from entries e
     left join lateral (select * from grades where entry_id = e.id order by created_at desc limit 1) g on true
     where e.url = ${t.url} or (e.kind = 'site' and e.domain = ${t.domain} and ${t.kind} = 'site')
     order by (e.url = ${t.url}) desc, e.created_at asc
     limit 1
-  `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; verdict: string | null; graded_at: string | null })[];
+  `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; overall: number | null; verdict: string | null; graded_at: string | null })[];
   const e = rows[0];
   if (!e) return c.json({ found: false, url: t.url, label: 'Not in the index' }, 404);
   const label = verdictLabel(e.verdict);
@@ -74,8 +74,9 @@ entries.get('/score', async (c) => {
   return c.json({
     found: true,
     url: privateRepo ? null : e.url,
-    quality: e.quality_score,
+    sloppiness: e.overall,
     popularity: e.popularity_score,
+    quality: e.quality_score,
     verdict: e.verdict,
     label,
     gradedAt: e.graded_at,

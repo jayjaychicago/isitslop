@@ -9,7 +9,7 @@ type Methodology = {
   termsVersion: string;
   quality: { question: string; source: string; maxPoints: number; rules: { id: string; description: string; weight: number; kind: 'points' | 'multiplier' }[] };
   popularity: { question: string; version: string; source: string; formula?: string; weights: { returning: number; reach: number }; returnBands: [number, number][]; reachBands: [number, number][]; caveat: string; missing: string };
-  verdict: { rule: string; thresholds: { craft: number; popular: number } };
+  verdict: { rule: string; thresholds: { craft: number; popular: number }; sloppiness?: string };
 };
 
 async function load(): Promise<Methodology | null> {
@@ -95,6 +95,7 @@ export default async function MethodologyPage() {
             <h2 className="display text-3xl">Verdict</h2>
             <p className="mt-2 text-ink-2">{m.verdict.rule}</p>
             <p className="text-sm text-muted">Craft at {m.verdict.thresholds.craft} and above, Popular at {m.verdict.thresholds.popular} and above.</p>
+            {m.verdict.sloppiness && <p className="mt-2 text-ink-2">{m.verdict.sloppiness}</p>}
             <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 display text-2xl">
               <li className="text-slop flex items-center gap-2"><WordIcon word="slop" /> Slop <span className="text-sm text-muted font-sans">quality below the cut</span></li>
               <li className="text-fresh flex items-center gap-2"><WordIcon word="craft" /> Craft <span className="text-sm text-muted font-sans">quality at or above</span></li>

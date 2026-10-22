@@ -91,7 +91,7 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
                 <div className="display text-4xl sm:text-5xl lg:text-6xl leading-none">
                   <VerdictWords verdict={it.grade?.verdict} fallback={it.verified ? "Not graded yet" : "Unclaimed"} />
                 </div>
-                {it.grade && <MiniScores quality={it.grade.quality} popularity={it.grade.popularity} />}
+                {it.grade && <MiniScores overall={it.grade.overall} quality={it.grade.quality} popularity={it.grade.popularity} />}
               </div>
             </Link>
           </li>

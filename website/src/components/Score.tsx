@@ -61,17 +61,26 @@ export function ScoreTile({ label, question, value, sub, word, onClick, open = f
 export const qualityWord = (n: number | null | undefined) => (n === null || n === undefined ? "Unknown" : n >= 50 ? "Craft" : "Slop");
 export const popularityWord = (n: number | null | undefined) => (n === null || n === undefined ? "Unknown" : n >= 50 ? "Popular" : "Fringe");
 
-export function MiniScores({ quality, popularity }: { quality: number | null | undefined; popularity: number | null | undefined }) {
+export function MiniScores({ quality, popularity, overall }: { quality: number | null | undefined; popularity: number | null | undefined; overall?: number | null }) {
   return (
     <div className="flex items-center gap-3 text-sm tabular-nums whitespace-nowrap">
+      {overall !== undefined && (
+        <>
+          <span title="Sloppiness score: Popularity and Quality averaged, higher is better">
+            <span className="text-muted mr-1">Sloppiness</span>
+            <span className={`font-bold ${scoreClass(overall)}`}>{overall ?? "?"}<span className="text-muted font-normal">/100</span></span>
+          </span>
+          <span className="text-line">·</span>
+        </>
+      )}
       <span title="Popularity: do the people who find it use it">
         <span className="text-muted mr-1">Popularity</span>
-        <span className={`font-semibold ${scoreClass(popularity)}`}><WordIcon word={popularityWord(popularity)} size="1em" className="inline-block align-[-0.15em] mr-1" />{popularity ?? "unknown"}</span>
+        <span className={`font-semibold ${scoreClass(popularity)}`}><WordIcon word={popularityWord(popularity)} size="1em" className="inline-block align-[-0.15em] mr-1" />{popularity ?? "?"}<span className="text-muted font-normal">/100</span></span>
       </span>
       <span className="text-line">·</span>
       <span title="Quality: real, maintained work by more than one person over time">
         <span className="text-muted mr-1">Quality</span>
-        <span className={`font-semibold ${scoreClass(quality)}`}><WordIcon word={qualityWord(quality)} size="1em" className="inline-block align-[-0.15em] mr-1" />{quality ?? "unknown"}</span>
+        <span className={`font-semibold ${scoreClass(quality)}`}><WordIcon word={qualityWord(quality)} size="1em" className="inline-block align-[-0.15em] mr-1" />{quality ?? "?"}<span className="text-muted font-normal">/100</span></span>
       </span>
     </div>
   );
