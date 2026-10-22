@@ -28,7 +28,7 @@ export default async function MethodologyPage() {
       <h1 className="display text-5xl">What the score is made of</h1>
       <p className="mt-4 text-ink-2 leading-relaxed">
         The score has two halves. <strong className="text-ink">Quality</strong> asks whether this is real, maintained work by more than one person
-        over time, read from the GitHub repository: a year of pushes, other humans committing, strangers filing issues that get closed. <strong className="text-ink">Popularity</strong> asks
+        over time, read from the GitHub repository: a year of pushes, other humans committing, issues being filed. <strong className="text-ink">Popularity</strong> asks
         whether the people who find it actually use it, read from the owner&apos;s connected analytics. Both have to be good for something to be Not slop. If either
         one is bad, it is Slop. Anything in between is Mixed. No repo is a quality of zero. No users is a popularity of zero.
       </p>

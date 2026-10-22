@@ -27,6 +27,7 @@ test('a long-lived, multi-contributor repo scores high; a day-old solo repo scor
   // A year of weekly pushes alone gets you to the edge of good; people and issues take you over.
   const year = scoreQuality({ ...FRESH, createdAt: ago(370), weeksWithCommits: 52 });
   assert.ok(year.score >= 55 && year.score < 65, `year solo=${year.score}`);
+  assert.ok(scoreQuality({ ...FRESH, createdAt: ago(370), weeksWithCommits: 52, issuesTotal: 100 }).score > year.score);
 });
 
 test('archived repos are capped; every rule is described; weights sum to 100', () => {

@@ -2,8 +2,7 @@
  * QUALITY: is this real, maintained work by more than one person over time?
  *
  * Measured from the GitHub repository with three signals that take time to
- * fake: a year of pushes, other humans committing, strangers filing issues that
- * get closed. Nothing that can be scaffolded in an afternoon counts.
+ * fake: a year of pushes, other humans committing, issues being filed. Nothing that can be scaffolded in an afternoon counts.
  *
  * Every signal is a plain function over GitHub REST responses. Add a signal,
  * describe it in one sentence, bump QUALITY_VERSION. No LLMs. No paid APIs.
@@ -12,7 +11,7 @@
  */
 import type { QualityResult, Signal } from './types.ts';
 
-export const QUALITY_VERSION = '0.5.0';
+export const QUALITY_VERSION = '0.5.1';
 
 const UA = 'isitslop-bot/0.3 (+https://isitslop.org/methodology)';
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -82,15 +81,9 @@ export const RULES: Rule[] = [
   {
     id: 'issues',
     kind: 'points',
-    description:
-      'Strangers file issues and they get closed: share of issues closed, times how many outside authors filed them. Fewer than three issues, or none from outside, is zero.',
+    description: 'Issues exist at all: the total number of issues ever filed, pull requests excluded. 3 is a start, 100 is full credit. Whether they were closed or who filed them is not quality.',
     weight: 15,
-    run: (f) => {
-      if (f.issuesTotal < 3 || f.issueAuthorsOutsideOwner === 0) return { score: 0, evidence: [`${f.issuesTotal} issues, ${f.issueAuthorsOutsideOwner} from outside`] };
-      const ratio = f.issuesClosed / f.issuesTotal;
-      const outside = band(f.issueAuthorsOutsideOwner, [[1, 0.5], [3, 0.8], [10, 1]]);
-      return { score: clamp01(ratio * outside), evidence: [`${f.issuesClosed} of ${f.issuesTotal} issues closed`, `${f.issueAuthorsOutsideOwner} outside issue authors`] };
-    },
+    run: (f) => ({ score: band(f.issuesTotal, [[0, 0], [3, 0.2], [10, 0.5], [30, 0.8], [100, 1]]), evidence: [`${f.issuesTotal} issues`] }),
   },
 ];
 

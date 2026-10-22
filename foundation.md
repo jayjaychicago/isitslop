@@ -53,7 +53,7 @@ On success the owner receives a one-time **owner key**. It is shown once, stored
 
 ## How v0 scores Quality
 
-From the repository, with the owner's token. Three signals, weights 60/25/15: a year of pushes (share of the last 52 weeks with commits, times age, with full credit only at twelve months and nothing under one), other humans with two or more commits, and issues from strangers that get closed. Nothing that can be scaffolded in an afternoon counts: README, license, CI, tests and releases were all tried on day two and removed because a day-old repo was scoring 23. Archived repos are capped at 20. The exact rules are in `api/src/heuristics/quality.ts` and on the methodology page.
+From the repository, with the owner's token. Three signals, weights 60/25/15: a year of pushes (share of the last 52 weeks with commits, times age, with full credit only at twelve months and nothing under one), other humans with two or more commits, and the number of issues ever filed. Who filed them and whether they were closed is popularity, not quality. Nothing that can be scaffolded in an afternoon counts: README, license, CI, tests and releases were all tried on day two and removed because a day-old repo was scoring 23. Archived repos are capped at 20. The exact rules are in `api/src/heuristics/quality.ts` and on the methodology page.
 
 ## How v0 scores Popularity
 
