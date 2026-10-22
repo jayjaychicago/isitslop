@@ -73,15 +73,6 @@ export function EntryView({ id }: { id: string }) {
         </div>
         <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-line">
           <ScoreTile
-            label="Quality"
-            question="Is this real, maintained work by more than one person over time? Read from the repository."
-            value={grade?.quality ?? null}
-            word={grade ? qualityWord(grade.quality) : undefined}
-            sub={grade ? grade.qualityBreakdown.note ?? `Read from ${grade.qualityBreakdown.repo}, rules v${grade.heuristicsVersion}` : "Not graded yet"}
-            onClick={grade ? () => setDetail(detail === "quality" ? null : "quality") : undefined}
-            open={detail === "quality"}
-          />
-          <ScoreTile
             label="Popularity"
             question="Do the people who find it actually use it? Read from Google Analytics."
             value={grade?.popularity ?? null}
@@ -90,11 +81,20 @@ export function EntryView({ id }: { id: string }) {
             onClick={grade ? () => setDetail(detail === "popularity" ? null : "popularity") : undefined}
             open={detail === "popularity"}
           />
+          <ScoreTile
+            label="Quality"
+            question="Is this real, maintained work by more than one person over time? Read from the repository."
+            value={grade?.quality ?? null}
+            word={grade ? qualityWord(grade.quality) : undefined}
+            sub={grade ? grade.qualityBreakdown.note ?? `Read from ${grade.qualityBreakdown.repo}, rules v${grade.heuristicsVersion}` : "Not graded yet"}
+            onClick={grade ? () => setDetail(detail === "quality" ? null : "quality") : undefined}
+            open={detail === "quality"}
+          />
         </div>
       </div>
 
-      {grade && detail === "quality" && <QualityDetails grade={grade} />}
       {grade && detail === "popularity" && <PopularityDetails grade={grade} />}
+      {grade && detail === "quality" && <QualityDetails grade={grade} />}
 
       <OwnerPanel key={gaPick ? "pick" : "panel"} entry={entry} grade={grade} onChange={reload} gaPick={gaPick} onGaPicked={() => setGaPick(null)} initialTab={gaPick ? "analytics" : undefined} />
 
@@ -129,14 +129,14 @@ export function EntryView({ id }: { id: string }) {
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <table className="w-full text-sm whitespace-nowrap">
               <thead className="text-xs uppercase tracking-wider text-muted">
-                <tr><th className="text-left py-1">Date</th><th className="text-right pl-4">Quality</th><th className="text-right pl-4">Popularity</th><th className="text-right pl-4">Verdict</th><th className="text-right pl-4">Rules</th></tr>
+                <tr><th className="text-left py-1">Date</th><th className="text-right pl-4">Popularity</th><th className="text-right pl-4">Quality</th><th className="text-right pl-4">Verdict</th><th className="text-right pl-4">Rules</th></tr>
               </thead>
               <tbody>
                 {history.map((h) => (
                   <tr key={h.id} className="border-t border-line">
                     <td className="py-1.5">{new Date(h.createdAt).toLocaleString()}</td>
-                    <td className="text-right tabular-nums pl-4">{h.quality ?? "?"}</td>
                     <td className="text-right tabular-nums pl-4">{h.popularity ?? "?"}</td>
+                    <td className="text-right tabular-nums pl-4">{h.quality ?? "?"}</td>
                     <td className="text-right pl-4"><VerdictBadge verdict={h.verdict} size="sm" /></td>
                     <td className="text-right text-muted pl-4">v{h.heuristicsVersion}</td>
                   </tr>

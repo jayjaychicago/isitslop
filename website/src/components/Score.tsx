@@ -64,14 +64,14 @@ export const popularityWord = (n: number | null | undefined) => (n === null || n
 export function MiniScores({ quality, popularity }: { quality: number | null | undefined; popularity: number | null | undefined }) {
   return (
     <div className="flex items-center gap-3 text-sm tabular-nums whitespace-nowrap">
-      <span title="Quality: real, maintained work by more than one person over time">
-        <span className="text-muted mr-1">Quality</span>
-        <span className={`font-semibold ${scoreClass(quality)}`}><WordIcon word={qualityWord(quality)} size="1em" className="inline-block align-[-0.15em] mr-1" />{quality ?? "unknown"}</span>
-      </span>
-      <span className="text-line">·</span>
       <span title="Popularity: do the people who find it use it">
         <span className="text-muted mr-1">Popularity</span>
         <span className={`font-semibold ${scoreClass(popularity)}`}><WordIcon word={popularityWord(popularity)} size="1em" className="inline-block align-[-0.15em] mr-1" />{popularity ?? "unknown"}</span>
+      </span>
+      <span className="text-line">·</span>
+      <span title="Quality: real, maintained work by more than one person over time">
+        <span className="text-muted mr-1">Quality</span>
+        <span className={`font-semibold ${scoreClass(quality)}`}><WordIcon word={qualityWord(quality)} size="1em" className="inline-block align-[-0.15em] mr-1" />{quality ?? "unknown"}</span>
       </span>
     </div>
   );

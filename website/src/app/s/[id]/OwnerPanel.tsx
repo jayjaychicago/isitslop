@@ -161,10 +161,10 @@ function RequestGrade({ entry, user, onDone }: { entry: Entry; user: { githubLog
     <div className="flex flex-col gap-4 text-sm">
       <ul className="card p-3 bg-paper flex flex-col gap-1.5">
         <li className="text-fresh">✓ Signed in as {user.githubLogin}; the repository is read with your GitHub access</li>
+        <li className={entry.analyticsConnected ? "text-fresh" : "text-slop"}>{entry.analyticsConnected ? "✓ Google Analytics connected" : "✗ Google Analytics not connected: Popularity will be unknown"}{!entry.analyticsConnected && <span className="text-muted ml-2">(analytics tab)</span>}</li>
         {entry.kind === "site" && (
           <li className={repoOk ? "text-fresh" : "text-slop"}>{repoOk ? "✓ Repository linked" : "✗ No repository linked: Quality will be unknown"}{!repoOk && <span className="text-muted ml-2">(repo tab)</span>}</li>
         )}
-        <li className={entry.analyticsConnected ? "text-fresh" : "text-slop"}>{entry.analyticsConnected ? "✓ Google Analytics connected" : "✗ Google Analytics not connected: Popularity will be unknown"}{!entry.analyticsConnected && <span className="text-muted ml-2">(analytics tab)</span>}</li>
       </ul>
       <label className="flex items-start gap-2 card p-3 bg-paper">
         <input type="checkbox" className="mt-1" checked={accept} onChange={(e) => setAccept(e.target.checked)} />
