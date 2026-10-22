@@ -205,32 +205,33 @@ function PopularityDetails({ grade }: { grade: Grade }) {
   const visitors = p.visitors ?? 0;
   const returning = p.returning ?? 0;
   const rate = visitors ? returning / visitors : 0;
-  // Mirrors api/src/heuristics/popularity.ts: returning rate bands (weight 0.55) and reach bands (weight 0.45).
+  // Mirrors api/src/heuristics/popularity.ts: popularity = reach × (0.5 + 0.5 × returning).
   const band = (x: number, pts: [number, number][]) => {
     if (x <= pts[0][0]) return pts[0][1];
     for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1]; const [x1, y1] = pts[i]; if (x <= x1) return y0 + ((x - x0) / (x1 - x0)) * (y1 - y0); }
     return pts[pts.length - 1][1];
   };
-  const returnPts = Math.round(55 * band(rate, [[0, 0], [0.1, 0.3], [0.25, 0.6], [0.4, 0.85], [0.6, 1]]));
-  const reachPts = Math.round(45 * band(Math.log10(Math.max(1, visitors)), [[2, 0], [3, 0.4], [4, 0.7], [5, 1]]));
-  const rows: [string, string, string, number, number][] = [
-    ["returning", "People who came back: returning active users as a share of all active users in the last 30 days.", `${returning.toLocaleString()} of ${visitors.toLocaleString()} (${(rate * 100).toFixed(1)}%)`, returnPts, 55],
-    ["reach", "How many people at all: log of active users in the last 30 days. 100 is zero, 1,000 is 40%, 10,000 is 70%, 100,000 is full.", `${visitors.toLocaleString()} active users`, reachPts, 45],
+  const reach = band(Math.log10(Math.max(1, visitors)), [[2, 0], [3, 0.3], [4, 0.6], [5, 0.85], [6, 1]]);
+  const ret = band(rate, [[0, 0], [0.1, 0.3], [0.25, 0.6], [0.4, 0.85], [0.6, 1]]);
+  const rows: [string, string, string, string][] = [
+    ["reach", "How many people at all: active users in the last 30 days on a log scale. 100 is zero, 1,000 is 30%, 10,000 is 60%, 100,000 is 85%, a million is full. Reach multiplies everything: nobody there means zero, however loyal.", `${visitors.toLocaleString()} active users`, `×${reach.toFixed(2)}`],
+    ["returning", "People who came back: returning active users as a share of all active users. Moves half of the reach-gated score.", `${returning.toLocaleString()} of ${visitors.toLocaleString()} (${(rate * 100).toFixed(1)}%)`, `×${(0.5 + 0.5 * ret).toFixed(2)}`],
   ];
   return (
     <section className="mt-4">
       <div className="text-xs uppercase tracking-wider text-muted font-semibold mb-2">Popularity subscores</div>
       <ul className="card divide-y divide-line">
-        {rows.map(([id, desc, ev, pts, w]) => (
+        {rows.map(([id, desc, ev, factor]) => (
           <li key={id} className="p-4 grid sm:grid-cols-[8rem_1fr_6rem] gap-2 items-start">
             <div className="font-mono text-sm capitalize">{id}</div>
             <div>
               <div className="text-sm text-ink-2">{desc}</div>
               <div className="mt-1"><span className="text-xs bg-paper border border-line rounded px-1.5 py-0.5">{ev}</span></div>
             </div>
-            <div className="text-right tabular-nums font-semibold text-ink">{pts} <span className="text-muted font-normal">/ {w}</span></div>
+            <div className="text-right tabular-nums font-semibold text-ink">{factor}</div>
           </li>
         ))}
+        <li className="p-4 text-sm text-ink-2">100 × {reach.toFixed(2)} × {(0.5 + 0.5 * ret).toFixed(2)} = <strong className="text-ink">{Math.round(100 * reach * (0.5 + 0.5 * ret))}</strong></li>
         <li className="p-3 text-xs text-muted">Read from Google Analytics{p.property ? ` (${p.property})` : ""}, last 30 days. Bands live in <code>api/src/heuristics/popularity.ts</code>.</li>
       </ul>
     </section>

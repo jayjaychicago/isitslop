@@ -41,9 +41,11 @@ test('archived repos are capped; every rule is described; weights sum to 100', (
 test('popularity: returning rate carries most weight, reach the rest, nobody is zero', () => {
   const r = (visitors: number, returning: number) => scorePopularity({ provider: 'test', visitors, returning, window: '30d' }).score;
   assert.equal(r(0, 0), 0);
-  assert.ok(r(50, 40) < 60, 'tiny but loyal audience is not a product');
-  assert.ok(r(20000, 9000) >= 80, String(r(20000, 9000)));
-  assert.ok(r(20000, 200) < 40, 'big reach nobody returns to');
+  assert.equal(r(46, 11), 0, 'a few dozen people, however loyal, is nobody');
+  assert.ok(r(1000, 250) < 30, `1k users = ${r(1000, 250)}`);
+  assert.ok(r(20000, 9000) >= 55 && r(20000, 9000) < 75, String(r(20000, 9000)));
+  assert.ok(r(200000, 120000) >= 85, String(r(200000, 120000)));
+  assert.ok(r(20000, 200) < r(20000, 9000) / 2, 'big reach nobody returns to scores half');
   assert.ok(r(5000, 2500) > r(5000, 500));
 });
 

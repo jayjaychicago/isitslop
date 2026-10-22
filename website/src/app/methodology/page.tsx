@@ -7,7 +7,7 @@ type Methodology = {
   heuristicsVersion: string;
   termsVersion: string;
   quality: { question: string; source: string; maxPoints: number; rules: { id: string; description: string; weight: number; kind: 'points' | 'multiplier' }[] };
-  popularity: { question: string; version: string; source: string; weights: { returning: number; reach: number }; returnBands: [number, number][]; reachBands: [number, number][]; caveat: string; missing: string };
+  popularity: { question: string; version: string; source: string; formula?: string; weights: { returning: number; reach: number }; returnBands: [number, number][]; reachBands: [number, number][]; caveat: string; missing: string };
   verdict: { rule: string; thresholds: { craft: number; popular: number } };
 };
 
@@ -74,14 +74,15 @@ export default async function MethodologyPage() {
             </div>
             <p className="mt-2 text-ink-2">{m.popularity.question}</p>
             <p className="text-sm text-muted">{m.popularity.source}</p>
+            {m.popularity.formula && <p className="mt-2 text-sm text-ink-2">{m.popularity.formula}</p>}
             <div className="card mt-4 p-4 text-sm grid sm:grid-cols-2 gap-4">
               <div>
-                <div className="font-semibold">Returning (weight {m.popularity.weights.returning})</div>
+                <div className="font-semibold">Returning (moves half)</div>
                 <div className="text-muted">returning active users / active users</div>
                 <Bands bands={m.popularity.returnBands} />
               </div>
               <div>
-                <div className="font-semibold">Reach (weight {m.popularity.weights.reach})</div>
+                <div className="font-semibold">Reach (multiplies everything)</div>
                 <div className="text-muted">log10 of active users in 30 days</div>
                 <Bands bands={m.popularity.reachBands} pct={false} />
               </div>
