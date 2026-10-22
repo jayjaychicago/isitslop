@@ -22,7 +22,7 @@ export type Entry = {
   ownerUserId: string | null;
 };
 
-export type Me = { user: { id: string; githubLogin: string; githubConnected: boolean } | null; entries: (Entry & { grade: GradeSummary | null })[] };
+export type Me = { user: { id: string; githubLogin: string; githubConnected: boolean; isAdmin?: boolean } | null; entries: (Entry & { grade: GradeSummary | null })[] };
 
 export type Signal = { id: string; description: string; weight: number; score: number; evidence: string[] };
 

@@ -31,6 +31,8 @@ routes = [
 PUBLIC_SITE_URL = "https://isitslop.org"
 # Origin registered as the OAuth callback with GitHub and Google. Change both registrations before changing this.
 OAUTH_CALLBACK_ORIGIN = "https://api.isitslop.org"
+# GitHub logins that can delete any entry from the site (comma separated). The operator.
+ADMIN_GITHUB_LOGINS = "jayjaychicago"
 
 [triggers]
 # Daily at 04:10 UTC: popularity for every graded entry; on the 1st of the month, quality too.

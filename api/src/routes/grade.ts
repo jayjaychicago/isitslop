@@ -64,7 +64,12 @@ export async function runGrade(env: Env, sql: Sql, e: EntryRow, opts: GradeOptio
       const facts = await collectRepoFacts(t.repo.owner, t.repo.name, token);
       if (typeof facts === 'string') return facts;
       quality = scoreQuality(facts);
-      if (e.repo_private) quality = { ...quality, repo: 'private repository' };
+      // A repo can go private after it was linked: trust what GitHub says now, and remember it.
+      if (facts.isPrivate !== e.repo_private) {
+        await sql`update entries set repo_private = ${facts.isPrivate} where id = ${e.id}`;
+        e.repo_private = facts.isPrivate;
+      }
+      if (facts.isPrivate || e.repo_private) quality = { ...quality, repo: 'private repository' };
     }
   } else {
     quality = prev.quality_breakdown as typeof quality;
@@ -95,5 +100,5 @@ grade.post('/entries/:id/grade', async (c) => {
   await sql`update entries set terms_version = ${TERMS_VERSION}, terms_accepted_at = now() where id = ${e.id}`;
   const g = await runGrade(c.env, sql, e, { refreshQuality: true, refreshPopularity: true });
   if (typeof g === 'string') return c.json({ error: g }, g.startsWith('analytics:') || g.includes('rate limit') || g.includes('not found') ? 422 : g.includes('signed in') ? 428 : 400);
-  return c.json({ grade: publicGrade(g) }, 201);
+  return c.json({ grade: publicGrade(g, e.repo_private) }, 201);
 });

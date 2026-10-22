@@ -50,4 +50,8 @@ export async function currentUser(c: Context<{ Bindings: Env }>, sql: Sql): Prom
   return rows[0] ?? null;
 }
 
-export const publicUser = (u: User) => ({ id: u.id, githubLogin: u.github_login, githubConnected: !!u.github_token });
+/** The operator: a signed-in GitHub login listed in ADMIN_GITHUB_LOGINS. Can delete any entry. */
+export const isAdminUser = (env: Env, u: User | null): boolean =>
+  !!u && (env.ADMIN_GITHUB_LOGINS ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean).includes(u.github_login.toLowerCase());
+
+export const publicUser = (env: Env, u: User) => ({ id: u.id, githubLogin: u.github_login, githubConnected: !!u.github_token, isAdmin: isAdminUser(env, u) });

@@ -6,6 +6,7 @@ import { api, type EntryDetail, type Grade } from "@/lib/api";
 import { ScoreTile, VerdictBadge, VerdictWords, popularityWord, qualityWord } from "@/components/Score";
 import { scoreClass } from "@/lib/api";
 import { OwnerPanel } from "./OwnerPanel";
+import { AdminDelete } from "./AdminDelete";
 
 export function EntryView({ id }: { id: string }) {
   const [data, setData] = useState<EntryDetail | null>(null);
@@ -160,6 +161,8 @@ export function EntryView({ id }: { id: string }) {
           </div>
         </section>
       )}
+
+      <AdminDelete entry={entry} />
 
       <p className="mt-12 text-xs text-muted">
         Scores are opinions produced by public rules, requested by the verified owner under the <Link href="/terms" className="underline">terms</Link>. See the <Link href="/methodology" className="underline">methodology</Link>.

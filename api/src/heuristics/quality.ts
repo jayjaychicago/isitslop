@@ -41,6 +41,8 @@ export function band(x: number, pts: [number, number][]): number {
 
 export type RepoFacts = {
   fullName: string;
+  /** Live visibility at read time. A private repo's name never leaves the Worker. */
+  isPrivate: boolean;
   createdAt: string;
   pushedAt: string | null;
   archived: boolean;
@@ -139,7 +141,7 @@ export async function collectRepoFacts(owner: string, name: string, token?: stri
   if (repo.status === 404) return 'repository not found (private repos are not supported)';
   if (repo.status === 403 || repo.status === 429) return 'GitHub rate limit reached; try again later';
   if (repo.status !== 200 || !repo.json) return `GitHub returned ${repo.status}`;
-  const r = repo.json as { full_name: string; created_at: string; pushed_at: string | null; archived: boolean; fork: boolean; default_branch: string; license: { spdx_id?: string; name?: string } | null; owner: { login: string } };
+  const r = repo.json as { full_name: string; private?: boolean; created_at: string; pushed_at: string | null; archived: boolean; fork: boolean; default_branch: string; license: { spdx_id?: string; name?: string } | null; owner: { login: string } };
 
   // Commit cadence over the last 52 weeks. GitHub computes this lazily (202 = not ready yet); it is
   // usually ready within a few seconds, so wait up to ~15 s before falling back.
@@ -190,6 +192,7 @@ export async function collectRepoFacts(owner: string, name: string, token?: stri
 
   return {
     fullName: r.full_name,
+    isPrivate: !!r.private,
     createdAt: r.created_at,
     pushedAt: r.pushed_at,
     archived: !!r.archived,

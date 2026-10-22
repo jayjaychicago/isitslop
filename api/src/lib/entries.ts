@@ -65,14 +65,16 @@ export function publicEntry(e: EntryRow) {
   };
 }
 
-export function publicGrade(g: GradeRow) {
+export function publicGrade(g: GradeRow, privateRepo = false) {
+  const qb = g.quality_breakdown as { repo?: string | null } | null;
+  const qualityBreakdown = privateRepo && qb && qb.repo ? { ...qb, repo: 'private repository' } : g.quality_breakdown;
   return {
     id: g.id,
     quality: g.quality_score,
     popularity: g.popularity_score,
     overall: g.overall,
     verdict: g.verdict,
-    qualityBreakdown: g.quality_breakdown,
+    qualityBreakdown,
     popularityInput: g.popularity_input,
     heuristicsVersion: g.heuristics_version,
     createdAt: g.created_at,

@@ -63,7 +63,7 @@ auth.get('/me', async (c) => {
     where e.owner_user_id = ${u.id} order by e.created_at desc
   `) as (EntryRow & Partial<GradeRow> & { graded_at: string | null })[];
   return c.json({
-    user: publicUser(u),
+    user: publicUser(c.env, u),
     entries: rows.map((r) => ({ ...publicEntry(r), grade: r.verdict ? { quality: r.quality_score, popularity: r.popularity_score, verdict: r.verdict, createdAt: r.graded_at } : null })),
   });
 });

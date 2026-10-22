@@ -7,7 +7,7 @@ import { requireOwner } from './grade.ts';
 import { collectRepoFacts, scoreQuality } from '../heuristics/quality.ts';
 import { userGithubToken } from './github.ts';
 import { repoPermission, repoInfo } from '../lib/github-auth.ts';
-import { currentUser } from '../lib/session.ts';
+import { currentUser, isAdminUser } from '../lib/session.ts';
 import { randomToken, sha256 } from '../lib/crypto.ts';
 import { getEntry, latestGrade, publicAppeal, publicEntry, publicGrade, type AppealRow, type EntryRow, type GradeRow } from '../lib/entries.ts';
 
@@ -33,7 +33,7 @@ entries.get('/entries', async (c) => {
     left join lateral (select * from grades where entry_id = e.id order by created_at desc limit 1) g on true
     where ${q} = ''
        or ((e.url ilike ${like} or e.domain ilike ${like}) and not (e.kind = 'github' and e.repo_private))
-       or coalesce(e.title,'') ilike ${like}
+       or (coalesce(e.title,'') ilike ${like} and not (e.kind = 'github' and e.repo_private))
     order by rank desc, (g.verdict is not null) desc, e.created_at desc
     limit ${limit} offset ${offset}
   `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; overall: number | null; verdict: string | null; graded_at: string | null })[];
@@ -68,12 +68,12 @@ entries.get('/score', async (c) => {
     limit 1
   `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; overall: number | null; verdict: string | null; graded_at: string | null })[];
   const e = rows[0];
-  if (!e) return c.json({ found: false, url: t.url, label: 'Not in the index' }, 404);
+  // A private repository is never confirmed to exist here, so its path cannot be probed.
+  if (!e || (e.kind === 'github' && e.repo_private)) return c.json({ found: false, url: t.url, label: 'Not in the index' }, 404);
   const label = verdictLabel(e.verdict);
-  const privateRepo = e.kind === 'github' && e.repo_private;
   return c.json({
     found: true,
-    url: privateRepo ? null : e.url,
+    url: e.url,
     overall: e.overall,
     popularity: e.popularity_score,
     quality: e.quality_score,
@@ -119,7 +119,7 @@ entries.get('/entries/:id', async (c) => {
   const appeals = (await sql`select * from appeals where entry_id = ${e.id} order by created_at desc`) as AppealRow[];
   return c.json({
     entry: publicEntry(e),
-    grade: g ? publicGrade(g) : null,
+    grade: g ? publicGrade(g, e.repo_private) : null,
     history: history.map((h) => ({ id: h.id, quality: h.quality_score, popularity: h.popularity_score, overall: h.overall, verdict: h.verdict, heuristicsVersion: h.heuristics_version, createdAt: h.created_at })),
     appeals: appeals.map(publicAppeal),
   });
@@ -173,13 +173,13 @@ entries.post('/entries/:id/claim', async (c) => {
   return c.json({ entry: publicEntry(rows[0]), ownerKey, note: 'ownerKey is only needed for API use; the website uses your sign-in.' });
 });
 
-/** Remove an entry and everything attached to it. Owner key or admin token. See terms, section 9. */
+/** Remove an entry and everything attached to it (grades, verifications, appeals, analytics). Owner key, admin token, or the signed-in operator. See terms, section 9. */
 entries.delete('/entries/:id', async (c) => {
   const sql = db(c.env.DATABASE_URL);
   const e = await getEntry(sql, c.req.param('id'));
   if (!e) return c.json({ error: 'not found' }, 404);
   const auth = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
-  const isAdmin = !!c.env.ADMIN_TOKEN && auth === c.env.ADMIN_TOKEN;
+  const isAdmin = (!!c.env.ADMIN_TOKEN && auth === c.env.ADMIN_TOKEN) || isAdminUser(c.env, await currentUser(c, sql));
   if (!isAdmin && !(await requireOwner(c, e, sql))) return c.json({ error: 'sign in as the owner' }, 401);
   await sql`delete from entries where id = ${e.id}`;
   return c.json({ deleted: e.id });
