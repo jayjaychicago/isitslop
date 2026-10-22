@@ -1,6 +1,7 @@
 -- isitslop index schema. Idempotent; safe to re-run.
 
 create extension if not exists pgcrypto;
+create extension if not exists pg_trgm;
 
 create table if not exists entries (
   id            uuid primary key default gen_random_uuid(),
@@ -30,6 +31,8 @@ alter table entries add column if not exists analytics_provider text;
 alter table entries add column if not exists analytics_config text;
 create index if not exists entries_domain_idx on entries (domain);
 create index if not exists entries_created_idx on entries (created_at desc);
+create index if not exists entries_url_trgm on entries using gin (url gin_trgm_ops);
+create index if not exists entries_title_trgm on entries using gin (coalesce(title,'') gin_trgm_ops);
 
 create table if not exists users (
   id            uuid primary key default gen_random_uuid(),

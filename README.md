@@ -9,7 +9,7 @@ The verdict is two words, one per axis: **Fringe** or **Popular**, **Slop** or *
 
 Built for founders and open source maintainers who want an honest, public answer to "was this worth building?", and for the contributors who think the rules could be better. It exists because AI made the "what" cheap: anyone can ship a spec in an afternoon, so the thing that separates a product from slop is the definition behind it, and nobody was measuring that.
 
-Heuristics only. No LLMs. Every rule is public and generated into the website's methodology page from the code. The API is a Cloudflare Worker written in TypeScript with Hono, the index is Neon Postgres, the website is Next.js on Vercel. Owners connect GitHub through the isitslop GitHub App, so private repos work and nobody shares a rate limit. It is not a security scanner, an SEO tool, or a replacement for talking to users.
+Heuristics only. No LLMs. Every rule is public and generated into the website's methodology page from the code. The API is a Cloudflare Worker written in TypeScript with Hono, the index is Neon Postgres, the website is Next.js on Vercel. Owners sign in with GitHub through the Is It Slop GitHub App, claim their repositories, link their sites, and connect Google Analytics; repositories are read with the owner's own access, so private repos work and nobody shares a rate limit. A private repository's URL is never published. It is not a security scanner, an SEO tool, or a replacement for talking to users.
 
 Live at [isitslop.org](https://isitslop.org). API at [api.isitslop.org](https://api.isitslop.org). Read [foundation.md](foundation.md) first: it is the "why" for this repo.
 
@@ -44,6 +44,15 @@ npm run dev                           # http://localhost:3000
 ```
 
 Note the API base URL includes `/v1`.
+
+## Look up a score
+
+```sh
+curl -H "Authorization: Bearer $ISITSLOP_API_KEY" "https://api.isitslop.org/v1/score?url=apiblaze.com"
+# {"found":true,"quality":79,"popularity":32,"verdict":"fringe_craft","label":"Fringe Craft",...}
+```
+
+One fixed key for now, handed out by the operator. Reading the index and entry pages needs no key.
 
 ## Try the quality rules on any public repo, without storing anything
 

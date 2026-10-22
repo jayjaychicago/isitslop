@@ -40,7 +40,9 @@ The index is a list of URLs. v0 supports:
 - Websites (any `https://` URL; the domain is what gets verified). A site links the repo it is built from, and Quality is read from that repo.
 - GitHub repositories (`https://github.com/owner/repo`), public or private.
 
-One thing is one entry: a product with a site and a repo is one entry with the repo linked, not two entries. Connected analytics are out of scope for v0 and left as an open contribution.
+One thing is one entry: a product with a site and a repo is one entry with the repo linked, not two entries. A private repository can be linked or claimed; its URL is never published, the entry shows as "private repository".
+
+There is also a one-call score API, `GET /v1/score?url=`, behind a single fixed key for now. Self-service keys come later.
 
 ## How v0 verifies ownership
 
@@ -49,7 +51,7 @@ One thing is one entry: a product with a site and a repo is one entry with the r
 | Website | DNS TXT record `_isitslop.<domain>`, or a file at `/.well-known/isitslop.txt`, or an email code sent to `admin@`, `webmaster@`, `postmaster@` or `hostmaster@` the domain. |
 | GitHub repo | Sign in with a GitHub account that has push access, through the isitslop GitHub App. |
 
-On success the owner receives a one-time **owner key**. It is shown once, stored hashed, and used as a bearer token for grading and appeals. A site owner also connects GitHub so the linked repo can be read with their token (encrypted at rest, refreshed automatically, deleted on disconnect).
+Owners sign in with GitHub on the website (through the Is It Slop GitHub App). A signed-in user who passes verification owns the entry from then on: grading, linking a repo, connecting Google Analytics and appeals all happen under that sign-in. Repositories are read with the owner's own GitHub access (encrypted at rest, refreshed automatically). An owner key is still issued for people driving the API from scripts; the website never shows it.
 
 ## How v0 scores Quality
 

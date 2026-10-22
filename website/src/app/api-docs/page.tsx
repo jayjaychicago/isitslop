@@ -10,6 +10,12 @@ export default function ApiDocs() {
         <a className="underline" href="https://github.com/jayjaychicago/isitslop/tree/main/api">GitHub</a>.
       </p>
 
+      <Section title="Look up a score">
+        <pre>{`curl -H "Authorization: Bearer $ISITSLOP_API_KEY" "${base}/score?url=apiblaze.com"
+# {"found":true,"quality":79,"popularity":32,"verdict":"fringe_craft","label":"Fringe Craft","gradedAt":"...","page":"..."}
+# 404 {"found":false} when the URL is not in the index`}</pre>
+        <p className="text-sm text-muted">One fixed key for now, handed out by the operator; self-service keys later. Everything below needs no key to read.</p>
+      </Section>
       <Section title="Try the quality rules on any public repo (nothing stored)">
         <pre>{`curl "${base}/preview?url=github.com/honojs/hono"`}</pre>
       </Section>

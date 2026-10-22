@@ -1,6 +1,8 @@
 export type Env = {
   DATABASE_URL: string;
   ADMIN_TOKEN: string;
+  /** Single fixed key for the external score API (GET /v1/score). Proxied by the operator; self-service keys later. */
+  API_KEY?: string;
   PUBLIC_SITE_URL: string;
   AWS_ACCESS_KEY_ID?: string;
   AWS_SECRET_ACCESS_KEY?: string;

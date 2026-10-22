@@ -17,16 +17,24 @@ const ip = (c: { req: { header: (n: string) => string | undefined } }) => c.req.
 
 entries.get('/entries', async (c) => {
   const sql = db(c.env.DATABASE_URL);
-  const q = (c.req.query('q') ?? '').trim().toLowerCase();
+  const q = (c.req.query('q') ?? '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/+$/, '');
   const limit = Math.min(50, Math.max(1, Number(c.req.query('limit') ?? 20) || 20));
   const offset = Math.max(0, Number(c.req.query('offset') ?? 0) || 0);
   const like = `%${q.replace(/[%_]/g, '')}%`;
   const rows = (await sql`
-    select e.*, g.quality_score, g.popularity_score, g.overall, g.verdict, g.created_at as graded_at
+    select e.*, g.quality_score, g.popularity_score, g.overall, g.verdict, g.created_at as graded_at,
+      case
+        when ${q} = '' then 0
+        when e.domain = ${q} then 3
+        when e.domain like ${q + '%'} or e.url like ${'https://' + q + '%'} then 2
+        else 1
+      end as rank
     from entries e
     left join lateral (select * from grades where entry_id = e.id order by created_at desc limit 1) g on true
-    where ${q} = '' or ((e.url ilike ${like} or e.domain ilike ${like}) and not (e.kind = 'github' and e.repo_private)) or coalesce(e.title,'') ilike ${like}
-    order by e.created_at desc
+    where ${q} = ''
+       or ((e.url ilike ${like} or e.domain ilike ${like}) and not (e.kind = 'github' and e.repo_private))
+       or coalesce(e.title,'') ilike ${like}
+    order by rank desc, (g.verdict is not null) desc, e.created_at desc
     limit ${limit} offset ${offset}
   `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; overall: number | null; verdict: string | null; graded_at: string | null })[];
   return c.json({
@@ -38,6 +46,53 @@ entries.get('/entries', async (c) => {
     offset,
   });
 });
+
+/**
+ * The simplest thing: the current score of a URL. One fixed API key, no side effects.
+ *   GET /v1/score?url=example.com  (Authorization: Bearer <API_KEY>)
+ * -> { found, url, quality, popularity, verdict, label, gradedAt, page }
+ */
+entries.get('/score', async (c) => {
+  const presented = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim() || (c.req.header('x-api-key') ?? '').trim();
+  if (!c.env.API_KEY) return c.json({ error: 'score API not enabled on this deployment' }, 503);
+  if (presented !== c.env.API_KEY) return c.json({ error: 'missing or invalid API key' }, 401);
+  const sql = db(c.env.DATABASE_URL);
+  const t = normalizeTarget(c.req.query('url') ?? '');
+  if (typeof t === 'string') return c.json({ error: t }, 400);
+  const rows = (await sql`
+    select e.*, g.quality_score, g.popularity_score, g.verdict, g.created_at as graded_at
+    from entries e
+    left join lateral (select * from grades where entry_id = e.id order by created_at desc limit 1) g on true
+    where e.url = ${t.url} or (e.kind = 'site' and e.domain = ${t.domain} and ${t.kind} = 'site')
+    order by (e.url = ${t.url}) desc, e.created_at asc
+    limit 1
+  `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; verdict: string | null; graded_at: string | null })[];
+  const e = rows[0];
+  if (!e) return c.json({ found: false, url: t.url, label: 'Not in the index' }, 404);
+  const label = verdictLabel(e.verdict);
+  const privateRepo = e.kind === 'github' && e.repo_private;
+  return c.json({
+    found: true,
+    url: privateRepo ? null : e.url,
+    quality: e.quality_score,
+    popularity: e.popularity_score,
+    verdict: e.verdict,
+    label,
+    gradedAt: e.graded_at,
+    page: `${c.env.PUBLIC_SITE_URL}/s/${e.id}`,
+  });
+});
+
+/** Plain words for a verdict, for people who do not want to parse `${popularity}_${quality}`. */
+function verdictLabel(v: string | null): string {
+  if (!v) return 'Not graded';
+  const [p, q] = v.split('_');
+  const cap = (w: string) => w[0].toUpperCase() + w.slice(1);
+  if (p === 'unknown' && q === 'unknown') return 'Nothing connected';
+  if (p === 'unknown') return `${cap(q)} of unknown popularity`;
+  if (q === 'unknown') return `${cap(p)} stuff of unknown quality`;
+  return `${cap(p)} ${cap(q)}`;
+}
 
 entries.post('/entries', async (c) => {
   const sql = db(c.env.DATABASE_URL);

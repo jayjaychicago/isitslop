@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- results of the Google round trip are read from the URL fragment after mount */
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";

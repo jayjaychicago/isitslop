@@ -7,6 +7,7 @@ workers_dev = true
 # Secrets (set with `wrangler secret put <NAME>`):
 #   DATABASE_URL          Neon Postgres connection string
 #   ADMIN_TOKEN           bearer token for resolving appeals
+#   API_KEY               single fixed key for GET /v1/score (Authorization: Bearer or x-api-key)
 #   AWS_ACCESS_KEY_ID     SES-only IAM user (optional; email verification disabled without it)
 #   AWS_SECRET_ACCESS_KEY
 #   AWS_REGION

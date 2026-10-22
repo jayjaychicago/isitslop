@@ -16,7 +16,7 @@ const app = new Hono<{ Bindings: Env }>();
 app.use('*', cors({
   origin: (origin, c) => (origin === c.env.PUBLIC_SITE_URL || /^http:\/\/localhost:\d+$/.test(origin) ? origin : c.env.PUBLIC_SITE_URL),
   credentials: true,
-  allowHeaders: ['Content-Type', 'Authorization'],
+  allowHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
   allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   maxAge: 86400,
 }));
@@ -28,6 +28,7 @@ app.get('/', (c) =>
     endpoints: [
       'GET  /v1/health',
       'GET  /v1/methodology',
+      'GET  /v1/score?url=example.com   (Authorization: Bearer API key) the current score of a URL, nothing else',
       'GET  /v1/entries?q=&limit=&offset=',
       'POST /v1/entries {url}',
       'GET  /v1/entries/:id',
