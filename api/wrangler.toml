@@ -16,7 +16,8 @@ workers_dev = true
 #   GITHUB_APP_CLIENT_SECRET
 #   GITHUB_APP_SLUG       for the install link, https://github.com/apps/<slug>
 #   TOKEN_KEY             64 hex chars; encrypts stored GitHub tokens and signs OAuth state
-#   GITHUB_TOKEN          optional fallback for anonymous /v1/preview only
+#   GITHUB_APP_PRIVATE_KEY the app's private key (PEM); /v1/preview reads as the app (5,000 calls/hour)
+#   GITHUB_TOKEN          optional last-resort fallback for /v1/preview when no app key is set
 #   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET  OAuth client for "Connect Google Analytics" (scope analytics.readonly)
 
 # Custom domains (the isitslop.org zone is on the same Cloudflare account).
@@ -33,6 +34,9 @@ PUBLIC_SITE_URL = "https://isitslop.org"
 OAUTH_CALLBACK_ORIGIN = "https://api.isitslop.org"
 # GitHub logins that can delete any entry from the site (comma separated). The operator.
 ADMIN_GITHUB_LOGINS = "jayjaychicago"
+# The isitslop GitHub App, installed on the isitslop org. Its private key is a secret (GITHUB_APP_PRIVATE_KEY).
+GITHUB_APP_ID = "5419816"
+GITHUB_APP_INSTALL_ACCOUNT = "isitslop"
 
 [triggers]
 # Daily at 04:10 UTC: popularity for every graded entry; on the 1st of the month, quality too.

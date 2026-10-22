@@ -15,6 +15,11 @@ export type Env = {
   GITHUB_APP_CLIENT_ID?: string;
   GITHUB_APP_CLIENT_SECRET?: string;
   GITHUB_APP_SLUG?: string;
+  /** The app's numeric id + private key (PEM) let the Worker act as the app itself for anonymous previews. */
+  GITHUB_APP_ID?: string;
+  GITHUB_APP_PRIVATE_KEY?: string;
+  /** Which installation to use (account login). Defaults to the first one. */
+  GITHUB_APP_INSTALL_ACCOUNT?: string;
   TOKEN_KEY?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;

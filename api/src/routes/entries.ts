@@ -9,6 +9,9 @@ import { userGithubToken } from './github.ts';
 import { repoPermission, repoInfo } from '../lib/github-auth.ts';
 import { currentUser, isAdminUser } from '../lib/session.ts';
 import { randomToken, sha256 } from '../lib/crypto.ts';
+import { cacheGet, cacheSet } from '../lib/cache.ts';
+import { installationToken } from '../lib/github-app.ts';
+import type { RepoFacts } from '../heuristics/quality.ts';
 import { getEntry, latestGrade, publicAppeal, publicEntry, publicGrade, type AppealRow, type EntryRow, type GradeRow } from '../lib/entries.ts';
 
 export const entries = new Hono<{ Bindings: Env }>();
@@ -185,14 +188,26 @@ entries.delete('/entries/:id', async (c) => {
   return c.json({ deleted: e.id });
 });
 
-/** Dry run: anyone can see the quality signals for any public GitHub repo. Nothing is stored. */
+/**
+ * Dry run: anyone can see the quality signals for any public GitHub repo. No entry is created.
+ * Reads as the GitHub App (its own 5,000/hour budget) and keeps each repo's facts for a day,
+ * so popular repos cost GitHub nothing on repeat.
+ */
+const PREVIEW_TTL = 24 * 3600;
 entries.get('/preview', async (c) => {
   const sql = db(c.env.DATABASE_URL);
   if (!(await rateLimit(sql, `preview:${ip(c)}`, 20, 3600))) return c.json({ error: 'rate limited' }, 429);
   const t = normalizeTarget(c.req.query('url') ?? '');
   if (typeof t === 'string') return c.json({ error: t }, 400);
   if (t.kind !== 'github' || !t.repo) return c.json({ error: 'preview takes a public github.com/owner/repo URL; sites are scored on their linked repo' }, 400);
-  const facts = await collectRepoFacts(t.repo.owner, t.repo.name, c.env.GITHUB_TOKEN); // anonymous preview: shared, optional token
+  const cacheKey = `preview:${t.repo.owner.toLowerCase()}/${t.repo.name.toLowerCase()}`;
+  const cached = await cacheGet<{ facts: RepoFacts; at: string }>(sql, cacheKey);
+  if (cached) return c.json({ target: t, quality: scoreQuality(cached.facts), facts: cached.facts, preview: true, cached: true, readAt: cached.at });
+  const token = (await installationToken(c.env, sql)) ?? c.env.GITHUB_TOKEN;
+  const facts = await collectRepoFacts(t.repo.owner, t.repo.name, token);
   if (typeof facts === 'string') return c.json({ error: facts }, 422);
-  return c.json({ target: t, quality: scoreQuality(facts), facts, preview: true });
+  if (facts.isPrivate) return c.json({ error: 'repository not found (private repos are not supported)' }, 422);
+  const at = new Date().toISOString();
+  await cacheSet(sql, cacheKey, { facts, at }, PREVIEW_TTL);
+  return c.json({ target: t, quality: scoreQuality(facts), facts, preview: true, cached: false, readAt: at });
 });

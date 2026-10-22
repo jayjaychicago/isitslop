@@ -122,6 +122,12 @@ alter table grades alter column popularity_score drop not null, alter column pop
 alter table grades alter column overall drop not null, alter column overall drop default;
 
 -- crude per-IP rate limiting, portable across hosts
+create table if not exists cache (
+  key        text primary key,
+  value      jsonb not null,
+  expires_at timestamptz not null
+);
+
 create table if not exists rate_limits (
   key        text primary key,
   count      int not null default 0,
