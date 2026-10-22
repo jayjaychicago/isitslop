@@ -48,11 +48,11 @@ Note the API base URL includes `/v1`.
 ## Look up a score
 
 ```sh
-curl -H "Authorization: Bearer $ISITSLOP_API_KEY" "https://api.isitslop.org/v1/score?url=apiblaze.com"
-# {"found":true,"quality":79,"popularity":32,"verdict":"fringe_craft","label":"Fringe Craft",...}
+curl -H "X-API-Key: $ISITSLOP_API_KEY" "https://api.isitslop.org/v1/score?url=apiblaze.com"
+# {"found":true,"quality":79,"popularity":0,"verdict":"fringe_craft","label":"Fringe Craft",...}
 ```
 
-One fixed key for now, handed out by the operator. Reading the index and entry pages needs no key.
+Keys are issued per consumer. Reading the index and entry pages needs no key. Grades refresh themselves: popularity every day, quality on the first of the month (a Cloudflare cron in `api/src/scheduled.ts`).
 
 ## Try the quality rules on any public repo, without storing anything
 

@@ -22,6 +22,10 @@ When you add or change a rule:
 4. Bump `QUALITY_VERSION` (or `POPULARITY_VERSION`). Existing grades keep the version they were computed with.
 4. Open a PR. Say what kind of page the rule helps with and what kind it might hurt.
 
+## Scheduled refresh
+
+`api/src/scheduled.ts` runs from the cron in `wrangler.toml` (daily 04:10 UTC): popularity for every graded entry with analytics connected, plus quality on the 1st. `POST /v1/admin/refresh` (admin token; `?quality=1` to force quality) runs the same thing on demand.
+
 ## Sessions and keys
 
 The website signs owners in with GitHub (`api/src/routes/auth.ts`, cookie on `.isitslop.org`). Owner actions check the session, or an owner key for API use (`requireOwner` in `grade.ts`). `GET /v1/score` is behind one fixed `API_KEY` secret.

@@ -411,6 +411,16 @@ paths:
         "201": { description: Filed, content: { application/json: { schema: { type: object, properties: { appeal: { $ref: "#/components/schemas/Appeal" } } } } } }
         "409": { description: No grade to appeal }
         "429": { description: At most 3 per entry per week }
+  /admin/refresh:
+    post:
+      tags: [admin]
+      summary: Run the scheduled refresh now
+      description: Same as the daily cron: popularity for every graded entry with analytics connected; quality too on the 1st of the month or with quality=1.
+      security: [{ admin: [] }]
+      parameters:
+        - { name: quality, in: query, schema: { type: string, enum: ["1"] }, description: Force a quality refresh }
+      responses:
+        "200": { description: Counts, content: { application/json: { schema: { type: object, properties: { refreshed: { type: integer }, failed: { type: integer }, quality: { type: boolean } } } } } }
   /appeals/{id}/resolve:
     post:
       tags: [admin]

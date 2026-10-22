@@ -42,6 +42,8 @@ The index is a list of URLs. v0 supports:
 
 One thing is one entry: a product with a site and a repo is one entry with the repo linked, not two entries. A private repository can be linked or claimed; its URL is never published, the entry shows as "private repository".
 
+Grades are refreshed automatically by a daily cron: popularity every day, quality on the first of the month. A score is never older than a day on the axis that moves fast.
+
 There is also a one-call score API, `GET /v1/score?url=`, behind a single fixed key for now. Self-service keys come later.
 
 ## How v0 verifies ownership
