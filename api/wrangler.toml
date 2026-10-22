@@ -32,5 +32,9 @@ PUBLIC_SITE_URL = "https://isitslop.org"
 # Origin registered as the OAuth callback with GitHub and Google. Change both registrations before changing this.
 OAUTH_CALLBACK_ORIGIN = "https://api.isitslop.org"
 
+[triggers]
+# Daily at 04:10 UTC: popularity for every graded entry; on the 1st of the month, quality too.
+crons = ["10 4 * * *"]
+
 [observability]
 enabled = true

@@ -26,6 +26,60 @@ export async function requireOwner(c: Context<{ Bindings: Env }>, e: EntryRow, s
   return !!u && !!e.owner_user_id && u.id === e.owner_user_id;
 }
 
+export type GradeOptions = { refreshQuality: boolean; refreshPopularity: boolean };
+
+/**
+ * Compute and store a grade. Used by the owner's button (both fresh) and by the
+ * scheduled refresh (popularity daily, quality monthly). Returns the grade row or an error string.
+ */
+export async function runGrade(env: Env, sql: Sql, e: EntryRow, opts: GradeOptions): Promise<GradeRow | string> {
+  const prevRows = (await sql`select * from grades where entry_id = ${e.id} order by created_at desc limit 1`) as GradeRow[];
+  const prev = prevRows[0];
+
+  // Popularity: read from the owner's connected Google Analytics. Nothing connected is unknown; connected and empty is zero.
+  let popularityScore: number | null;
+  let popularityInput: unknown;
+  if (opts.refreshPopularity || !prev) {
+    const reading = await readAnalytics(env, sql, e);
+    if (typeof reading === 'string') return `analytics: ${reading}`;
+    const popularity = reading ? scorePopularity(reading) : null;
+    popularityScore = popularity ? popularity.score : null;
+    popularityInput = reading ? { ...reading, ...popularity, note: popularity?.note } : { note: 'No analytics connected: popularity is unknown.' };
+  } else {
+    popularityScore = prev.popularity_score;
+    popularityInput = prev.popularity_input;
+  }
+
+  // Quality: GitHub signals on the repo (the entry itself, or the repo linked to the site). No repo is unknown.
+  let quality: { score: number | null; signals: unknown[]; repo: string | null; version: string; note?: string };
+  const repoUrl = e.kind === 'github' ? e.url : e.repo_url;
+  if (opts.refreshQuality || !prev) {
+    if (!repoUrl) {
+      quality = { score: null, signals: [], repo: null, version: QUALITY_VERSION, note: 'No repository linked: quality is unknown. Link a repo to be scored.' };
+    } else {
+      const t = normalizeTarget(repoUrl);
+      if (typeof t === 'string' || !t.repo) return 'linked repo is not a valid github.com/owner/repo URL';
+      const token = await ownerGithubToken(env, sql, e);
+      if (!token) return 'the owner must be signed in with GitHub so the repo can be read with their token';
+      const facts = await collectRepoFacts(t.repo.owner, t.repo.name, token);
+      if (typeof facts === 'string') return facts;
+      quality = scoreQuality(facts);
+      if (e.repo_private) quality = { ...quality, repo: 'private repository' };
+    }
+  } else {
+    quality = prev.quality_breakdown as typeof quality;
+  }
+
+  const v = verdict(quality.score, popularityScore);
+  const ov = overall(quality.score, popularityScore);
+  const rows = (await sql`
+    insert into grades (entry_id, quality_score, popularity_score, overall, verdict, quality_breakdown, popularity_input, heuristics_version)
+    values (${e.id}, ${quality.score}, ${popularityScore}, ${ov}, ${v}, ${JSON.stringify(quality)}::jsonb, ${JSON.stringify(popularityInput)}::jsonb, ${QUALITY_VERSION})
+    returning *
+  `) as GradeRow[];
+  return rows[0];
+}
+
 grade.post('/entries/:id/grade', async (c) => {
   const sql = db(c.env.DATABASE_URL);
   const e = await getEntry(sql, c.req.param('id'));
@@ -38,39 +92,8 @@ grade.post('/entries/:id/grade', async (c) => {
   if (body.acceptTerms !== true) {
     return c.json({ error: `you must accept the terms (version ${TERMS_VERSION}) by sending acceptTerms: true`, termsUrl: `${c.env.PUBLIC_SITE_URL}/terms`, termsVersion: TERMS_VERSION }, 400);
   }
-
-  // Popularity: read from the owner's connected analytics. Nothing connected is unknown; connected and empty is zero.
-  const reading = await readAnalytics(c.env, sql, e);
-  if (typeof reading === 'string') return c.json({ error: `analytics: ${reading}` }, 422);
-  const popularity = reading ? scorePopularity(reading) : null;
-  const popularityScore: number | null = popularity ? popularity.score : null;
-  const popularityInput = reading ? { ...reading, ...popularity, note: popularity?.note } : { note: 'No analytics connected: popularity is unknown.' };
-
-  // Quality: GitHub signals on the repo (the entry itself, or the repo linked to the site). No repo is unknown.
-  const repoUrl = e.kind === 'github' ? e.url : e.repo_url;
-  let quality: { score: number | null; signals: unknown[]; repo: string | null; version: string; note?: string };
-  if (!repoUrl) {
-    quality = { score: null, signals: [], repo: null, version: QUALITY_VERSION, note: 'No repository linked: quality is unknown. Link a repo to be scored.' };
-  } else {
-    const t = normalizeTarget(repoUrl);
-    if (typeof t === 'string' || !t.repo) return c.json({ error: 'linked repo is not a valid github.com/owner/repo URL' }, 400);
-    // Read with the owner's own GitHub token: their rate limit, their private repos.
-    const token = await ownerGithubToken(c.env, sql, e);
-    if (!token) return c.json({ error: 'the owner must be signed in with GitHub so the repo can be read with their token' }, 428);
-    const facts = await collectRepoFacts(t.repo.owner, t.repo.name, token);
-    if (typeof facts === 'string') return c.json({ error: facts }, 422);
-    quality = scoreQuality(facts);
-    if (e.repo_private) quality = { ...quality, repo: 'private repository' };
-  }
-
-  const v = verdict(quality.score, popularityScore);
-  const ov = overall(quality.score, popularityScore);
-
   await sql`update entries set terms_version = ${TERMS_VERSION}, terms_accepted_at = now() where id = ${e.id}`;
-  const rows = (await sql`
-    insert into grades (entry_id, quality_score, popularity_score, overall, verdict, quality_breakdown, popularity_input, heuristics_version)
-    values (${e.id}, ${quality.score}, ${popularityScore}, ${ov}, ${v}, ${JSON.stringify(quality)}::jsonb, ${JSON.stringify(popularityInput)}::jsonb, ${QUALITY_VERSION})
-    returning *
-  `) as GradeRow[];
-  return c.json({ grade: publicGrade(rows[0]) }, 201);
+  const g = await runGrade(c.env, sql, e, { refreshQuality: true, refreshPopularity: true });
+  if (typeof g === 'string') return c.json({ error: g }, g.startsWith('analytics:') || g.includes('rate limit') || g.includes('not found') ? 422 : g.includes('signed in') ? 428 : 400);
+  return c.json({ grade: publicGrade(g) }, 201);
 });

@@ -10,6 +10,7 @@ import { github } from './routes/github.ts';
 import { analytics } from './routes/analytics.ts';
 import { google } from './routes/google.ts';
 import { auth } from './routes/auth.ts';
+import { scheduledRefresh } from './scheduled.ts';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -68,4 +69,17 @@ app.onError((err, c) => {
   return c.json({ error: 'internal error' }, 500);
 });
 
-export default app;
+/** Admin: run the refresh now (same as the cron). ?quality=1 forces a quality refresh. */
+app.post('/v1/admin/refresh', async (c) => {
+  const auth = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+  if (!c.env.ADMIN_TOKEN || auth !== c.env.ADMIN_TOKEN) return c.json({ error: 'unauthorized' }, 401);
+  const force = c.req.query('quality') === '1';
+  return c.json(await scheduledRefresh(c.env, force ? new Date(Date.UTC(2000, 0, 1)) : new Date()));
+});
+
+export default {
+  fetch: app.fetch,
+  scheduled: async (_event: ScheduledEvent, env: Env, ctx: ExecutionContext) => {
+    ctx.waitUntil(scheduledRefresh(env));
+  },
+};

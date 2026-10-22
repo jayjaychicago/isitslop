@@ -97,7 +97,8 @@ export default async function MethodologyPage() {
           </section>
 
           <section className="mt-10 text-sm text-muted">
-            <p>Terms version in force: {m.termsVersion}. Grades keep the heuristics version they were computed with; re-grading uses the current rules.</p>
+            <p>Grades do not go stale: popularity is re-read every day and quality on the first of every month, from the owner&apos;s connected accounts. The history on each entry page shows the drift.</p>
+            <p className="mt-2">Terms version in force: {m.termsVersion}. Grades keep the heuristics version they were computed with; re-grading uses the current rules.</p>
           </section>
         </>
       )}

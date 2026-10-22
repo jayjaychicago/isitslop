@@ -40,6 +40,7 @@ export default function Terms() {
         <li>The result may be unfavorable. It may call your work slop and fringe. You accept that outcome in advance.</li>
         <li>The result will be published on the Service, be available through the public API, and may be redistributed by anyone.</li>
         <li>The rules may be crude, incomplete or wrong. They are published so you can read them before you ask. You have read them, or chosen not to.</li>
+        <li>Grades are refreshed automatically for as long as the entry exists: popularity daily and quality monthly, from the same connected accounts. Each refresh is published like the first grade. Disconnecting an account or removing the entry stops it.</li>
         <li>Your <strong>sole and exclusive remedy</strong> for any disagreement with a grade is the public appeal process in section 6.</li>
         <li>
           To the fullest extent permitted by law, you <strong>waive and release</strong> any and all claims against us, our members, managers, officers,
