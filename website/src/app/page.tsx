@@ -26,16 +26,16 @@ export default function Home() {
 
       <section className="grid sm:grid-cols-3 gap-4 pb-6">
         <div className="card p-5">
-          <div className="display text-2xl mb-1">1. Add a URL</div>
-          <p className="text-sm text-ink-2">Anyone can add a website or a public GitHub repo to the index. Adding does not grade it.</p>
+          <div className="display text-2xl mb-1">1. Add it and prove it is yours</div>
+          <p className="text-sm text-ink-2">Paste a URL or a GitHub repo. Sign in with GitHub. A site is yours after a DNS record, a well-known file, or an email to admin@ your domain; a repo is yours if your GitHub account can push to it.</p>
         </div>
         <div className="card p-5">
-          <div className="display text-2xl mb-1">2. Prove you own it</div>
-          <p className="text-sm text-ink-2">For a site: a DNS record, a well-known file, or an email to admin@ your domain. For a repo: sign in with GitHub. You get an owner key.</p>
+          <div className="display text-2xl mb-1">2. Connect GitHub and Google Analytics</div>
+          <p className="text-sm text-ink-2">Quality is read from your repository, Popularity from your Google Analytics property. Both read-only, with your own login. Private repos work and are never named.</p>
         </div>
         <div className="card p-5">
           <div className="display text-2xl mb-1">3. Ask for a grade</div>
-          <p className="text-sm text-ink-2">Only owners get graded. Connect GitHub and Google Analytics, accept the <Link href="/terms" className="underline">terms</Link>, we run the rules, the result is public. You can appeal.</p>
+          <p className="text-sm text-ink-2">Only owners get graded. Accept the <Link href="/terms" className="underline">terms</Link>, we run the public rules, the result is published. You can appeal.</p>
         </div>
       </section>
       <section className="mt-10 card p-6 sm:p-8 border-ink">
