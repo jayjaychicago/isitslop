@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { API } from "@/lib/api";
+import { WordIcon } from "@/components/Icons";
 
 export const dynamic = "force-dynamic";
 
@@ -94,6 +95,13 @@ export default async function MethodologyPage() {
             <h2 className="display text-3xl">Verdict</h2>
             <p className="mt-2 text-ink-2">{m.verdict.rule}</p>
             <p className="text-sm text-muted">Craft at {m.verdict.thresholds.craft} and above, Popular at {m.verdict.thresholds.popular} and above.</p>
+            <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 display text-2xl">
+              <li className="text-slop flex items-center gap-2"><WordIcon word="slop" /> Slop <span className="text-sm text-muted font-sans">quality below the cut</span></li>
+              <li className="text-fresh flex items-center gap-2"><WordIcon word="craft" /> Craft <span className="text-sm text-muted font-sans">quality at or above</span></li>
+              <li className="text-mixed flex items-center gap-2"><WordIcon word="fringe" /> Fringe <span className="text-sm text-muted font-sans">popularity below the cut</span></li>
+              <li className="text-fresh flex items-center gap-2"><WordIcon word="popular" /> Popular <span className="text-sm text-muted font-sans">popularity at or above</span></li>
+              <li className="text-muted flex items-center gap-2"><WordIcon word="unknown" /> Unknown <span className="text-sm text-muted font-sans">nothing connected</span></li>
+            </ul>
           </section>
 
           <section className="mt-10 text-sm text-muted">
