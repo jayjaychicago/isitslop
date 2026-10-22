@@ -238,7 +238,13 @@ function Analytics({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    api<{ providers: Provider[] }>(`/analytics/providers`).then((r) => setProviders(r.providers)).catch(() => {});
+    api<{ providers: Provider[] }>(`/analytics/providers`)
+      .then((r) => {
+        const avail = r.providers.filter((x) => x.available);
+        setProviders(avail);
+        if (avail.length && !avail.some((x) => x.id === "ga4")) setProvider(avail[0].id);
+      })
+      .catch(() => {});
   }, []);
   const p = providers.find((x) => x.id === provider);
   async function connect() {
