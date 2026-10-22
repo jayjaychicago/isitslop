@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, type Entry, type GradeSummary } from "@/lib/api";
-import { MiniScores, VerdictWords } from "./Score";
+import { VerdictColumns, VerdictWords } from "./Score";
 import { scoreClass } from "@/lib/api";
 
 type Item = Entry & { grade: GradeSummary | null };
@@ -96,11 +96,14 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
                   {it.title && it.url && <div className="mt-1.5 text-sm sm:text-base text-ink-2 truncate">{it.title}</div>}
                 </div>
               </div>
-              <div className="shrink-0 flex flex-col lg:items-end gap-1.5 min-w-0">
-                <div className="display text-4xl sm:text-5xl lg:text-6xl leading-none">
-                  <VerdictWords verdict={it.grade?.verdict} fallback={it.verified ? "Not graded yet" : "Unclaimed"} />
-                </div>
-                {it.grade && <MiniScores quality={it.grade.quality} popularity={it.grade.popularity} />}
+              <div className="shrink-0 min-w-0">
+                {it.grade ? (
+                  <VerdictColumns quality={it.grade.quality} popularity={it.grade.popularity} align="end" />
+                ) : (
+                  <div className="display text-4xl sm:text-5xl lg:text-6xl leading-none">
+                    <VerdictWords verdict={null} fallback={it.verified ? "Not graded yet" : "Unclaimed"} />
+                  </div>
+                )}
               </div>
             </Link>
           </li>

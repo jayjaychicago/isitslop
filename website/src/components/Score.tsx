@@ -75,13 +75,42 @@ export function MiniScores({ quality, popularity, overall }: { quality: number |
       )}
       <span title="Popularity: do the people who find it use it">
         <span className="text-muted mr-1">Popularity</span>
-        <span className={`font-semibold ${scoreClass(popularity)}`}><WordIcon word={popularityWord(popularity)} size="1em" className="inline-block align-[-0.15em] mr-1" />{popularity ?? "?"}<span className="text-muted font-normal">/100</span></span>
+        <span className={`font-semibold ${scoreClass(popularity)}`}>{popularity ?? "?"}<span className="text-muted font-normal">/100</span></span>
       </span>
       <span className="text-line">·</span>
       <span title="Quality: real, maintained work by more than one person over time">
         <span className="text-muted mr-1">Quality</span>
-        <span className={`font-semibold ${scoreClass(quality)}`}><WordIcon word={qualityWord(quality)} size="1em" className="inline-block align-[-0.15em] mr-1" />{quality ?? "?"}<span className="text-muted font-normal">/100</span></span>
+        <span className={`font-semibold ${scoreClass(quality)}`}>{quality ?? "?"}<span className="text-muted font-normal">/100</span></span>
       </span>
+    </div>
+  );
+}
+
+/**
+ * The verdict as two aligned columns, one per axis: the big word on top, its score lined up directly underneath.
+ * Used on list rows so "Fringe" sits over "Popularity 0/100" and "Slop" over "Quality 0/100".
+ */
+export function VerdictColumns({ quality, popularity, align = "start", className = "" }: { quality: number | null | undefined; popularity: number | null | undefined; align?: "start" | "end"; className?: string }) {
+  const cells = [
+    { label: "Popularity", title: "Popularity: do the people who find it use it", value: popularity, word: popularityWord(popularity) },
+    { label: "Quality", title: "Quality: real, maintained work by more than one person over time", value: quality, word: qualityWord(quality) },
+  ];
+  const side = align === "end" ? "lg:items-end lg:text-right" : "";
+  return (
+    <div className={`grid grid-cols-2 gap-x-5 sm:gap-x-8 ${className}`}>
+      {cells.map((c) => (
+        <div key={c.label} className={`flex flex-col items-start gap-2 min-w-0 ${side}`} title={c.title}>
+          <div className={`display text-4xl sm:text-5xl lg:text-6xl leading-none flex items-center gap-2 whitespace-nowrap ${scoreClass(c.value)}`}>
+            <WordIcon word={c.word} size="0.8em" className="shrink-0" />
+            <span>{c.word}</span>
+          </div>
+          <div className="text-xs sm:text-sm tabular-nums whitespace-nowrap">
+            <span className="text-muted">{c.label}</span>{" "}
+            <span className={`font-semibold ${scoreClass(c.value)}`}>{c.value ?? "?"}</span>
+            <span className="text-muted">/100</span>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
