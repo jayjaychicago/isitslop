@@ -16,7 +16,7 @@ auth.get('/auth/github', async (c) => {
   const url = new URL('https://github.com/login/oauth/authorize');
   url.searchParams.set('client_id', c.env.GITHUB_APP_CLIENT_ID!);
   // The GitHub App has /v1/github/callback registered as its callback URL.
-  url.searchParams.set('redirect_uri', `${new URL(c.req.url).origin}/v1/github/callback`);
+  url.searchParams.set('redirect_uri', `${c.env.OAUTH_CALLBACK_ORIGIN}/v1/github/callback`);
   url.searchParams.set('state', state);
   return c.redirect(url.toString(), 302);
 });

@@ -1,4 +1,4 @@
-export const API = (process.env.NEXT_PUBLIC_API_URL ?? "https://api.isitslop.org/v1").replace(/\/$/, "");
+export const API = (process.env.NEXT_PUBLIC_API_URL ?? "https://internalapi.isitslop.org/v1").replace(/\/$/, "");
 
 /** `${popularity}_${quality}`: fringe|popular|unknown _ slop|craft|unknown */
 export type Verdict = string;
@@ -32,7 +32,7 @@ export type Grade = {
   overall: number | null;
   verdict: Verdict;
   qualityBreakdown: { score: number | null; signals: Signal[]; repo: string | null; version: string; note?: string };
-  popularityInput: { provider?: string; visitors?: number; returning?: number; returningRate?: number; window?: string; note: string } | null;
+  popularityInput: { provider?: string; visitors?: number; returning?: number; returningRate?: number; window?: string; property?: string; note: string } | null;
   heuristicsVersion: string;
   createdAt: string;
 };

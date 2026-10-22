@@ -24,7 +24,7 @@ google.get('/google/login', async (c) => {
   const state = await signState(c.env, { entry: e.id, nonce: randomToken(8), google: true });
   const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
   url.searchParams.set('client_id', c.env.GOOGLE_CLIENT_ID);
-  url.searchParams.set('redirect_uri', `${new URL(c.req.url).origin}/v1/google/callback`);
+  url.searchParams.set('redirect_uri', `${c.env.OAUTH_CALLBACK_ORIGIN}/v1/google/callback`);
   url.searchParams.set('response_type', 'code');
   url.searchParams.set('scope', SCOPE);
   url.searchParams.set('access_type', 'offline');
@@ -54,7 +54,7 @@ google.get('/google/callback', async (c) => {
   const r = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ code, client_id: c.env.GOOGLE_CLIENT_ID!, client_secret: c.env.GOOGLE_CLIENT_SECRET!, redirect_uri: `${new URL(c.req.url).origin}/v1/google/callback`, grant_type: 'authorization_code' }),
+    body: new URLSearchParams({ code, client_id: c.env.GOOGLE_CLIENT_ID!, client_secret: c.env.GOOGLE_CLIENT_SECRET!, redirect_uri: `${c.env.OAUTH_CALLBACK_ORIGIN}/v1/google/callback`, grant_type: 'authorization_code' }),
   });
   const t = (await r.json().catch(() => ({}))) as { access_token?: string; refresh_token?: string; error_description?: string };
   if (!t.access_token || !t.refresh_token) return back(e.id, { google: 'error', detail: t.error_description ?? 'token exchange failed (no refresh token: revoke the app at myaccount.google.com/permissions and retry)' });

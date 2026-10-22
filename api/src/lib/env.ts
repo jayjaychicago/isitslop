@@ -4,6 +4,7 @@ export type Env = {
   /** Single fixed key for the external score API (GET /v1/score). Proxied by the operator; self-service keys later. */
   API_KEY?: string;
   PUBLIC_SITE_URL: string;
+  OAUTH_CALLBACK_ORIGIN: string;
   AWS_ACCESS_KEY_ID?: string;
   AWS_SECRET_ACCESS_KEY?: string;
   AWS_REGION?: string;

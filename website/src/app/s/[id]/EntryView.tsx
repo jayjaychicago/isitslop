@@ -11,6 +11,7 @@ export function EntryView({ id }: { id: string }) {
   const [err, setErr] = useState<string | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
   const [gaPick, setGaPick] = useState<{ id: string; name: string }[] | null>(null);
+  const [detail, setDetail] = useState<"quality" | "popularity" | null>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -69,6 +70,8 @@ export function EntryView({ id }: { id: string }) {
           value={grade?.quality ?? null}
           sub={grade ? grade.qualityBreakdown.note ?? `Read from ${grade.qualityBreakdown.repo}, rules v${grade.heuristicsVersion}` : "Not graded yet"}
           big
+          onClick={grade ? () => setDetail(detail === "quality" ? null : "quality") : undefined}
+          open={detail === "quality"}
         />
         <ScoreTile
           label="Popularity"
@@ -76,6 +79,8 @@ export function EntryView({ id }: { id: string }) {
           value={grade?.popularity ?? null}
           sub={grade ? grade.popularityInput?.note ?? "Google Analytics not connected: unknown." : "Not graded yet"}
           big
+          onClick={grade ? () => setDetail(detail === "popularity" ? null : "popularity") : undefined}
+          open={detail === "popularity"}
         />
         <div className="card p-5 sm:p-6 flex flex-col justify-center gap-2">
           <div className="text-xs uppercase tracking-wider text-muted font-semibold">Verdict</div>
@@ -86,7 +91,8 @@ export function EntryView({ id }: { id: string }) {
         </div>
       </div>
 
-      {grade && <Breakdown grade={grade} />}
+      {grade && detail === "quality" && <QualityDetails grade={grade} />}
+      {grade && detail === "popularity" && <PopularityDetails grade={grade} />}
 
       <OwnerPanel key={gaPick ? "pick" : "panel"} entry={entry} grade={grade} onChange={reload} gaPick={gaPick} initialTab={gaPick ? "analytics" : undefined} />
 
@@ -144,22 +150,20 @@ export function EntryView({ id }: { id: string }) {
   );
 }
 
-function Breakdown({ grade }: { grade: Grade }) {
-  const [open, setOpen] = useState(false);
+function QualityDetails({ grade }: { grade: Grade }) {
   const s = grade.qualityBreakdown.signals;
-  if (!s.length) return null;
   return (
-    <section className="mt-6">
-      <button className="btn btn-ghost text-sm" onClick={() => setOpen(!open)}>
-        {open ? "Hide" : "Show"} how the Quality score was computed
-      </button>
-      {open && (
-        <ul className="card mt-3 divide-y divide-line">
+    <section className="mt-4">
+      <div className="text-xs uppercase tracking-wider text-muted font-semibold mb-2">Quality subscores</div>
+      {s.length === 0 ? (
+        <div className="card p-4 text-sm text-ink-2">{grade.qualityBreakdown.note ?? "No repository was read."}</div>
+      ) : (
+        <ul className="card divide-y divide-line">
           {s.map((sig) => {
             const pts = Math.round(sig.weight * sig.score);
             return (
-              <li key={sig.id} className="p-4 grid sm:grid-cols-[8rem_1fr_5rem] gap-2 items-start">
-                <div className="font-mono text-sm">{sig.id}</div>
+              <li key={sig.id} className="p-4 grid sm:grid-cols-[8rem_1fr_6rem] gap-2 items-start">
+                <div className="font-mono text-sm capitalize">{sig.id.replace(/_/g, " ")}</div>
                 <div>
                   <div className="text-sm text-ink-2">{sig.description}</div>
                   {sig.evidence.length > 0 && (
@@ -171,19 +175,62 @@ function Breakdown({ grade }: { grade: Grade }) {
                   )}
                 </div>
                 <div className="text-right tabular-nums font-semibold text-ink">
-                  +{pts} <span className="text-muted font-normal">/ {sig.weight}</span>
+                  {pts} <span className="text-muted font-normal">/ {sig.weight}</span>
                 </div>
               </li>
             );
           })}
-          {grade.qualityBreakdown.repo && (
-            <li className="p-3 text-xs text-muted">Repository read: {grade.qualityBreakdown.repo}</li>
-          )}
-          <li className="p-3 text-xs text-muted">
-            Think a rule misfired? Rules are public code. <Link href="/contribute" className="underline">Change them for everyone</Link>, or file an appeal below.
+          <li className="p-3 text-xs text-muted flex flex-wrap justify-between gap-2">
+            <span>Repository read: {grade.qualityBreakdown.repo}, rules v{grade.heuristicsVersion}.</span>
+            <span>Think a rule misfired? <Link href="/contribute" className="underline">Change it for everyone</Link>, or appeal below.</span>
           </li>
         </ul>
       )}
+    </section>
+  );
+}
+
+function PopularityDetails({ grade }: { grade: Grade }) {
+  const p = grade.popularityInput;
+  if (!p || p.visitors === undefined) {
+    return (
+      <section className="mt-4">
+        <div className="text-xs uppercase tracking-wider text-muted font-semibold mb-2">Popularity subscores</div>
+        <div className="card p-4 text-sm text-ink-2">{p?.note ?? "Google Analytics was not connected when this grade was computed."}</div>
+      </section>
+    );
+  }
+  const visitors = p.visitors ?? 0;
+  const returning = p.returning ?? 0;
+  const rate = visitors ? returning / visitors : 0;
+  // Mirrors api/src/heuristics/popularity.ts: returning rate bands (weight 0.55) and reach bands (weight 0.45).
+  const band = (x: number, pts: [number, number][]) => {
+    if (x <= pts[0][0]) return pts[0][1];
+    for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1]; const [x1, y1] = pts[i]; if (x <= x1) return y0 + ((x - x0) / (x1 - x0)) * (y1 - y0); }
+    return pts[pts.length - 1][1];
+  };
+  const returnPts = Math.round(55 * band(rate, [[0, 0], [0.1, 0.3], [0.25, 0.6], [0.4, 0.85], [0.6, 1]]));
+  const reachPts = Math.round(45 * band(Math.log10(Math.max(1, visitors)), [[2, 0], [3, 0.4], [4, 0.7], [5, 1]]));
+  const rows: [string, string, string, number, number][] = [
+    ["returning", "People who came back: returning active users as a share of all active users in the last 30 days.", `${returning.toLocaleString()} of ${visitors.toLocaleString()} (${(rate * 100).toFixed(1)}%)`, returnPts, 55],
+    ["reach", "How many people at all: log of active users in the last 30 days. 100 is zero, 1,000 is 40%, 10,000 is 70%, 100,000 is full.", `${visitors.toLocaleString()} active users`, reachPts, 45],
+  ];
+  return (
+    <section className="mt-4">
+      <div className="text-xs uppercase tracking-wider text-muted font-semibold mb-2">Popularity subscores</div>
+      <ul className="card divide-y divide-line">
+        {rows.map(([id, desc, ev, pts, w]) => (
+          <li key={id} className="p-4 grid sm:grid-cols-[8rem_1fr_6rem] gap-2 items-start">
+            <div className="font-mono text-sm capitalize">{id}</div>
+            <div>
+              <div className="text-sm text-ink-2">{desc}</div>
+              <div className="mt-1"><span className="text-xs bg-paper border border-line rounded px-1.5 py-0.5">{ev}</span></div>
+            </div>
+            <div className="text-right tabular-nums font-semibold text-ink">{pts} <span className="text-muted font-normal">/ {w}</span></div>
+          </li>
+        ))}
+        <li className="p-3 text-xs text-muted">Read from Google Analytics{p.property ? ` (${p.property})` : ""}, last 30 days. Bands live in <code>api/src/heuristics/popularity.ts</code>.</li>
+      </ul>
     </section>
   );
 }
