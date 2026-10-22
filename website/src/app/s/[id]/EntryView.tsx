@@ -2,7 +2,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { api, entryLabel, verdictClass, verdictLabel, type EntryDetail, type Grade } from "@/lib/api";
+import { api, verdictClass, verdictLabel, type EntryDetail, type Grade } from "@/lib/api";
 import { ScoreTile, VerdictBadge } from "@/components/Score";
 import { OwnerPanel } from "./OwnerPanel";
 
@@ -49,26 +49,20 @@ export function EntryView({ id }: { id: string }) {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="text-xs uppercase tracking-wider text-muted font-semibold">{entry.kind === "github" ? (entry.repoPrivate ? "Private repository" : "GitHub repository") : "Website"}</div>
-      <h1 className={`display text-5xl sm:text-7xl leading-[0.95] mt-1 ${grade ? verdictClass(grade.verdict).split(" ")[0] : "text-muted"}`}>
-        {grade ? `${verdictLabel(grade.verdict)}.` : entry.verified ? "Not graded yet." : "Unclaimed."}
+      <h1 className="display text-5xl sm:text-7xl leading-[0.95] mt-1 break-words">
+        {entry.url ? <a href={entry.url} target="_blank" rel="noreferrer nofollow">{entry.url.replace(/^https?:\/\//, "")}</a> : "Private repository"}
       </h1>
-      <div className="mt-4 text-lg">
-        <span className="font-medium">{entryLabel(entry)}</span>
-        {entry.url && (
-          <>
-            {" "}·{" "}
-            <a href={entry.url} target="_blank" rel="noreferrer nofollow" className="text-ink-2 underline break-all">{entry.url.replace(/^https?:\/\//, "")}</a>
-          </>
-        )}
+      <div className="mt-3 text-lg text-ink-2">
+        {entry.title && entry.url && <span>{entry.title}</span>}
         {entry.repoUrl && (
-          <span className="text-ink-2"> · code: <a href={entry.repoUrl} target="_blank" rel="noreferrer nofollow" className="underline break-all">{entry.repoUrl.replace(/^https?:\/\/github\.com\//, "")}</a></span>
+          <span>{entry.title ? " · " : ""}code: <a href={entry.repoUrl} target="_blank" rel="noreferrer nofollow" className="underline break-all">{entry.repoUrl.replace(/^https?:\/\/github\.com\//, "")}</a></span>
         )}
-        {entry.kind === "site" && entry.repoPrivate && <span className="text-muted"> · private repository linked</span>}
+        {entry.kind === "site" && entry.repoPrivate && <span className="text-muted">{entry.title ? " · " : ""}private repository linked</span>}
       </div>
 
       {flash && <div className="mt-4 card p-3 text-sm">{flash}</div>}
 
-      <div className="grid sm:grid-cols-2 gap-4 mt-8">
+      <div className="grid sm:grid-cols-[1fr_1fr_1.4fr] gap-4 mt-8">
         <ScoreTile
           label="Quality"
           question="Is this real, maintained work by more than one person over time? Read from the repository."
@@ -83,6 +77,13 @@ export function EntryView({ id }: { id: string }) {
           sub={grade ? grade.popularityInput?.note ?? "Google Analytics not connected: unknown." : "Not graded yet"}
           big
         />
+        <div className="card p-5 sm:p-6 flex flex-col justify-center gap-2">
+          <div className="text-xs uppercase tracking-wider text-muted font-semibold">Verdict</div>
+          <div className={`display text-4xl sm:text-5xl leading-[1.05] ${grade ? verdictClass(grade.verdict).split(" ")[0] : "text-muted"}`}>
+            {grade ? verdictLabel(grade.verdict) : entry.verified ? "Not graded yet" : "Unclaimed"}
+          </div>
+          <div className="text-sm text-ink-2">Below 50 on quality is Slop, above is Craft. Below 50 on popularity is Fringe, above is Popular.</div>
+        </div>
       </div>
 
       {grade && <Breakdown grade={grade} />}

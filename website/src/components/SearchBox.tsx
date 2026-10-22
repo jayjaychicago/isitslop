@@ -69,14 +69,17 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
         )}
         {items.map((it) => (
           <li key={it.id}>
-            <Link href={`/s/${it.id}`} className="flex items-center justify-between gap-4 p-4 hover:bg-paper transition-colors">
+            <Link href={`/s/${it.id}`} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-6 p-4 hover:bg-paper transition-colors">
               <div className="min-w-0">
+                <div className="display text-3xl leading-tight truncate">{it.url ? it.url.replace(/^https?:\/\//, "") : "Private repository"}</div>
+                {it.title && it.url && <div className="text-sm text-ink-2 truncate">{it.title}</div>}
+              </div>
+              <div className="shrink-0 flex flex-col sm:items-end gap-1">
                 <div className={`display text-2xl leading-tight ${it.grade ? verdictClass(it.grade.verdict).split(" ")[0] : "text-muted"}`}>
                   {it.grade ? verdictLabel(it.grade.verdict) : it.verified ? "Not graded yet" : "Unclaimed"}
                 </div>
-                <div className="text-sm text-ink-2 truncate">{entryLabel(it)}{it.url && it.title ? <span className="text-muted"> · {it.url.replace(/^https?:\/\//, "")}</span> : null}</div>
+                {it.grade && <MiniScores quality={it.grade.quality} popularity={it.grade.popularity} />}
               </div>
-              {it.grade && <div className="shrink-0"><MiniScores quality={it.grade.quality} popularity={it.grade.popularity} /></div>}
             </Link>
           </li>
         ))}

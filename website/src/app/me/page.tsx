@@ -1,8 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useSession } from "@/components/Session";
-import { entryLabel, signInUrl, verdictLabel } from "@/lib/api";
-import { VerdictBadge } from "@/components/Score";
+import { signInUrl, verdictLabel } from "@/lib/api";
 
 export default function MePage() {
   const { me } = useSession();
@@ -26,10 +25,10 @@ export default function MePage() {
           <li key={e.id}>
             <Link href={`/s/${e.id}`} className="flex items-center justify-between gap-4 p-4 hover:bg-paper">
               <div className="min-w-0">
-                <div className="display text-2xl leading-tight">{e.grade ? verdictLabel(e.grade.verdict) : "Not graded yet"}</div>
-                <div className="text-sm text-ink-2 truncate">{entryLabel(e)}</div>
+                <div className="display text-3xl leading-tight truncate">{e.url ? e.url.replace(/^https?:\/\//, "") : "Private repository"}</div>
+                {e.title && e.url && <div className="text-sm text-ink-2 truncate">{e.title}</div>}
               </div>
-              {e.grade && <VerdictBadge verdict={e.grade.verdict} size="sm" />}
+              <div className="display text-2xl shrink-0 text-ink-2">{e.grade ? verdictLabel(e.grade.verdict) : e.verified ? "Not graded yet" : "Unclaimed"}</div>
             </Link>
           </li>
         ))}
