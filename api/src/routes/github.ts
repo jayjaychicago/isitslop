@@ -27,10 +27,12 @@ github.get('/github/login', async (c) => {
     ownerKeyHash = e.owner_key_hash;
   }
   const state = await signState(c.env, { entry: e.id, ownerKeyHash, nonce: randomToken(8) });
-  // The app's install page handles both cases: install on an account, or pick an account where it is
-  // already installed. With "request user authorization during installation" on, GitHub then sends the
-  // user to our callback with a code. One click from isitslop.org, no separate authorize step.
-  const url = new URL(`https://github.com/apps/${c.env.GITHUB_APP_SLUG ?? 'is-it-slop'}/installations/new`);
+  // Authorize always comes back to our callback, installed or not. If the token then cannot see the
+  // repo, the callback or the link step says so and points at the install page. Installing is a
+  // separate, one-time step per account.
+  const url = new URL('https://github.com/login/oauth/authorize');
+  url.searchParams.set('client_id', c.env.GITHUB_APP_CLIENT_ID!);
+  url.searchParams.set('redirect_uri', `${new URL(c.req.url).origin}/v1/github/callback`);
   url.searchParams.set('state', state);
   return c.redirect(url.toString(), 302);
 });
