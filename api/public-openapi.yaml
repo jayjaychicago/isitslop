@@ -1,0 +1,67 @@
+openapi: 3.1.0
+info:
+  title: Is it slop?
+  version: 1.0.0
+  description: |
+    The current sloppiness score of a URL. One call. Scores are opinions produced by public rules
+    (https://isitslop.org/methodology), requested by verified owners under https://isitslop.org/terms.
+
+    Quality: real, maintained work by more than one person over time, read from the repository.
+    Popularity: do the people who find it use it, read from Google Analytics.
+    The verdict is two words, one per axis: Fringe or Popular, Slop or Craft. Unknown when nothing is connected.
+  contact: { url: "https://github.com/jayjaychicago/isitslop" }
+  license: { name: MIT }
+servers:
+  - url: https://internalapi.isitslop.org/v1
+paths:
+  /score:
+    get:
+      operationId: getScore
+      summary: Get the score of a URL
+      description: Looks up a website or GitHub repository in the index and returns its latest grade. Nothing is stored.
+      parameters:
+        - name: url
+          in: query
+          required: true
+          description: A website (example.com) or a repository (github.com/owner/repo).
+          schema: { type: string }
+          example: apiblaze.com
+      responses:
+        "200":
+          description: The URL is in the index
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [found, verdict, label, page]
+                properties:
+                  found: { type: boolean, const: true }
+                  url: { type: [string, "null"], description: Null for private repositories; their URL is never published. }
+                  quality: { type: [integer, "null"], minimum: 0, maximum: 100, description: Null when no repository is connected. }
+                  popularity: { type: [integer, "null"], minimum: 0, maximum: 100, description: Null when no analytics is connected. }
+                  verdict: { type: string, description: "`${popularity}_${quality}`: fringe|popular|unknown _ slop|craft|unknown", examples: [fringe_craft] }
+                  label: { type: string, description: The verdict in words., examples: ["Fringe Craft", "Craft of unknown popularity"] }
+                  gradedAt: { type: [string, "null"], format: date-time }
+                  page: { type: string, format: uri, description: The public entry page on isitslop.org. }
+              example:
+                found: true
+                url: https://apiblaze.com
+                quality: 79
+                popularity: 32
+                verdict: fringe_craft
+                label: Fringe Craft
+                gradedAt: "2026-10-22T03:34:47.342Z"
+                page: https://isitslop.org/s/3eb94e41-304d-4bdd-8064-4db4fca62fb3
+        "404":
+          description: The URL is not in the index
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  found: { type: boolean, const: false }
+                  url: { type: string }
+                  label: { type: string, const: Not in the index }
+        "400":
+          description: Not a usable URL
+          content: { application/json: { schema: { type: object, properties: { error: { type: string } } } } }
