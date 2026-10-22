@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import type { Env } from '../lib/env.ts';
 import { db } from '../lib/db.ts';
 import { randomToken } from '../lib/crypto.ts';
@@ -15,12 +15,13 @@ auth.get('/auth/github', async (c) => {
   const state = await signState(c.env, { login: true, ret: ret.startsWith('/') ? ret : '/', nonce: randomToken(8) });
   const url = new URL('https://github.com/login/oauth/authorize');
   url.searchParams.set('client_id', c.env.GITHUB_APP_CLIENT_ID!);
-  url.searchParams.set('redirect_uri', `${new URL(c.req.url).origin}/v1/auth/github/callback`);
+  // The GitHub App has /v1/github/callback registered as its callback URL.
+  url.searchParams.set('redirect_uri', `${new URL(c.req.url).origin}/v1/github/callback`);
   url.searchParams.set('state', state);
   return c.redirect(url.toString(), 302);
 });
 
-auth.get('/auth/github/callback', async (c) => {
+const callback = async (c: Context<{ Bindings: Env }>) => {
   const state = await verifyState(c.env, c.req.query('state') ?? '');
   const code = c.req.query('code') ?? '';
   const site = c.env.PUBLIC_SITE_URL;
@@ -41,7 +42,9 @@ auth.get('/auth/github/callback', async (c) => {
   `) as User[];
   await createSession(c, sql, rows[0].id);
   return c.redirect(`${site}${state.ret}`, 302);
-});
+};
+auth.get('/github/callback', callback);
+auth.get('/auth/github/callback', callback);
 
 auth.post('/auth/logout', async (c) => {
   await destroySession(c, db(c.env.DATABASE_URL));

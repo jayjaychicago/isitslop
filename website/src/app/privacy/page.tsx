@@ -21,10 +21,12 @@ export default function Privacy() {
         <li><strong>Grades and appeals.</strong> The scores, the signal breakdown with its evidence (counts and dates), the aggregate analytics numbers, and any appeal text. All of this is public.</li>
         <li><strong>IP addresses.</strong> Used transiently for rate limiting, keyed by a per-feature bucket that is overwritten as windows expire. Not joined to entries, grades or appeals.</li>
         <li><strong>Terms acceptance.</strong> The terms version and timestamp of your acceptance, attached to your entry.</li>
+        <li><strong>Session cookie.</strong> If you sign in with GitHub, a random session ID in a cookie on isitslop.org, valid 30 days, deleted on sign-out.</li>
+        <li><strong>Website analytics.</strong> Google Analytics on isitslop.org records page views and the usual device and approximate-location data Google collects, under Google&apos;s policy. We see only aggregates.</li>
       </ul>
 
       <h2>2. What we do not collect</h2>
-      <p>No accounts, no passwords, no cookies set by us, no analytics scripts on the website, no advertising, no sale of data, no sharing of data with third parties beyond the processors in section 5.</p>
+      <p>No passwords, no advertising, no sale of data, no sharing of data with third parties beyond the processors in section 5. The website uses Google Analytics to count visits (we eat our own cooking: the site is graded on it). Google Analytics sets its own cookies under Google&apos;s policy; the only cookie we set ourselves is the sign-in session.</p>
 
       <h2>3. Google user data</h2>
       <p>
@@ -54,6 +56,7 @@ export default function Privacy() {
         <li><strong>Neon</strong> hosts the database, including the encrypted tokens.</li>
         <li><strong>Amazon Web Services (SES)</strong> sends verification emails, if you choose email verification.</li>
         <li><strong>GitHub</strong> and <strong>Google</strong> provide the repository and analytics data you authorise, under their own policies.</li>
+        <li><strong>Google Analytics</strong> measures traffic on this website.</li>
       </ul>
       <p>Each may keep its own operational logs (including IP addresses) under its own policy.</p>
 
