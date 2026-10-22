@@ -9,7 +9,7 @@ type StartResp = { verificationId: string; method: string; text: string; record?
 
 const INSTALL = "https://github.com/apps/is-it-slop/installations/new";
 
-export function OwnerPanel({ entry, grade, onChange, gaPick, initialTab }: { entry: Entry; grade: Grade | null; onChange: () => void; gaPick?: { id: string; name: string }[] | null; initialTab?: Tab }) {
+export function OwnerPanel({ entry, grade, onChange, gaPick, onGaPicked, initialTab }: { entry: Entry; grade: Grade | null; onChange: () => void; gaPick?: { id: string; name: string }[] | null; onGaPicked?: () => void; initialTab?: Tab }) {
   const { me, reload } = useSession();
   const user = me?.user ?? null;
   const isOwner = !!user && entry.ownerUserId === user.id;
@@ -55,7 +55,7 @@ export function OwnerPanel({ entry, grade, onChange, gaPick, initialTab }: { ent
       <div className="mt-5">
         {tab === "grade" && <RequestGrade entry={entry} user={user} onDone={onChange} />}
         {tab === "repo" && <LinkRepo entry={entry} onDone={onChange} />}
-        {tab === "analytics" && <Analytics entry={entry} onDone={onChange} gaPick={gaPick ?? null} />}
+        {tab === "analytics" && <Analytics entry={entry} onDone={onChange} gaPick={gaPick ?? null} onPicked={onGaPicked} />}
         {tab === "appeal" && <Appeal entry={entry} grade={grade} onDone={onChange} />}
         {tab === "verify" && (entry.kind === "github" ? <Claim entry={entry} onDone={onChange} /> : <VerifySite entry={entry} onDone={onChange} />)}
       </div>
@@ -212,15 +212,18 @@ function LinkRepo({ entry, onDone }: { entry: Entry; onDone: () => void }) {
   );
 }
 
-function Analytics({ entry, onDone, gaPick }: { entry: Entry; onDone: () => void; gaPick: { id: string; name: string }[] | null }) {
+function Analytics({ entry, onDone, gaPick, onPicked }: { entry: Entry; onDone: () => void; gaPick: { id: string; name: string }[] | null; onPicked?: () => void }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [picked, setPicked] = useState<string | null>(null);
   async function pick(g: { id: string; name: string }) {
     setBusy(true); setMsg(null);
     try {
       const r = await api<{ reading: { visitors: number; returning: number } }>(`/entries/${entry.id}/analytics`, { method: "POST", body: JSON.stringify({ propertyId: g.id, propertyName: g.name }) });
       setMsg(`Connected ${g.name}. Last 30 days: ${r.reading.visitors.toLocaleString()} active users, ${r.reading.returning.toLocaleString()} returning. Request a grade.`);
+      setPicked(g.name);
       onDone();
+      onPicked?.();
     } catch (e) { setMsg((e as Error).message); }
     setBusy(false);
   }
@@ -236,7 +239,9 @@ function Analytics({ entry, onDone, gaPick }: { entry: Entry; onDone: () => void
         Google and grant read-only access to Analytics; nothing is typed in and nothing is written. The connection is stored encrypted and removed when
         you disconnect or delete the entry. {entry.analyticsConnected ? "Currently connected." : "Nothing connected yet."}
       </p>
-      {gaPick && gaPick.length > 0 ? (
+      {picked ? (
+        <div className="text-ink-2">Connected: {picked}.</div>
+      ) : gaPick && gaPick.length > 0 ? (
         <div className="flex flex-col gap-2">
           <span className="text-ink-2">Pick the property for {entry.domain}:</span>
           {gaPick.map((g) => (

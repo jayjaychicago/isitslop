@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api, verdictClass, verdictLabel, type Entry, type GradeSummary } from "@/lib/api";
-import { MiniScores } from "./Score";
+import { api, type Entry, type GradeSummary } from "@/lib/api";
+import { MiniScores, VerdictWords } from "./Score";
 
 type Item = Entry & { grade: GradeSummary | null };
 
@@ -75,8 +75,8 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
                 {it.title && it.url && <div className="text-sm text-ink-2 truncate">{it.title}</div>}
               </div>
               <div className="shrink-0 flex flex-col sm:items-end gap-1">
-                <div className={`display text-2xl leading-tight ${it.grade ? verdictClass(it.grade.verdict).split(" ")[0] : "text-muted"}`}>
-                  {it.grade ? verdictLabel(it.grade.verdict) : it.verified ? "Not graded yet" : "Unclaimed"}
+                <div className="display text-2xl leading-tight">
+                  <VerdictWords verdict={it.grade?.verdict} fallback={it.verified ? "Not graded yet" : "Unclaimed"} />
                 </div>
                 {it.grade && <MiniScores quality={it.grade.quality} popularity={it.grade.popularity} />}
               </div>

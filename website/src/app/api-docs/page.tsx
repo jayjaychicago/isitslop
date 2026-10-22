@@ -6,7 +6,7 @@ export default function ApiDocs() {
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="display text-5xl">API</h1>
       <p className="mt-4 text-ink-2 leading-relaxed">
-        Everything the website does, curl can do. Base URL <code>{base}</code>. JSON in, JSON out. Reading needs nothing. Owner actions need the session cookie from GitHub sign-in, or the owner key a site verification returns. Rate limited per IP. Source on{" "}
+        Everything the website does, curl can do. Base URL <code>{base}</code>. JSON in, JSON out. Reading needs nothing. Owner actions need the session cookie from GitHub sign-in, or the owner key a site verification returns. Rate limited per IP. The OpenAPI spec is at <a className="underline" href="/internalopenapi.yaml">/internalopenapi.yaml</a>. Source on{" "}
         <a className="underline" href="https://github.com/jayjaychicago/isitslop/tree/main/api">GitHub</a>.
       </p>
 

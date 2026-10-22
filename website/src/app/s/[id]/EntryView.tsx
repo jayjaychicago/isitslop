@@ -2,8 +2,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { api, verdictClass, verdictLabel, type EntryDetail, type Grade } from "@/lib/api";
-import { ScoreTile, VerdictBadge, popularityWord, qualityWord } from "@/components/Score";
+import { api, type EntryDetail, type Grade } from "@/lib/api";
+import { ScoreTile, VerdictBadge, VerdictWords, popularityWord, qualityWord } from "@/components/Score";
 import { OwnerPanel } from "./OwnerPanel";
 
 export function EntryView({ id }: { id: string }) {
@@ -66,8 +66,8 @@ export function EntryView({ id }: { id: string }) {
       <div className="card mt-8 overflow-hidden">
         <div className="p-5 sm:p-6 border-b border-line">
           <div className="text-xs uppercase tracking-wider text-muted font-semibold">Verdict</div>
-          <div className={`display text-4xl sm:text-6xl leading-[1.05] mt-1 ${grade ? verdictClass(grade.verdict).split(" ")[0] : "text-muted"}`}>
-            {grade ? verdictLabel(grade.verdict) : entry.verified ? "Not graded yet" : "Unclaimed"}
+          <div className="display text-4xl sm:text-6xl leading-[1.05] mt-1">
+            <VerdictWords verdict={grade?.verdict} fallback={entry.verified ? "Not graded yet" : "Unclaimed"} />
           </div>
           {grade && <div className="text-sm text-muted mt-2">Two words, one per score below. The cut is 50 on each.</div>}
         </div>
@@ -96,7 +96,7 @@ export function EntryView({ id }: { id: string }) {
       {grade && detail === "quality" && <QualityDetails grade={grade} />}
       {grade && detail === "popularity" && <PopularityDetails grade={grade} />}
 
-      <OwnerPanel key={gaPick ? "pick" : "panel"} entry={entry} grade={grade} onChange={reload} gaPick={gaPick} initialTab={gaPick ? "analytics" : undefined} />
+      <OwnerPanel key={gaPick ? "pick" : "panel"} entry={entry} grade={grade} onChange={reload} gaPick={gaPick} onGaPicked={() => setGaPick(null)} initialTab={gaPick ? "analytics" : undefined} />
 
       <section className="mt-12">
         <h2 className="display text-3xl mb-3">Appeals</h2>

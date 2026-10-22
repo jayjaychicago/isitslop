@@ -1,5 +1,20 @@
 import { scoreClass, verdictClass, verdictLabel } from "@/lib/api";
 
+const WORD_CLASS: Record<string, string> = { slop: "text-slop", craft: "text-fresh", fringe: "text-mixed", popular: "text-fresh" };
+
+/** The verdict sentence with each axis word in its own colour: Slop red, Craft green, Fringe amber, Popular green. */
+export function VerdictWords({ verdict, fallback = "Not graded yet", className = "" }: { verdict: string | null | undefined; fallback?: string; className?: string }) {
+  if (!verdict) return <span className={`text-muted ${className}`}>{fallback}</span>;
+  const words = verdictLabel(verdict).split(" ");
+  return (
+    <span className={className}>
+      {words.map((w, i) => (
+        <span key={i} className={WORD_CLASS[w.toLowerCase()] ?? "text-muted"}>{w}{i < words.length - 1 ? " " : ""}</span>
+      ))}
+    </span>
+  );
+}
+
 export function VerdictBadge({ verdict, size = "md" }: { verdict: string | null | undefined; size?: "sm" | "md" | "lg" }) {
   const pad = size === "lg" ? "px-4 py-1.5 text-base" : size === "sm" ? "px-2 py-0.5 text-xs" : "px-3 py-1 text-sm";
   return <span className={`inline-flex items-center rounded-full font-semibold ${pad} ${verdictClass(verdict)}`}>{verdictLabel(verdict)}</span>;

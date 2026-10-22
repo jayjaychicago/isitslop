@@ -1,0 +1,425 @@
+openapi: 3.1.0
+info:
+  title: Is it slop? internal API
+  version: 0.6.1
+  description: |
+    The API behind isitslop.org. Served from a Cloudflare Worker at https://internalapi.isitslop.org/v1.
+
+    Two kinds of callers:
+    - **Readers** need nothing. Entries, grades, appeals and the methodology are public.
+    - **Owners** act on their own entries. On the website this is a session cookie set by GitHub sign-in
+      (`GET /auth/github`). From scripts, a site owner can instead send the owner key returned by a successful
+      site verification as `Authorization: Bearer isk_...`.
+    - `GET /score` is the one-call lookup for integrations. It needs the fixed API key (`Authorization: Bearer`
+      or `x-api-key`). The operator proxies it; self-service keys come later.
+
+    Scores: quality and popularity, each 0 to 100 or null when nothing is connected. Verdict is
+    `${popularity}_${quality}` with popularity in fringe | popular | unknown and quality in slop | craft | unknown.
+  contact:
+    url: https://github.com/jayjaychicago/isitslop
+  license:
+    name: MIT
+servers:
+  - url: https://internalapi.isitslop.org/v1
+tags:
+  - { name: public, description: No auth }
+  - { name: owner, description: Session cookie from GitHub sign-in, or Bearer owner key where noted }
+  - { name: integration, description: Fixed API key }
+  - { name: admin, description: Bearer admin token }
+
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: isitslop_session
+      description: Set by GET /auth/github on .isitslop.org.
+    ownerKey:
+      type: http
+      scheme: bearer
+      description: Owner key returned by a successful site verification (isk_...).
+    apiKey:
+      type: http
+      scheme: bearer
+      description: Fixed API key for GET /score. Also accepted as the x-api-key header.
+    admin:
+      type: http
+      scheme: bearer
+      description: Admin token.
+  schemas:
+    Error:
+      type: object
+      properties: { error: { type: string } }
+      required: [error]
+    Verdict:
+      type: string
+      description: "`${popularity}_${quality}`"
+      examples: [fringe_craft, popular_craft, unknown_slop, fringe_unknown]
+    Entry:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: [string, "null"], description: Null for private repositories; their URL is never published. }
+        kind: { type: string, enum: [site, github] }
+        domain: { type: string }
+        title: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        verified: { type: boolean }
+        verifiedAt: { type: [string, "null"], format: date-time }
+        repoUrl: { type: [string, "null"], description: Linked repository of a site entry; null if none or private. }
+        repoPrivate: { type: boolean }
+        analyticsConnected: { type: boolean }
+        ownerUserId: { type: [string, "null"] }
+    GradeSummary:
+      type: object
+      properties:
+        quality: { type: [integer, "null"], minimum: 0, maximum: 100 }
+        popularity: { type: [integer, "null"], minimum: 0, maximum: 100 }
+        overall: { type: [integer, "null"] }
+        verdict: { $ref: "#/components/schemas/Verdict" }
+        createdAt: { type: string, format: date-time }
+    Signal:
+      type: object
+      properties:
+        id: { type: string }
+        description: { type: string }
+        weight: { type: integer }
+        score: { type: number, minimum: 0, maximum: 1 }
+        evidence: { type: array, items: { type: string } }
+    Grade:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        quality: { type: [integer, "null"] }
+        popularity: { type: [integer, "null"] }
+        overall: { type: [integer, "null"] }
+        verdict: { $ref: "#/components/schemas/Verdict" }
+        qualityBreakdown:
+          type: object
+          properties:
+            score: { type: [integer, "null"] }
+            signals: { type: array, items: { $ref: "#/components/schemas/Signal" } }
+            repo: { type: [string, "null"], description: owner/name, or "private repository" }
+            version: { type: string }
+            note: { type: string }
+        popularityInput:
+          type: [object, "null"]
+          properties:
+            provider: { type: string, enum: [ga4] }
+            visitors: { type: integer, description: Active users, last 30 days }
+            returning: { type: integer, description: Returning active users, last 30 days }
+            returningRate: { type: number }
+            window: { type: string, examples: [30d] }
+            property: { type: string }
+            note: { type: string }
+        heuristicsVersion: { type: string }
+        createdAt: { type: string, format: date-time }
+    Appeal:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        gradeId: { type: [string, "null"] }
+        text: { type: string }
+        status: { type: string, enum: [open, accepted, rejected] }
+        response: { type: [string, "null"] }
+        createdAt: { type: string, format: date-time }
+        resolvedAt: { type: [string, "null"], format: date-time }
+
+paths:
+  /health:
+    get:
+      tags: [public]
+      summary: Liveness
+      responses:
+        "200": { description: OK, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+
+  /methodology:
+    get:
+      tags: [public]
+      summary: What the score is made of, generated from the code
+      responses:
+        "200":
+          description: Rules, weights, bands and thresholds currently in force
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  heuristicsVersion: { type: string }
+                  termsVersion: { type: string }
+                  quality:
+                    type: object
+                    properties:
+                      question: { type: string }
+                      source: { type: string }
+                      maxPoints: { type: integer }
+                      rules: { type: array, items: { type: object, properties: { id: { type: string }, description: { type: string }, weight: { type: integer }, kind: { type: string, enum: [points, multiplier] } } } }
+                  popularity:
+                    type: object
+                    properties:
+                      question: { type: string }
+                      version: { type: string }
+                      source: { type: string }
+                      weights: { type: object, properties: { returning: { type: number }, reach: { type: number } } }
+                      returnBands: { type: array, items: { type: array, items: { type: number } } }
+                      reachBands: { type: array, items: { type: array, items: { type: number } } }
+                      missing: { type: string }
+                      caveat: { type: string }
+                  verdict:
+                    type: object
+                    properties:
+                      rule: { type: string }
+                      thresholds: { type: object, properties: { craft: { type: integer }, popular: { type: integer } } }
+
+  /score:
+    get:
+      tags: [integration]
+      summary: The current score of a URL, nothing else
+      security: [{ apiKey: [] }]
+      parameters:
+        - { name: url, in: query, required: true, schema: { type: string }, example: apiblaze.com }
+      responses:
+        "200":
+          description: Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  found: { type: boolean, const: true }
+                  url: { type: [string, "null"] }
+                  quality: { type: [integer, "null"] }
+                  popularity: { type: [integer, "null"] }
+                  verdict: { $ref: "#/components/schemas/Verdict" }
+                  label: { type: string, examples: ["Fringe Craft", "Craft of unknown popularity"] }
+                  gradedAt: { type: [string, "null"], format: date-time }
+                  page: { type: string, format: uri }
+        "404":
+          description: Not in the index
+          content: { application/json: { schema: { type: object, properties: { found: { type: boolean, const: false }, url: { type: string }, label: { type: string } } } } }
+        "401": { description: Missing or invalid API key, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+
+  /entries:
+    get:
+      tags: [public]
+      summary: Search the index
+      parameters:
+        - { name: q, in: query, schema: { type: string }, description: Matches domain, URL and title. Private repository URLs are never matched. }
+        - { name: limit, in: query, schema: { type: integer, default: 20, maximum: 50 } }
+        - { name: offset, in: query, schema: { type: integer, default: 0 } }
+      responses:
+        "200":
+          description: Entries ranked exact domain, then prefix, then anything; graded before ungraded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: { type: array, items: { allOf: [{ $ref: "#/components/schemas/Entry" }, { type: object, properties: { grade: { oneOf: [{ $ref: "#/components/schemas/GradeSummary" }, { type: "null" }] } } }] } }
+                  limit: { type: integer }
+                  offset: { type: integer }
+    post:
+      tags: [public]
+      summary: Add a URL to the index (does not grade it)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [url], properties: { url: { type: string, examples: [example.com, "https://github.com/owner/repo"] } } } } }
+      responses:
+        "201": { description: The entry (existing or new), content: { application/json: { schema: { type: object, properties: { entry: { $ref: "#/components/schemas/Entry" } } } } } }
+        "400": { description: Not a usable URL, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+        "429": { description: Rate limited }
+
+  /entries/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [public]
+      summary: An entry with its latest grade, history and appeals
+      responses:
+        "200":
+          description: Entry detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entry: { $ref: "#/components/schemas/Entry" }
+                  grade: { oneOf: [{ $ref: "#/components/schemas/Grade" }, { type: "null" }] }
+                  history: { type: array, items: { allOf: [{ $ref: "#/components/schemas/GradeSummary" }, { type: object, properties: { id: { type: string }, heuristicsVersion: { type: string } } }] } }
+                  appeals: { type: array, items: { $ref: "#/components/schemas/Appeal" } }
+        "404": { description: Not found }
+    delete:
+      tags: [owner, admin]
+      summary: Remove an entry and everything attached to it
+      security: [{ session: [] }, { ownerKey: [] }, { admin: [] }]
+      responses:
+        "200": { description: Deleted, content: { application/json: { schema: { type: object, properties: { deleted: { type: string } } } } } }
+        "401": { description: Not the owner }
+
+  /preview:
+    get:
+      tags: [public]
+      summary: Dry-run the quality rules on a public repository (nothing stored)
+      parameters:
+        - { name: url, in: query, required: true, schema: { type: string }, example: github.com/honojs/hono }
+      responses:
+        "200": { description: Quality result and the collected facts }
+        "422": { description: Repository unreadable or GitHub rate limit }
+
+  /auth/github:
+    get:
+      tags: [owner]
+      summary: Sign in with GitHub (browser)
+      description: Redirects to GitHub. On return, sets the session cookie and redirects to `return` on the website.
+      parameters:
+        - { name: return, in: query, schema: { type: string, default: "/" } }
+      responses:
+        "302": { description: Redirect to GitHub }
+  /auth/logout:
+    post:
+      tags: [owner]
+      summary: End the session
+      security: [{ session: [] }]
+      responses:
+        "200": { description: OK }
+  /me:
+    get:
+      tags: [owner]
+      summary: Who am I and what do I own
+      security: [{ session: [] }]
+      responses:
+        "200":
+          description: Null user when not signed in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { type: [object, "null"], properties: { id: { type: string }, githubLogin: { type: string }, githubConnected: { type: boolean } } }
+                  entries: { type: array, items: { allOf: [{ $ref: "#/components/schemas/Entry" }, { type: object, properties: { grade: { oneOf: [{ $ref: "#/components/schemas/GradeSummary" }, { type: "null" }] } } }] } }
+
+  /entries/{id}/verify/start:
+    post:
+      tags: [owner]
+      summary: Start verifying a site (DNS TXT, well-known file, or email to the domain)
+      description: Sites only. Repositories are claimed with POST /entries/{id}/claim.
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [method], properties: { method: { type: string, enum: [dns, file, email] }, email: { type: string, description: "admin@, webmaster@, postmaster@ or hostmaster@ the domain (email method)" } } } } }
+      responses:
+        "201": { description: Instructions and a verificationId }
+        "400": { description: Bad method or repository entry }
+        "503": { description: Email not configured }
+  /entries/{id}/verify/check:
+    post:
+      tags: [owner]
+      summary: Check a pending verification
+      description: On success the signed-in user becomes the owner. An owner key is also returned for script use.
+      security: [{ session: [] }, {}]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [verificationId], properties: { verificationId: { type: string }, code: { type: string, description: 6-digit code (email method) } } } } }
+      responses:
+        "200":
+          description: Result
+          content: { application/json: { schema: { type: object, properties: { verified: { type: boolean }, detail: { type: string }, ownerKey: { type: string }, signedIn: { type: boolean }, entry: { $ref: "#/components/schemas/Entry" } } } } }
+  /entries/{id}/claim:
+    post:
+      tags: [owner]
+      summary: Claim a repository entry
+      description: The signed-in GitHub account must have push access to the repository, and the Is It Slop GitHub App must be installed on the account that owns it. Private repositories are fine; their URL is never published.
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: Claimed, content: { application/json: { schema: { type: object, properties: { entry: { $ref: "#/components/schemas/Entry" }, ownerKey: { type: string } } } } } }
+        "403": { description: No push access }
+        "422": { description: App not installed on that account }
+  /entries/{id}/repo:
+    post:
+      tags: [owner]
+      summary: Link a repository to a site entry (or unlink with repoUrl null)
+      security: [{ session: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, properties: { repoUrl: { type: [string, "null"] } } } } }
+      responses:
+        "200": { description: Updated entry }
+        "403": { description: No push access }
+        "422": { description: App not installed on that account }
+  /google/login:
+    get:
+      tags: [owner]
+      summary: Connect Google Analytics (browser)
+      description: Google sign-in with the read-only Analytics scope. Returns to the entry page; if the account has several GA4 properties the page shows a picker that calls POST /entries/{id}/analytics.
+      security: [{ session: [] }, { ownerKey: [] }]
+      parameters:
+        - { name: entry, in: query, required: true, schema: { type: string } }
+        - { name: ownerKey, in: query, schema: { type: string }, description: Alternative to the session }
+      responses:
+        "302": { description: Redirect to Google }
+  /entries/{id}/analytics:
+    post:
+      tags: [owner]
+      summary: Pick the GA4 property after Google sign-in
+      security: [{ session: [] }, { ownerKey: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [propertyId], properties: { propertyId: { type: string, pattern: "^[0-9]+$" }, propertyName: { type: string } } } } }
+      responses:
+        "200": { description: Connected, with the 30-day reading }
+        "422": { description: Google denied access or no data }
+        "428": { description: Sign in with Google first }
+    delete:
+      tags: [owner]
+      summary: Disconnect Google Analytics
+      security: [{ session: [] }, { ownerKey: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses:
+        "200": { description: OK }
+  /entries/{id}/grade:
+    post:
+      tags: [owner]
+      summary: Request a grade
+      description: Reads the repository with the owner's GitHub access and the connected Google Analytics property, runs the public rules, publishes the result. Sending acceptTerms true is agreement to https://isitslop.org/terms. At most 5 per entry per day.
+      security: [{ session: [] }, { ownerKey: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [acceptTerms], properties: { acceptTerms: { type: boolean, const: true } } } } }
+      responses:
+        "201": { description: The new grade, content: { application/json: { schema: { type: object, properties: { grade: { $ref: "#/components/schemas/Grade" } } } } } }
+        "400": { description: Terms not accepted }
+        "401": { description: Not the owner }
+        "403": { description: Entry not verified }
+        "422": { description: Repository or analytics could not be read }
+        "428": { description: Owner has no GitHub access token }
+        "429": { description: Daily limit }
+  /entries/{id}/appeals:
+    post:
+      tags: [owner]
+      summary: Appeal the latest grade (public)
+      security: [{ session: [] }, { ownerKey: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [text], properties: { text: { type: string, minLength: 20, maxLength: 4000 } } } } }
+      responses:
+        "201": { description: Filed, content: { application/json: { schema: { type: object, properties: { appeal: { $ref: "#/components/schemas/Appeal" } } } } } }
+        "409": { description: No grade to appeal }
+        "429": { description: At most 3 per entry per week }
+  /appeals/{id}/resolve:
+    post:
+      tags: [admin]
+      summary: Resolve an appeal with a public response
+      security: [{ admin: [] }]
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [status, response], properties: { status: { type: string, enum: [accepted, rejected] }, response: { type: string } } } } }
+      responses:
+        "200": { description: Resolved }
+        "401": { description: Unauthorized }

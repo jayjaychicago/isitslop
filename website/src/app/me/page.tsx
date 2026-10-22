@@ -1,7 +1,8 @@
 "use client";
 import Link from "next/link";
 import { useSession } from "@/components/Session";
-import { signInUrl, verdictLabel } from "@/lib/api";
+import { signInUrl } from "@/lib/api";
+import { VerdictWords } from "@/components/Score";
 
 export default function MePage() {
   const { me } = useSession();
@@ -28,7 +29,7 @@ export default function MePage() {
                 <div className="display text-3xl leading-tight truncate">{e.url ? e.url.replace(/^https?:\/\//, "") : "Private repository"}</div>
                 {e.title && e.url && <div className="text-sm text-ink-2 truncate">{e.title}</div>}
               </div>
-              <div className="display text-2xl shrink-0 text-ink-2">{e.grade ? verdictLabel(e.grade.verdict) : e.verified ? "Not graded yet" : "Unclaimed"}</div>
+              <div className="display text-2xl shrink-0"><VerdictWords verdict={e.grade?.verdict} fallback={e.verified ? "Not graded yet" : "Unclaimed"} /></div>
             </Link>
           </li>
         ))}
