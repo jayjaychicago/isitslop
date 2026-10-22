@@ -53,7 +53,7 @@ test('markdown README extraction', () => {
 test('people: bands, thresholds and validation', () => {
   assert.equal(band(0, [[0, 0], [1, 1]]), 0);
   assert.equal(band(2, [[0, 0], [1, 1]]), 1);
-  assert.equal(scorePeople({ visitors: 50, activated: 10, returned: 5 }).score, null);
+  assert.equal(scorePeople({ visitors: 50, activated: 10, returned: 5 }).score, 0);
   const strong = scorePeople({ visitors: 1000, activated: 120, returned: 80 });
   const weak = scorePeople({ visitors: 1000, activated: 3, returned: 0 });
   assert.ok(strong.score! >= 90, String(strong.score));
@@ -63,14 +63,14 @@ test('people: bands, thresholds and validation', () => {
   assert.deepEqual(validatePeople({ visitors: 100, activated: 10, returned: 2 }), { visitors: 100, activated: 10, returned: 2 });
 });
 
-test('verdict follows the rotten-tomatoes rule', () => {
+test('verdict: both halves good is not slop, either bad is slop', () => {
   assert.equal(verdict(80, 80), 'not_slop');
   assert.equal(verdict(80, 30), 'slop');
   assert.equal(verdict(30, 80), 'slop');
   assert.equal(verdict(50, 70), 'mixed');
-  assert.equal(verdict(70, null), 'not_slop');
-  assert.equal(verdict(50, null), 'mixed');
-  assert.equal(overall(80, null), 80);
+  assert.equal(verdict(70, null), 'slop', 'no users is slop however well defined');
+  assert.equal(verdict(95, 0), 'slop');
+  assert.equal(overall(80, null), 40);
   assert.equal(overall(80, 40), 60);
 });
 

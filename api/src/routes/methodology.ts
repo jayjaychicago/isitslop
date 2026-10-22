@@ -13,14 +13,14 @@ methodology.get('/methodology', (c) =>
     heuristicsVersion: HEURISTICS_VERSION,
     termsVersion: TERMS_VERSION,
     critics: {
-      question: 'Is there a quality product definition? What it is, why it must exist, who it is for, what it is not.',
+      question: 'Definition: does it say clearly what it is, why it needs to exist, who it is for, and what it is not?',
       source: 'The landing page HTML for sites, the README for GitHub repos. Fetched once at grading time.',
       maxPositive: MAX_POSITIVE,
       rules: methodologyCritics(),
     },
-    people: { question: 'Do the people who find it actually use it?', ...methodologyPeople() },
+    people: { question: 'Usage: do the people who find it actually use it?', ...methodologyPeople() },
     verdict: {
-      rule: 'Both halves at or above notSlop is Not Slop. Either half below slop is Slop. Everything else is Mixed. Without People data, Critics alone decides and People shows as unrated.',
+      rule: 'Both halves at or above notSlop is Not slop. Either half below slop is Slop. Everything else is Mixed. No usage data counts as a usage score of 0, so an unused thing is Slop however well defined.',
       thresholds: VERDICT_THRESHOLDS,
     },
   }),

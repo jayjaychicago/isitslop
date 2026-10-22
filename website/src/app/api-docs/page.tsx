@@ -33,7 +33,17 @@ curl -X POST ${base}/entries/ENTRY_ID/verify/check -H 'content-type: application
         <pre>{`curl -X POST ${base}/entries/ENTRY_ID/grade \\
   -H 'authorization: Bearer isk_...' -H 'content-type: application/json' \\
   -d '{"acceptTerms":true,"people":{"visitors":1200,"activated":90,"returned":40}}'`}</pre>
-        <p className="text-sm text-muted">Sending <code>acceptTerms: true</code> is agreement to the terms at /terms. The people object is optional.</p>
+        <p className="text-sm text-muted">Sending <code>acceptTerms: true</code> is agreement to the terms at /terms. The people object (usage numbers) is optional.</p>
+      </Section>
+      <Section title="Link a repo to a site (owner only)">
+        <pre>{`# commit .isitslop to the repo root containing: isitslop-site=ENTRY_ID
+curl -X POST ${base}/entries/ENTRY_ID/repo \\
+  -H 'authorization: Bearer isk_...' -H 'content-type: application/json' \\
+  -d '{"repoUrl":"https://github.com/owner/repo"}'`}</pre>
+        <p className="text-sm text-muted">One thing, one entry. The README is then graded together with the landing page. Send <code>repoUrl: null</code> to unlink.</p>
+      </Section>
+      <Section title="Remove an entry (owner or admin)">
+        <pre>{`curl -X DELETE ${base}/entries/ENTRY_ID -H 'authorization: Bearer isk_...'`}</pre>
       </Section>
       <Section title="Appeal (owner only)">
         <pre>{`curl -X POST ${base}/entries/ENTRY_ID/appeals \\

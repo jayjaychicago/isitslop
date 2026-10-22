@@ -13,6 +13,7 @@ export type Entry = {
   createdAt: string;
   verified: boolean;
   verifiedAt: string | null;
+  repoUrl: string | null;
 };
 
 export type Signal = { id: string; description: string; weight: number; score: number; evidence: string[] };

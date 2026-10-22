@@ -11,6 +11,7 @@ export type EntryRow = {
   owner_key_hash: string | null;
   terms_version: string | null;
   terms_accepted_at: string | null;
+  repo_url: string | null;
 };
 
 export type GradeRow = {
@@ -47,6 +48,7 @@ export function publicEntry(e: EntryRow) {
     createdAt: e.created_at,
     verified: !!e.verified_at,
     verifiedAt: e.verified_at,
+    repoUrl: e.repo_url,
   };
 }
 

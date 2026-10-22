@@ -39,6 +39,19 @@ export async function fetchTargetText(t: Target): Promise<{ extracted: Extracted
   return { extracted: extractHtml(r.body), source: t.url, status: r.status };
 }
 
+/** Merge two extractions: the site page leads, the README adds body text, headings and links. */
+export function mergeExtracted(a: Extracted, b: Extracted): Extracted {
+  const text = `${a.text} ${b.text}`.trim();
+  return {
+    title: a.title || b.title,
+    description: a.description || b.description,
+    headings: [...a.headings, ...b.headings],
+    links: [...a.links, ...b.links],
+    text,
+    words: a.words + b.words,
+  };
+}
+
 export async function fetchText(url: string): Promise<string | null> {
   const r = await get(url, 'text/plain,*/*');
   return r.ok ? r.body : null;

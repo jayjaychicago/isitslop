@@ -1,5 +1,5 @@
 /**
- * PEOPLE: "Do the people who find it use it?"
+ * USAGE (called "people" in code and API): do the people who find it use it?
  *
  * v0 is owner-attested. The verified owner reports three numbers for the last
  * 30 days. We do not trust them; we label them. Verified analytics connections
@@ -10,7 +10,7 @@
  */
 import type { PeopleInput, PeopleResult } from './types.ts';
 
-export const PEOPLE_VERSION = '0.1.0';
+export const PEOPLE_VERSION = '0.2.0';
 export const MIN_VISITORS = 100;
 
 /** Piecewise-linear bands. Rates above the last point saturate at 1. */
@@ -61,10 +61,10 @@ export function validatePeople(p: unknown): PeopleInput | string {
 export function scorePeople(p: PeopleInput): PeopleResult {
   if (p.visitors < MIN_VISITORS) {
     return {
-      score: null,
+      score: 0,
       conversion: null,
       returnRate: null,
-      note: `Fewer than ${MIN_VISITORS} visitors in 30 days: not enough data to rate.`,
+      note: `Fewer than ${MIN_VISITORS} visitors in 30 days. That is nobody. Usage is zero.`,
       selfReported: true,
       version: PEOPLE_VERSION,
     };
@@ -90,6 +90,7 @@ export function methodologyPeople() {
     weights: { conversion: CONVERSION_WEIGHT, return: RETURN_WEIGHT },
     conversionBands: CONVERSION_BANDS,
     returnBands: RETURN_BANDS,
+    missing: 'No usage numbers, or fewer than minVisitors visitors, counts as a usage score of 0. A thing nobody uses is slop, however well defined.',
     caveat: 'Numbers are labelled self-reported on every page. Verified analytics connections are an open contribution.',
   };
 }

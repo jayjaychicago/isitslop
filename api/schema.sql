@@ -12,8 +12,10 @@ create table if not exists entries (
   verified_at   timestamptz,
   owner_key_hash text,
   terms_version text,
-  terms_accepted_at timestamptz
+  terms_accepted_at timestamptz,
+  repo_url      text
 );
+alter table entries add column if not exists repo_url text;
 create index if not exists entries_domain_idx on entries (domain);
 create index if not exists entries_created_idx on entries (created_at desc);
 

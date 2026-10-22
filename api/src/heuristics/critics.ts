@@ -1,5 +1,6 @@
 /**
- * CRITICS: "Is there a quality product definition?"
+ * DEFINITION (called "critics" in code and API): does it say clearly what it is,
+ * why it needs to exist, who it is for, and what it is not?
  *
  * In a world where AI can deliver any spec, the hard part is the definition:
  * what it is, why it must exist, who it is for, and what it deliberately is not.
@@ -13,7 +14,7 @@
 import type { CriticsResult, Signal } from './types.ts';
 import type { Extracted } from './text.ts';
 
-export const HEURISTICS_VERSION = '0.1.0';
+export const HEURISTICS_VERSION = '0.2.0';
 
 type Rule = {
   id: string;

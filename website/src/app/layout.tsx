@@ -9,7 +9,7 @@ const display = Instrument_Serif({ variable: "--font-display", subsets: ["latin"
 
 export const metadata: Metadata = {
   title: "Is it slop?",
-  description: "A sloppiness score for things on the internet. Critics: is there a real product definition? People: do the people who find it use it?",
+  description: "A sloppiness score for things on the internet. Does it say clearly why it exists and who it is for? Do the people who find it use it?",
   metadataBase: new URL("https://isitslop.org"),
   openGraph: { title: "Is it slop?", description: "A sloppiness score for things on the internet.", url: "https://isitslop.org" },
 };

@@ -36,7 +36,7 @@ The response is public. Either fix the rule for everyone and re-grade, or explai
 ## Good first contributions
 
 - Private GitHub repos (GitHub App or fine-grained token, owner-supplied).
-- Verified analytics for the People score (GA4, PostHog, Plausible, Stripe) via owner-supplied read-only credentials.
+- Verified analytics for the Usage score (GA4, PostHog, Plausible, Stripe) via owner-supplied read-only credentials.
 - Better text extraction for JavaScript-rendered landing pages, without a headless browser if at all possible.
 - Multilingual rules. Everything in v0 is English regexes.
 - A badge endpoint (`/v1/entries/:id/badge.svg`) so owners can show their score.

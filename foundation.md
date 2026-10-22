@@ -12,14 +12,16 @@ AI can now deliver almost any spec. "What to build" has become cheap. The only h
 
 Slop is what you get when the definition is missing. It ships, it even looks fine, and nobody needed it.
 
-So the score has two halves, like Rotten Tomatoes:
+So the score has two halves:
 
 | Half | Question it answers | How v0 measures it |
 |---|---|---|
-| **Critics** (definition) | Is there a quality product definition? Does the thing say what it is, why it must exist, and who it is for, in specific terms? | Text heuristics over the landing page or README. No LLM. |
-| **People** (usage) | Do the people who find it actually use it? | Conversion and return rates attested by the verified owner. |
+| **Definition** | Does the thing say clearly what it is, why it needs to exist, who it is for, and what it is not? | Text heuristics over the landing page or README. No LLM. |
+| **Usage** | Do the people who find it actually use it? | Conversion and return rates attested by the verified owner. |
 
-A thing is **Not Slop** when both halves are good. It is **Slop** when either half is bad. Everything else is **Mixed**.
+In the code and the API these halves are still called `critics` and `people`. That is an implementation detail, not editorial. On the website and in writing, say Definition and Usage.
+
+A thing is **Not Slop** when both halves are good. It is **Slop** when either half is bad. Everything else is **Mixed**. No usage data is not "unknown": a thing nobody uses is slop, however well defined, so missing usage counts as zero.
 
 ## Rules that do not change without a very good reason
 
@@ -48,9 +50,9 @@ Private repos and connected analytics are explicitly out of scope for v0 and lef
 
 On success the owner receives a one-time **owner key**. It is shown once, stored hashed, and used as a bearer token for grading and appeals.
 
-## How v0 scores "People"
+## How v0 scores Usage
 
-The owner reports three numbers for the last 30 days: visitors, visitors who took the core action ("activated"), and activated users who came back at least once. Conversion carries most of the weight; return is a sanity check so a high-converting page nobody returns to does not pass. The page shows the numbers as **self-reported**. Fewer than 100 visitors means "not enough data", not a low score. Verified analytics connections (GA4, PostHog, Plausible, Stripe) are the obvious next contribution.
+The owner reports three numbers for the last 30 days: visitors, visitors who took the core action ("activated"), and activated users who came back at least once. Conversion carries most of the weight; return is a sanity check so a high-converting page nobody returns to does not pass. The page shows the numbers as **self-reported**. Fewer than 100 visitors, or no numbers at all, is a usage score of zero: nobody is using it. Verified analytics connections (GA4, PostHog, Plausible, Stripe) are the obvious next contribution.
 
 ## Architecture (v0)
 

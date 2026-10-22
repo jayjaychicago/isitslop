@@ -3,7 +3,8 @@ import type { Env } from '../lib/env.ts';
 import { db } from '../lib/db.ts';
 import { normalizeTarget } from '../lib/url.ts';
 import { rateLimit } from '../lib/ratelimit.ts';
-import { fetchTargetText } from '../lib/fetch.ts';
+import { fetchTargetText, fetchText, rawGithub } from '../lib/fetch.ts';
+import { requireOwner } from './grade.ts';
 import { scoreCritics } from '../heuristics/critics.ts';
 import { getEntry, latestGrade, publicAppeal, publicEntry, publicGrade, type AppealRow, type EntryRow, type GradeRow } from '../lib/entries.ts';
 
@@ -65,7 +66,50 @@ entries.get('/entries/:id', async (c) => {
   });
 });
 
-/** Dry run: anyone can see what the critics heuristics think of any URL. Nothing is stored. */
+/**
+ * Link a public GitHub repo to a site entry, so one thing is one entry.
+ * Both sides must be proven: the caller holds the site's owner key, and the repo's
+ * default branch contains a `.isitslop` file with the line `isitslop-site=<entry id>`.
+ */
+entries.post('/entries/:id/repo', async (c) => {
+  const sql = db(c.env.DATABASE_URL);
+  const e = await getEntry(sql, c.req.param('id'));
+  if (!e) return c.json({ error: 'not found' }, 404);
+  if (e.kind !== 'site') return c.json({ error: 'only site entries can link a repo' }, 400);
+  if (!(await requireOwner(c, e))) return c.json({ error: 'invalid owner key' }, 401);
+  const body = await c.req.json().catch(() => ({}));
+  if (body.repoUrl === null) {
+    const rows = (await sql`update entries set repo_url = null where id = ${e.id} returning *`) as EntryRow[];
+    return c.json({ entry: publicEntry(rows[0]) });
+  }
+  const t = normalizeTarget(String(body.repoUrl ?? ''));
+  if (typeof t === 'string' || t.kind !== 'github' || !t.repo) return c.json({ error: 'repoUrl must be a public github.com/owner/repo URL' }, 400);
+  const expected = `isitslop-site=${e.id}`;
+  let found: string | null = null;
+  for (const br of ['main', 'master']) {
+    found = await fetchText(rawGithub(t.repo.owner, t.repo.name, br, '.isitslop'));
+    if (found) break;
+  }
+  if (!found || !found.includes(expected)) {
+    return c.json({ error: `commit a .isitslop file to the root of ${t.url} containing the line ${expected}, then retry`, file: { path: '.isitslop', line: expected } }, 422);
+  }
+  const rows = (await sql`update entries set repo_url = ${t.url} where id = ${e.id} returning *`) as EntryRow[];
+  return c.json({ entry: publicEntry(rows[0]) });
+});
+
+/** Remove an entry and everything attached to it. Owner key or admin token. See terms, section 9. */
+entries.delete('/entries/:id', async (c) => {
+  const sql = db(c.env.DATABASE_URL);
+  const e = await getEntry(sql, c.req.param('id'));
+  if (!e) return c.json({ error: 'not found' }, 404);
+  const auth = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+  const isAdmin = !!c.env.ADMIN_TOKEN && auth === c.env.ADMIN_TOKEN;
+  if (!isAdmin && !(await requireOwner(c, e))) return c.json({ error: 'invalid owner key' }, 401);
+  await sql`delete from entries where id = ${e.id}`;
+  return c.json({ deleted: e.id });
+});
+
+/** Dry run: anyone can see what the definition heuristics think of any URL. Nothing is stored. */
 entries.get('/preview', async (c) => {
   const sql = db(c.env.DATABASE_URL);
   if (!(await rateLimit(sql, `preview:${ip(c)}`, 30, 3600))) return c.json({ error: 'rate limited' }, 429);

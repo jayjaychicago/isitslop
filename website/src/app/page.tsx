@@ -10,9 +10,9 @@ export default function Home() {
           <em>Was this worth building?</em>
         </h1>
         <p className="mt-6 max-w-2xl text-lg text-ink-2 leading-relaxed">
-          A sloppiness score for things on the internet, shaped like a Rotten Tomatoes score. <strong className="text-ink">Critics</strong> asks
-          whether there is a real product definition: what it is, why it must exist, who it is for. <strong className="text-ink">People</strong> asks
-          whether the people who find it actually use it. Heuristics only, no LLMs, every rule public.
+          A sloppiness score for things on the internet. It asks two plain questions. <strong className="text-ink">Definition</strong>: does the
+          thing say clearly what it is, why it needs to exist, who it is for, and what it is not? <strong className="text-ink">Usage</strong>: do
+          the people who find it actually use it? Both have to be good to be not slop. If either is bad, it is slop. Nobody using it counts as zero. Heuristics only, no LLMs, every rule public.
         </p>
         <p className="mt-4 max-w-2xl text-ink-2 leading-relaxed">
           Built for founders and open source maintainers who want an honest, public answer to &quot;was this worth building?&quot;, because AI made the

@@ -1,9 +1,11 @@
 # isitslop
 
-A sloppiness score for things on the internet, shaped like a Rotten Tomatoes score.
+A sloppiness score for things on the internet. It asks two plain questions:
 
-- **Critics**: is there a quality product definition? What it is, why it must exist, who it is for, what it is not.
-- **People**: do the people who find it actually use it?
+- **Definition**: does the thing say clearly what it is, why it needs to exist, who it is for, and what it is not?
+- **Usage**: do the people who find it actually use it?
+
+Both have to be good to be not slop. If either is bad, it is slop. Anything in between is mixed. No users counts as zero: an unused thing is slop however well defined.
 
 Built for founders and open source maintainers who want an honest, public answer to "was this worth building?", and for the contributors who think the rules could be better. It exists because AI made the "what" cheap: anyone can ship a spec in an afternoon, so the thing that separates a product from slop is the definition behind it, and nobody was measuring that.
 

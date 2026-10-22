@@ -27,6 +27,12 @@ export default async function MethodologyPage() {
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="display text-5xl">What the score is made of</h1>
       <p className="mt-4 text-ink-2 leading-relaxed">
+        The score has two halves. <strong className="text-ink">Definition</strong> asks whether the thing says clearly what it is, why it needs to
+        exist, who it is for, and what it is not. <strong className="text-ink">Usage</strong> asks whether the people who find it actually use it.
+        Both have to be good for something to be Not slop. If either one is bad, it is Slop. Anything in between is Mixed. No usage numbers, or fewer
+        than 100 visitors, counts as zero: a thing nobody uses is slop, however well it is defined.
+      </p>
+      <p className="mt-4 text-ink-2 leading-relaxed">
         This page is generated from the code that computes the score, so it is always current. Every rule is a plain function anyone can read in{" "}
         <a className="underline" href="https://github.com/jayjaychicago/isitslop/tree/main/api/src/heuristics">api/src/heuristics</a>. No LLMs, no paid data.
       </p>
@@ -44,7 +50,7 @@ export default async function MethodologyPage() {
         <>
           <section className="mt-10">
             <div className="flex items-baseline justify-between">
-              <h2 className="display text-3xl">Critics</h2>
+              <h2 className="display text-3xl">Definition</h2>
               <span className="text-xs text-muted">heuristics v{m.heuristicsVersion}</span>
             </div>
             <p className="mt-2 text-ink-2">{m.critics.question}</p>
@@ -63,7 +69,7 @@ export default async function MethodologyPage() {
 
           <section className="mt-10">
             <div className="flex items-baseline justify-between">
-              <h2 className="display text-3xl">People</h2>
+              <h2 className="display text-3xl">Usage</h2>
               <span className="text-xs text-muted">v{m.people.version}</span>
             </div>
             <p className="mt-2 text-ink-2">{m.people.question}</p>
@@ -80,7 +86,7 @@ export default async function MethodologyPage() {
                 <Bands bands={m.people.returnBands} />
               </div>
             </div>
-            <p className="mt-2 text-sm text-muted">Fewer than {m.people.minVisitors} visitors means not enough data, not a low score. {m.people.caveat}</p>
+            <p className="mt-2 text-sm text-muted">Fewer than {m.people.minVisitors} visitors, or no numbers at all, is a usage score of zero. {m.people.caveat}</p>
           </section>
 
           <section className="mt-10">

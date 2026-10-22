@@ -53,7 +53,7 @@ export default function Terms() {
 
       <h2>5. Self-reported numbers</h2>
       <p>
-        If you submit usage numbers for the People score, you represent that they are true and accurate to the best of your knowledge. They are
+        If you submit usage numbers for the Usage score, you represent that they are true and accurate to the best of your knowledge. They are
         published and labelled as self-reported. Submitting numbers you know to be false is a breach of these terms and may result in removal of the
         grade and the entry.
       </p>

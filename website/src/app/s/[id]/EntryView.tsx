@@ -39,6 +39,11 @@ export function EntryView({ id }: { id: string }) {
           <a href={entry.url} target="_blank" rel="noreferrer nofollow" className="text-sm text-ink-2 underline break-all">
             {entry.url.replace(/^https?:\/\//, "")}
           </a>
+          {entry.repoUrl && (
+            <span className="text-sm text-ink-2">
+              {" "}· code: <a href={entry.repoUrl} target="_blank" rel="noreferrer nofollow" className="underline break-all">{entry.repoUrl.replace(/^https?:\/\//, "")}</a>
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <VerdictBadge verdict={grade?.verdict ?? "unrated"} size="lg" />
@@ -47,17 +52,17 @@ export function EntryView({ id }: { id: string }) {
 
       <div className="grid sm:grid-cols-2 gap-4 mt-8">
         <ScoreTile
-          label="Critics"
-          question="Is there a quality product definition? What it is, why it must exist, who it is for."
+          label="Definition"
+          question="Does it say clearly what it is, why it needs to exist, who it is for, and what it is not?"
           value={grade?.critics ?? null}
           sub={grade ? `Heuristics v${grade.heuristicsVersion}, confidence ${grade.criticsBreakdown.confidence}, ${grade.criticsBreakdown.words} words analysed` : "Not graded yet"}
           big
         />
         <ScoreTile
-          label="People"
+          label="Usage"
           question="Do the people who find it actually use it?"
           value={grade?.people ?? null}
-          sub={grade?.peopleInput ? peopleSub(grade) : grade ? "Owner did not submit usage numbers" : "Not graded yet"}
+          sub={grade?.peopleInput ? peopleSub(grade) : grade ? "No usage numbers submitted. Nobody using it counts as zero." : "Not graded yet"}
           big
         />
       </div>
@@ -96,7 +101,7 @@ export function EntryView({ id }: { id: string }) {
           <h2 className="display text-3xl mb-3">History</h2>
           <table className="w-full text-sm">
             <thead className="text-xs uppercase tracking-wider text-muted">
-              <tr><th className="text-left py-1">Date</th><th className="text-right">Critics</th><th className="text-right">People</th><th className="text-right">Verdict</th><th className="text-right">Rules</th></tr>
+              <tr><th className="text-left py-1">Date</th><th className="text-right">Definition</th><th className="text-right">Usage</th><th className="text-right">Verdict</th><th className="text-right">Rules</th></tr>
             </thead>
             <tbody>
               {history.map((h) => (
@@ -122,7 +127,7 @@ export function EntryView({ id }: { id: string }) {
 
 function peopleSub(g: Grade): string {
   const p = g.peopleInput!;
-  if (g.people === null) return `Self-reported: ${p.visitors} visitors. ${p.note}`;
+  if (p.conversion === null) return `Self-reported: ${p.visitors} visitors. ${p.note}`;
   const pct = (n: number | null) => (n === null ? "–" : `${(n * 100).toFixed(1)}%`);
   return `Self-reported: ${p.visitors.toLocaleString()} visitors, ${pct(p.conversion)} converted, ${pct(p.returnRate)} returned. Not independently checked.`;
 }
@@ -133,7 +138,7 @@ function Breakdown({ grade }: { grade: Grade }) {
   return (
     <section className="mt-6">
       <button className="btn btn-ghost text-sm" onClick={() => setOpen(!open)}>
-        {open ? "Hide" : "Show"} how the Critics score was computed
+        {open ? "Hide" : "Show"} how the Definition score was computed
       </button>
       {open && (
         <ul className="card mt-3 divide-y divide-line">

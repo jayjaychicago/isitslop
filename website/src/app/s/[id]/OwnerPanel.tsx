@@ -6,13 +6,13 @@ import { api, type Entry, type Grade } from "@/lib/api";
 type StartResp = { verificationId: string; method: string; text: string; record?: { type: string; name: string; value: string }; file?: { url?: string; path?: string; content: string }; email?: string };
 
 export function OwnerPanel({ entry, grade, ownerKey, onOwnerKey, onChange }: { entry: Entry; grade: Grade | null; ownerKey: string | null; onOwnerKey: (k: string | null) => void; onChange: () => void }) {
-  const [tab, setTab] = useState<"verify" | "grade" | "appeal">(ownerKey ? "grade" : "verify");
+  const [tab, setTab] = useState<"verify" | "grade" | "repo" | "appeal">(ownerKey ? "grade" : "verify");
   return (
     <section className="mt-12 card p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="display text-3xl">Owner actions</h2>
         <div className="flex gap-1 text-sm">
-          {(["verify", "grade", "appeal"] as const).map((t) => (
+          {(["verify", "grade", ...(entry.kind === "site" ? (["repo"] as const) : []), "appeal"] as const).map((t) => (
             <button key={t} onClick={() => setTab(t)} className={`px-3 py-1 rounded-full capitalize ${tab === t ? "bg-ink text-paper" : "text-ink-2 hover:text-ink"}`}>{t}</button>
           ))}
         </div>
@@ -24,6 +24,7 @@ export function OwnerPanel({ entry, grade, ownerKey, onOwnerKey, onChange }: { e
       <div className="mt-5">
         {tab === "verify" && <Verify entry={entry} onKey={(k) => { onOwnerKey(k); onChange(); setTab("grade"); }} />}
         {tab === "grade" && <RequestGrade entry={entry} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
+        {tab === "repo" && <LinkRepo entry={entry} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
         {tab === "appeal" && <Appeal entry={entry} grade={grade} ownerKey={ownerKey} onKey={onOwnerKey} onDone={onChange} />}
       </div>
     </section>
@@ -138,7 +139,7 @@ function RequestGrade({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerK
       <KeyField ownerKey={ownerKey} onKey={onKey} />
       <label className="flex items-center gap-2">
         <input type="checkbox" checked={withPeople} onChange={(e) => setWithPeople(e.target.checked)} />
-        <span>Include usage numbers for the People score (last 30 days, self-reported, shown publicly)</span>
+        <span>Include usage numbers for the Usage score (last 30 days, self-reported, shown publicly)</span>
       </label>
       {withPeople && (
         <div className="grid sm:grid-cols-3 gap-3">
@@ -158,6 +159,37 @@ function RequestGrade({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerK
         <span className="text-muted">At most 5 grades per entry per day.</span>
       </div>
       {msg && <div className={msg === "Graded." ? "text-fresh" : "text-slop"}>{msg}</div>}
+    </div>
+  );
+}
+
+function LinkRepo({ entry, ownerKey, onKey, onDone }: { entry: Entry; ownerKey: string | null; onKey: (k: string | null) => void; onDone: () => void }) {
+  const [repo, setRepo] = useState(entry.repoUrl ?? "");
+  const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  async function go(unlink = false) {
+    setBusy(true); setMsg(null);
+    try {
+      await api(`/entries/${entry.id}/repo`, { method: "POST", ownerKey: ownerKey ?? undefined, body: JSON.stringify({ repoUrl: unlink ? null : repo.trim() }) });
+      setMsg(unlink ? "Repo unlinked." : "Repo linked. Request a grade to include the README.");
+      onDone();
+    } catch (e) { setMsg((e as Error).message); }
+    setBusy(false);
+  }
+  return (
+    <div className="flex flex-col gap-4 text-sm">
+      <KeyField ownerKey={ownerKey} onKey={onKey} />
+      <p className="text-ink-2">
+        One thing, one entry. If this site has a public GitHub repo, link it here and the README is graded together with the landing page.
+        To prove the repo is yours, commit a file named <code>.isitslop</code> to its root containing the line below, then link.
+      </p>
+      <pre className="select-all">{`isitslop-site=${entry.id}`}</pre>
+      <input className="input" placeholder="https://github.com/owner/repo" value={repo} onChange={(e) => setRepo(e.target.value)} />
+      <div className="flex gap-2">
+        <button className="btn" onClick={() => go(false)} disabled={!ownerKey || !repo.trim() || busy}>{busy ? "Linking…" : "Link repo"}</button>
+        {entry.repoUrl && <button className="btn btn-ghost" onClick={() => go(true)} disabled={!ownerKey || busy}>Unlink</button>}
+      </div>
+      {msg && <div className={msg.startsWith("Repo") ? "text-fresh" : "text-slop"}>{msg}</div>}
     </div>
   );
 }

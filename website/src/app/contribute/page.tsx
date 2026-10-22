@@ -24,9 +24,9 @@ export default function Contribute() {
         <h2 className="display text-3xl">How a score is made</h2>
         <ol className="mt-3 space-y-3 text-ink-2">
           <li className="card p-4"><strong className="text-ink">1. Fetch.</strong> At grading time the API fetches your landing page or README once, as <code>isitslop-bot</code>. Scripts, styles and code blocks are stripped; what is left is the text a visitor would read.</li>
-          <li className="card p-4"><strong className="text-ink">2. Run the rules.</strong> Each rule in <code>critics.ts</code> gets the text and returns a number between 0 and 1 plus the phrases it matched. Rules have weights. The weighted sum, clamped to 0 to 100, is the Critics score.</li>
-          <li className="card p-4"><strong className="text-ink">3. People.</strong> The owner&apos;s self-reported conversion and return rate go through the bands in <code>people.ts</code>.</li>
-          <li className="card p-4"><strong className="text-ink">4. Verdict.</strong> <code>verdict.ts</code> combines the two halves, Rotten Tomatoes style. The <Link href="/methodology" className="underline">methodology page</Link> is generated from these files.</li>
+          <li className="card p-4"><strong className="text-ink">2. Run the rules.</strong> Each rule in <code>critics.ts</code> gets the text and returns a number between 0 and 1 plus the phrases it matched. Rules have weights. The weighted sum, clamped to 0 to 100, is the Definition score: does it say what it is, why it exists, who it is for, what it is not.</li>
+          <li className="card p-4"><strong className="text-ink">3. Usage.</strong> The owner&apos;s self-reported conversion and return rate go through the bands in <code>people.ts</code>. This answers: do the people who find it use it?</li>
+          <li className="card p-4"><strong className="text-ink">4. Verdict.</strong> <code>verdict.ts</code> combines the two halves: both good is Not slop, either bad is Slop, anything else is Mixed. The <Link href="/methodology" className="underline">methodology page</Link> is generated from these files.</li>
         </ol>
       </section>
 
@@ -68,7 +68,7 @@ export default function Contribute() {
       <section className="mt-12">
         <h2 className="display text-3xl">Open problems worth a pull request</h2>
         <ul className="mt-3 grid sm:grid-cols-2 gap-3 text-sm text-ink-2">
-          <li className="card p-4">Verified analytics for the People score (GA4, PostHog, Plausible, Stripe) with owner-supplied read-only credentials, so numbers stop being self-reported.</li>
+          <li className="card p-4">Verified analytics for the Usage score (GA4, PostHog, Plausible, Stripe) with owner-supplied read-only credentials, so numbers stop being self-reported.</li>
           <li className="card p-4">Private GitHub repos through a GitHub App or a fine-grained token.</li>
           <li className="card p-4">Text extraction for JavaScript-rendered landing pages without a headless browser.</li>
           <li className="card p-4">Rules in languages other than English. Everything in v0 is an English regex.</li>
