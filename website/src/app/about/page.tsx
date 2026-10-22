@@ -30,7 +30,7 @@ export default function AboutPage() {
       <section className="mt-8">
         <h2 className="display text-3xl">How a thing gets graded</h2>
         <ol className="mt-3 flex flex-col gap-3 text-ink-2 leading-relaxed">
-          <li><strong className="text-ink">1. Add it and prove it is yours.</strong> Paste a URL or a GitHub repo and sign in with GitHub. A site is yours after a DNS record, a well-known file, or an email to admin@ your domain. A repo is yours if your GitHub account can push to it.</li>
+          <li><strong className="text-ink">1. Claim it.</strong> Sign in with GitHub and paste a URL or a repo. A site is yours after a DNS record, a well-known file, or an email to admin@ your domain. A repo is yours if your GitHub account can push to it. Nothing enters the index until that proof passes, so there are no unclaimed entries.</li>
           <li><strong className="text-ink">2. Connect GitHub and Google Analytics.</strong> Quality is read from your repository, Popularity from your Google Analytics property. Both read-only, with your own login. Private repos work and are never named.</li>
           <li><strong className="text-ink">3. Ask for a grade.</strong> Only owners get graded. Accept the <Link href="/terms" className="underline">terms</Link>, the public rules run, the result is published. Grades refresh on their own: Popularity daily, Quality monthly. You can appeal, publicly.</li>
         </ol>

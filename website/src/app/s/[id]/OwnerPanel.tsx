@@ -3,14 +3,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { API, api, signInUrl, type Entry, type Grade } from "@/lib/api";
 import { useSession } from "@/components/Session";
+import { ClaimRepo, INSTALL_APP, VerifySite } from "@/components/VerifySite";
 
 type Tab = "verify" | "grade" | "repo" | "analytics" | "appeal";
-type StartResp = { verificationId: string; method: string; text: string; record?: { type: string; name: string; value: string }; file?: { url?: string; path?: string; content: string }; email?: string };
-
-const INSTALL = "https://github.com/apps/is-it-slop/installations/new";
 
 export function OwnerPanel({ entry, grade, onChange, gaPick, onGaPicked, initialTab }: { entry: Entry; grade: Grade | null; onChange: () => void; gaPick?: { id: string; name: string }[] | null; onGaPicked?: () => void; initialTab?: Tab }) {
-  const { me, reload } = useSession();
+  const { me } = useSession();
   const user = me?.user ?? null;
   const isOwner = !!user && entry.ownerUserId === user.id;
   const [tab, setTab] = useState<Tab>(initialTab ?? "grade");
@@ -29,13 +27,12 @@ export function OwnerPanel({ entry, grade, onChange, gaPick, onGaPicked, initial
   }
 
   if (!isOwner) {
+    const claimHref = entry.url ? `/claim?url=${encodeURIComponent(entry.url)}` : "/claim";
     return (
       <section className="mt-12 card p-5 sm:p-6">
         <h2 className="display text-3xl">Own this?</h2>
-        <p className="text-sm text-ink-2 mt-1">
-          {entry.verified ? "Someone else has already claimed this entry. If that is wrong, verify it yourself and it becomes yours." : "Prove it is yours and it becomes yours. Signed in as " + user.githubLogin + "."}
-        </p>
-        <div className="mt-5">{entry.kind === "github" ? <Claim entry={entry} onDone={async () => { await reload(); onChange(); }} /> : <VerifySite entry={entry} onDone={async () => { await reload(); onChange(); }} />}</div>
+        <p className="text-sm text-ink-2 mt-1">Someone else has claimed this entry. If it is actually yours, prove it and it becomes yours. Signed in as {user.githubLogin}.</p>
+        <Link className="btn mt-4 inline-flex" href={claimHref}>Claim it</Link>
       </section>
     );
   }
@@ -57,93 +54,9 @@ export function OwnerPanel({ entry, grade, onChange, gaPick, onGaPicked, initial
         {tab === "repo" && <LinkRepo entry={entry} onDone={onChange} />}
         {tab === "analytics" && <Analytics entry={entry} onDone={onChange} gaPick={gaPick ?? null} onPicked={onGaPicked} />}
         {tab === "appeal" && <Appeal entry={entry} grade={grade} onDone={onChange} />}
-        {tab === "verify" && (entry.kind === "github" ? <Claim entry={entry} onDone={onChange} /> : <VerifySite entry={entry} onDone={onChange} />)}
+        {tab === "verify" && (entry.kind === "github" ? <ClaimRepo url={entry.url ?? ""} onDone={onChange} label="Re-verify with GitHub" /> : <VerifySite url={entry.url ?? entry.domain} onDone={onChange} />)}
       </div>
     </section>
-  );
-}
-
-function Claim({ entry, onDone }: { entry: Entry; onDone: () => void }) {
-  const [msg, setMsg] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  async function go() {
-    setBusy(true); setMsg(null);
-    try { await api(`/entries/${entry.id}/claim`, { method: "POST" }); setMsg("Claimed. This repository is yours."); onDone(); } catch (e) { setMsg((e as Error).message); }
-    setBusy(false);
-  }
-  return (
-    <div className="flex flex-col gap-3 text-sm">
-      <p className="text-ink-2">Your GitHub account must have push access to this repository, and the Is It Slop app must be installed on the account that owns it. The repository can be private; its URL is never published.</p>
-      <div className="flex flex-wrap gap-2">
-        <button className="btn" onClick={go} disabled={busy}>{busy ? "Checking…" : "Claim with GitHub"}</button>
-        <a className="btn btn-ghost" href={INSTALL}>Install the app</a>
-      </div>
-      {msg && <div className={msg.startsWith("Claimed") ? "text-fresh" : "text-slop"}>{msg}</div>}
-    </div>
-  );
-}
-
-function VerifySite({ entry, onDone }: { entry: Entry; onDone: () => void }) {
-  const methods = ["dns", "file", "email"] as const;
-  const [method, setMethod] = useState<string>(methods[0]);
-  const [email, setEmail] = useState(`admin@${entry.domain}`);
-  const [started, setStarted] = useState<StartResp | null>(null);
-  const [code, setCode] = useState("");
-  const [msg, setMsg] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  async function start() {
-    setBusy(true); setMsg(null);
-    try { setStarted(await api<StartResp>(`/entries/${entry.id}/verify/start`, { method: "POST", body: JSON.stringify({ method, email }) })); } catch (e) { setMsg((e as Error).message); }
-    setBusy(false);
-  }
-  async function check() {
-    if (!started) return;
-    setBusy(true); setMsg(null);
-    try {
-      const r = await api<{ verified: boolean; detail: string }>(`/entries/${entry.id}/verify/check`, { method: "POST", body: JSON.stringify({ verificationId: started.verificationId, code }) });
-      if (r.verified) { setDone(true); onDone(); }
-      setMsg(r.detail);
-    } catch (e) { setMsg((e as Error).message); }
-    setBusy(false);
-  }
-
-  if (done) return <div className="text-sm text-fresh">Verified. This site is yours.</div>;
-
-  return (
-    <div className="flex flex-col gap-4 text-sm">
-      <div className="flex flex-wrap gap-2">
-        {methods.map((m) => (
-          <button key={m} onClick={() => { setMethod(m); setStarted(null); }} className={`btn btn-ghost text-sm ${method === m ? "border-ink" : ""}`}>
-            {m === "dns" ? "DNS TXT record" : m === "file" ? "Well-known file" : "Email to the domain"}
-          </button>
-        ))}
-      </div>
-      {method === "email" && !started && (
-        <label className="block">
-          <span className="text-ink-2">Send the code to</span>
-          <select className="input mt-1" value={email} onChange={(e) => setEmail(e.target.value)}>
-            {["admin", "webmaster", "postmaster", "hostmaster"].map((l) => <option key={l}>{`${l}@${entry.domain}`}</option>)}
-          </select>
-        </label>
-      )}
-      {!started ? (
-        <div><button className="btn" onClick={start} disabled={busy}>{busy ? "Starting…" : "Start verification"}</button></div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          <p className="text-ink-2">{started.text}</p>
-          {started.record && <pre>{`${started.record.type}  ${started.record.name}\n${started.record.value}`}</pre>}
-          {started.file && <pre>{`${started.file.url ?? started.file.path}\n${started.file.content}`}</pre>}
-          {method === "email" && <input className="input font-mono w-40" placeholder="6-digit code" value={code} onChange={(e) => setCode(e.target.value)} />}
-          <div className="flex gap-2">
-            <button className="btn" onClick={check} disabled={busy}>{busy ? "Checking…" : "Check now"}</button>
-            <button className="btn btn-ghost" onClick={() => setStarted(null)}>Start over</button>
-          </div>
-        </div>
-      )}
-      {msg && <div className="text-mixed">{msg}</div>}
-    </div>
   );
 }
 
@@ -205,7 +118,7 @@ function LinkRepo({ entry, onDone }: { entry: Entry; onDone: () => void }) {
       <div className="flex flex-wrap gap-2">
         <button className="btn" onClick={() => go(false)} disabled={!repo.trim() || busy}>{busy ? "Linking…" : "Link repo"}</button>
         {(entry.repoUrl || entry.repoPrivate) && <button className="btn btn-ghost" onClick={() => go(true)} disabled={busy}>Unlink</button>}
-        <a className="btn btn-ghost" href={INSTALL}>Install the app</a>
+        <a className="btn btn-ghost" href={INSTALL_APP}>Install the app</a>
       </div>
       {msg && <div className={msg.startsWith("Repo") ? "text-fresh" : "text-slop"}>{msg}</div>}
     </div>

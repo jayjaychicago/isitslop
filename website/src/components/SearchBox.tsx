@@ -15,7 +15,6 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
   const router = useRouter();
   const [q, setQ] = useState("");
   const [items, setItems] = useState<Item[]>(initial);
-  const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,17 +37,8 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
 
   const looksLikeUrl = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(q.trim());
 
-  async function add() {
-    setBusy(true);
-    setErr(null);
-    try {
-      const r = await api<{ entry: Entry }>(`/entries`, { method: "POST", body: JSON.stringify({ url: q.trim() }) });
-      router.push(`/s/${r.entry.id}`);
-    } catch (e) {
-      setErr((e as Error).message);
-      setBusy(false);
-    }
-  }
+  /** The only way in: prove it is yours. */
+  const claim = () => router.push(`/claim?url=${encodeURIComponent(q.trim())}`);
 
   return (
     <div className="flex flex-col gap-4">
@@ -56,12 +46,12 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
         className="flex flex-col sm:flex-row gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          if (looksLikeUrl) add();
+          if (looksLikeUrl) claim();
         }}
       >
         <input
           className="input text-base w-full min-w-0"
-          placeholder="Search the index, or paste a URL or github.com/owner/repo to add it"
+          placeholder="Search the index, or paste your URL or github.com/owner/repo to claim it"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           autoFocus
@@ -70,8 +60,8 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
           <button className="btn btn-ghost flex-1 sm:flex-none" type="button" onClick={() => setQ(q.trim())} title="Results appear as you type">
             Search
           </button>
-          <button className="btn flex-1 sm:flex-none" type="submit" disabled={!looksLikeUrl || busy}>
-            {busy ? "Adding…" : "Add"}
+          <button className="btn flex-1 sm:flex-none" type="submit" disabled={!looksLikeUrl} title="Prove it is yours to list it">
+            Claim
           </button>
         </div>
       </form>
@@ -79,7 +69,7 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
 
       <ul className="divide-y divide-line card">
         {items.length === 0 && (
-          <li className="p-5 text-sm text-muted">{q ? "Nothing in the index matches. Paste the full URL to add it." : "Loading…"}</li>
+          <li className="p-5 text-sm text-muted">{q ? "Nothing in the index matches. Yours? Paste the full URL and claim it." : "Loading…"}</li>
         )}
         {items.map((it) => (
           <li key={it.id}>

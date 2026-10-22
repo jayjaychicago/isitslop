@@ -20,7 +20,7 @@ export default function Home() {
       </section>
 
       <section className="pb-10 grid sm:grid-cols-3 gap-x-6 gap-y-4 text-ink-2">
-        <div><span className="display text-2xl text-ink">1. Add it.</span> A URL or a GitHub repo, and prove it is yours.</div>
+        <div><span className="display text-2xl text-ink">1. Claim it.</span> Sign in with GitHub and prove the URL or repo is yours. Nothing is listed until you do.</div>
         <div><span className="display text-2xl text-ink">2. Connect.</span> GitHub for Quality, Google Analytics for Popularity. Read-only.</div>
         <div><span className="display text-2xl text-ink">3. Get graded.</span> Public rules, public result, public appeals.</div>
       </section>

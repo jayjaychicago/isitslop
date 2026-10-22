@@ -21,22 +21,19 @@ export default function ApiDocs() {
       <Section title="Search the index">
         <pre>{`curl "${base}/entries?q=example"`}</pre>
       </Section>
-      <Section title="Add a URL">
-        <pre>{`curl -X POST ${base}/entries -H 'content-type: application/json' \\
-  -d '{"url":"https://example.com"}'`}</pre>
-      </Section>
-      <Section title="Sign in and own things">
+      <Section title="Claim something you own (this is how things enter the index)">
         <pre>{`# browser: sign in with GitHub (sets a session cookie on .isitslop.org)
 ${base}/auth/github?return=/me
 curl -b cookies ${base}/me
 
-# sites: prove the domain with dns | file | email
-curl -b cookies -X POST ${base}/entries/ENTRY_ID/verify/start -H 'content-type: application/json' -d '{"method":"dns"}'
-curl -b cookies -X POST ${base}/entries/ENTRY_ID/verify/check -H 'content-type: application/json' -d '{"verificationId":"..."}'
-# -> { verified: true, ownerKey: "isk_..." }   the ownerKey is only for curl use; the website uses your sign-in
+# repositories: your GitHub account must have push access. The entry is created on success.
+curl -b cookies -X POST ${base}/claim -H 'content-type: application/json' -d '{"url":"github.com/owner/repo"}'
+# -> { entry, ownerKey: "isk_..." }   the ownerKey is only for curl use; the website uses your sign-in
 
-# repositories: your GitHub account must have push access
-curl -b cookies -X POST ${base}/entries/ENTRY_ID/claim`}</pre>
+# sites: prove the domain with dns | file | email. The entry is created when the check passes.
+curl -b cookies -X POST ${base}/verify/start -H 'content-type: application/json' -d '{"url":"example.com","method":"dns"}'
+curl -b cookies -X POST ${base}/verify/check -H 'content-type: application/json' -d '{"verificationId":"..."}'
+# -> { verified: true, entry, ownerKey: "isk_..." }`}</pre>
       </Section>
       <Section title="Request a grade (owner only)">
         <pre>{`curl -b cookies -X POST ${base}/entries/ENTRY_ID/grade \\

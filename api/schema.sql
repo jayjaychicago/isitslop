@@ -70,6 +70,10 @@ create table if not exists verifications (
   expires_at  timestamptz not null default now() + interval '24 hours'
 );
 create index if not exists verifications_entry_idx on verifications (entry_id, created_at desc);
+alter table verifications alter column entry_id drop not null;
+alter table verifications add column if not exists url text;
+alter table verifications add column if not exists domain text;
+alter table verifications add column if not exists user_id uuid references users(id) on delete cascade;
 alter table verifications drop constraint if exists verifications_method_check;
 alter table verifications add constraint verifications_method_check check (method in ('dns', 'file', 'email', 'github'));
 

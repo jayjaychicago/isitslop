@@ -239,16 +239,6 @@ paths:
                   items: { type: array, items: { allOf: [{ $ref: "#/components/schemas/Entry" }, { type: object, properties: { grade: { oneOf: [{ $ref: "#/components/schemas/GradeSummary" }, { type: "null" }] } } }] } }
                   limit: { type: integer }
                   offset: { type: integer }
-    post:
-      tags: [public]
-      summary: Add a URL to the index (does not grade it)
-      requestBody:
-        required: true
-        content: { application/json: { schema: { type: object, required: [url], properties: { url: { type: string, examples: [example.com, "https://github.com/owner/repo"] } } } } }
-      responses:
-        "201": { description: The entry (existing or new), content: { application/json: { schema: { type: object, properties: { entry: { $ref: "#/components/schemas/Entry" } } } } } }
-        "400": { description: Not a usable URL, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
-        "429": { description: Rate limited }
 
   /entries/{id}:
     parameters:
@@ -319,44 +309,48 @@ paths:
                   user: { type: [object, "null"], properties: { id: { type: string }, githubLogin: { type: string }, githubConnected: { type: boolean } } }
                   entries: { type: array, items: { allOf: [{ $ref: "#/components/schemas/Entry" }, { type: object, properties: { grade: { oneOf: [{ $ref: "#/components/schemas/GradeSummary" }, { type: "null" }] } } }] } }
 
-  /entries/{id}/verify/start:
+  /claim:
     post:
       tags: [owner]
-      summary: Start verifying a site (DNS TXT, well-known file, or email to the domain)
-      description: Sites only. Repositories are claimed with POST /entries/{id}/claim.
-      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      summary: Claim a repository. Creates the entry.
+      description: The signed-in GitHub account must have push access to the repository, and the Is It Slop GitHub App must be installed on the account that owns it. Nothing is indexed until this succeeds. Private repositories are fine; their URL is never published.
+      security: [{ session: [] }]
       requestBody:
         required: true
-        content: { application/json: { schema: { type: object, required: [method], properties: { method: { type: string, enum: [dns, file, email] }, email: { type: string, description: "admin@, webmaster@, postmaster@ or hostmaster@ the domain (email method)" } } } } }
+        content: { application/json: { schema: { type: object, required: [url], properties: { url: { type: string, examples: ["https://github.com/owner/repo"] } } } } }
       responses:
-        "201": { description: Instructions and a verificationId }
-        "400": { description: Bad method or repository entry }
-        "503": { description: Email not configured }
-  /entries/{id}/verify/check:
+        "201": { description: Claimed, content: { application/json: { schema: { type: object, properties: { entry: { $ref: "#/components/schemas/Entry" }, ownerKey: { type: string } } } } } }
+        "400": { description: Not a repository URL (sites use /verify/start) }
+        "401": { description: Not signed in }
+        "403": { description: No push access }
+        "422": { description: App not installed on that account }
+  /verify/start:
     post:
       tags: [owner]
-      summary: Check a pending verification
-      description: On success the signed-in user becomes the owner. An owner key is also returned for script use.
-      security: [{ session: [] }, {}]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      summary: Start proving a site is yours (DNS TXT, well-known file, or email to the domain)
+      description: Sites only; repositories are claimed with POST /claim. Nothing is indexed until the check passes.
+      security: [{ session: [] }]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [url, method], properties: { url: { type: string, examples: [example.com] }, method: { type: string, enum: [dns, file, email] }, email: { type: string, description: "admin@, webmaster@, postmaster@ or hostmaster@ the domain (email method)" } } } } }
+      responses:
+        "201": { description: Instructions and a verificationId }
+        "400": { description: Bad URL, method, or a repository URL }
+        "401": { description: Not signed in }
+        "503": { description: Email not configured }
+  /verify/check:
+    post:
+      tags: [owner]
+      summary: Check a pending site verification
+      description: On success the entry is created, owned by the signed-in user who started the check. An owner key is also returned for script use.
+      security: [{ session: [] }]
       requestBody:
         required: true
         content: { application/json: { schema: { type: object, required: [verificationId], properties: { verificationId: { type: string }, code: { type: string, description: 6-digit code (email method) } } } } }
       responses:
         "200":
           description: Result
-          content: { application/json: { schema: { type: object, properties: { verified: { type: boolean }, detail: { type: string }, ownerKey: { type: string }, signedIn: { type: boolean }, entry: { $ref: "#/components/schemas/Entry" } } } } }
-  /entries/{id}/claim:
-    post:
-      tags: [owner]
-      summary: Claim a repository entry
-      description: The signed-in GitHub account must have push access to the repository, and the Is It Slop GitHub App must be installed on the account that owns it. Private repositories are fine; their URL is never published.
-      security: [{ session: [] }]
-      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
-      responses:
-        "200": { description: Claimed, content: { application/json: { schema: { type: object, properties: { entry: { $ref: "#/components/schemas/Entry" }, ownerKey: { type: string } } } } } }
-        "403": { description: No push access }
-        "422": { description: App not installed on that account }
+          content: { application/json: { schema: { type: object, properties: { verified: { type: boolean }, detail: { type: string }, ownerKey: { type: string }, entry: { $ref: "#/components/schemas/Entry" } } } } }
   /entries/{id}/repo:
     post:
       tags: [owner]

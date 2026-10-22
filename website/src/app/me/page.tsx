@@ -19,7 +19,7 @@ export default function MePage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="display text-4xl">Your entries</h1>
-      <p className="mt-2 text-ink-2">Signed in as {me.user.githubLogin}. Add a URL on the <Link href="/" className="underline">home page</Link>, then verify it to make it yours.</p>
+      <p className="mt-2 text-ink-2">Signed in as {me.user.githubLogin}. <Link href="/claim" className="underline">Claim a URL or a repo</Link> to add it.</p>
       <ul className="card mt-6 divide-y divide-line">
         {me.entries.length === 0 && <li className="p-5 text-sm text-muted">Nothing yet.</li>}
         {me.entries.map((e) => (

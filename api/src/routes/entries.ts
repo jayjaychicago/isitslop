@@ -34,9 +34,9 @@ entries.get('/entries', async (c) => {
       end as rank
     from entries e
     left join lateral (select * from grades where entry_id = e.id order by created_at desc limit 1) g on true
-    where ${q} = ''
+    where e.verified_at is not null and (${q} = ''
        or ((e.url ilike ${like} or e.domain ilike ${like}) and not (e.kind = 'github' and e.repo_private))
-       or (coalesce(e.title,'') ilike ${like} and not (e.kind = 'github' and e.repo_private))
+       or (coalesce(e.title,'') ilike ${like} and not (e.kind = 'github' and e.repo_private)))
     order by rank desc, (g.verdict is not null) desc, e.created_at desc
     limit ${limit} offset ${offset}
   `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; overall: number | null; verdict: string | null; graded_at: string | null })[];
@@ -98,21 +98,6 @@ function verdictLabel(v: string | null): string {
   return `${cap(p)} ${cap(q)}`;
 }
 
-entries.post('/entries', async (c) => {
-  const sql = db(c.env.DATABASE_URL);
-  if (!(await rateLimit(sql, `add:${ip(c)}`, 20, 3600))) return c.json({ error: 'rate limited' }, 429);
-  const body = await c.req.json().catch(() => ({}));
-  const t = normalizeTarget(String(body.url ?? ''));
-  if (typeof t === 'string') return c.json({ error: t }, 400);
-  const rows = (await sql`
-    insert into entries (url, kind, domain) values (${t.url}, ${t.kind}, ${t.domain})
-    on conflict (url) do update set url = excluded.url
-    returning *
-  `) as EntryRow[];
-  const e = rows[0];
-  return c.json({ entry: publicEntry(e) }, 201);
-});
-
 entries.get('/entries/:id', async (c) => {
   const sql = db(c.env.DATABASE_URL);
   const e = await getEntry(sql, c.req.param('id'));
@@ -153,27 +138,6 @@ entries.post('/entries/:id/repo', async (c) => {
   if (info.permission !== 'admin' && info.permission !== 'push') return c.json({ error: `${u.github_login} does not have push access to ${t.url}` }, 403);
   const rows = (await sql`update entries set repo_url = ${t.url}, repo_private = ${info.isPrivate} where id = ${e.id} returning *`) as EntryRow[];
   return c.json({ entry: publicEntry(rows[0]) });
-});
-
-/** Claim a repository entry: the signed-in user's GitHub account must have push access. This is the ownership proof. */
-entries.post('/entries/:id/claim', async (c) => {
-  const sql = db(c.env.DATABASE_URL);
-  const e = await getEntry(sql, c.req.param('id'));
-  if (!e) return c.json({ error: 'not found' }, 404);
-  if (e.kind !== 'github') return c.json({ error: 'sites are verified by DNS, file or email' }, 400);
-  const u = await currentUser(c, sql);
-  if (!u) return c.json({ error: 'sign in with GitHub first' }, 401);
-  const t = normalizeTarget(e.url);
-  if (typeof t === 'string' || !t.repo) return c.json({ error: 'bad repo url' }, 400);
-  const token = await userGithubToken(c.env, sql, u);
-  if (!token) return c.json({ error: 'your GitHub sign-in has expired; sign in again' }, 428);
-  const info = await repoInfo(token, t.repo.owner, t.repo.name);
-  if (info === 'invisible') return c.json({ error: `the Is It Slop app cannot see ${t.url}; install it on that account at https://github.com/apps/${c.env.GITHUB_APP_SLUG ?? 'is-it-slop'}/installations/new` }, 422);
-  if (info.permission !== 'admin' && info.permission !== 'push') return c.json({ error: `${u.github_login} does not have push access to ${t.url}` }, 403);
-  const ownerKey = `isk_${randomToken(24)}`;
-  await sql`insert into verifications (entry_id, method, token, status) values (${e.id}, 'github', ${u.github_login}, 'verified')`;
-  const rows = (await sql`update entries set verified_at = now(), owner_user_id = ${u.id}, owner_key_hash = ${await sha256(ownerKey)}, repo_private = ${info.isPrivate} where id = ${e.id} returning *`) as EntryRow[];
-  return c.json({ entry: publicEntry(rows[0]), ownerKey, note: 'ownerKey is only needed for API use; the website uses your sign-in.' });
 });
 
 /** Remove an entry and everything attached to it (grades, verifications, appeals, analytics). Owner key, admin token, or the signed-in operator. See terms, section 9. */
