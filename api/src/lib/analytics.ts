@@ -5,10 +5,10 @@
  *   returning  of those, how many came on at least two different days
  * Add a provider by implementing `AnalyticsProvider` and registering it in PROVIDERS.
  */
-export type AnalyticsConfig = { apiKey: string; host?: string; projectId?: string; siteId?: string };
+export type AnalyticsConfig = { apiKey: string; host?: string; projectId?: string; siteId?: string; refreshToken?: string };
 export type AnalyticsReading = { provider: string; visitors: number; returning: number; window: string; note?: string };
 
-export type ProviderEnv = { GA_SERVICE_ACCOUNT_JSON?: string };
+export type ProviderEnv = { GA_SERVICE_ACCOUNT_JSON?: string; GOOGLE_CLIENT_ID?: string; GOOGLE_CLIENT_SECRET?: string };
 
 export type AnalyticsProvider = {
   id: string;
@@ -115,47 +115,73 @@ async function googleAccessToken(sa: { client_email: string; private_key: string
   return j.access_token ?? `google token error: ${j.error_description ?? r.status}`;
 }
 
+/** Access token from an owner's refresh token (the "Connect Google Analytics" button). */
+export async function googleUserToken(env: ProviderEnv, refreshToken: string): Promise<string | null> {
+  const r = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: env.GOOGLE_CLIENT_ID ?? '', client_secret: env.GOOGLE_CLIENT_SECRET ?? '', refresh_token: refreshToken, grant_type: 'refresh_token' }),
+  });
+  const j = (await r.json().catch(() => ({}))) as { access_token?: string };
+  return j.access_token ?? null;
+}
+
+/** GA4 properties the token can see, for the picker after sign-in. */
+export async function listGa4Properties(token: string): Promise<{ id: string; name: string }[]> {
+  const r = await fetch('https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200', { headers: { authorization: `Bearer ${token}`, 'user-agent': UA } });
+  if (!r.ok) return [];
+  const j = (await r.json()) as { accountSummaries?: { displayName: string; propertySummaries?: { property: string; displayName: string }[] }[] };
+  const out: { id: string; name: string }[] = [];
+  for (const a of j.accountSummaries ?? []) for (const p of a.propertySummaries ?? []) out.push({ id: p.property.replace('properties/', ''), name: `${a.displayName} / ${p.displayName}` });
+  return out;
+}
+
+export async function ga4Report(token: string, propertyId: string): Promise<AnalyticsReading | string> {
+  const r = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${encodeURIComponent(propertyId)}:runReport`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', 'user-agent': UA },
+    body: JSON.stringify({ dateRanges: [{ startDate: '30daysAgo', endDate: 'yesterday' }], dimensions: [{ name: 'newVsReturning' }], metrics: [{ name: 'activeUsers' }] }),
+  });
+  if (r.status === 403) return `Google Analytics denied access to property ${propertyId}`;
+  if (r.status === 404) return `GA4 property ${propertyId} not found (use the numeric property ID, not the measurement ID)`;
+  if (!r.ok) return `Google Analytics returned ${r.status}: ${(await r.text()).slice(0, 120)}`;
+  const j = (await r.json()) as { rows?: { dimensionValues: { value: string }[]; metricValues: { value: string }[] }[] };
+  let visitors = 0;
+  let returning = 0;
+  for (const row of j.rows ?? []) {
+    const n = Number(row.metricValues[0]?.value ?? 0);
+    visitors += n;
+    if (row.dimensionValues[0]?.value === 'returning') returning += n;
+  }
+  return { provider: 'ga4', visitors, returning, window: '30d' };
+}
+
 const ga4: AnalyticsProvider = {
   id: 'ga4',
   name: 'Google Analytics 4',
   fields: [{ key: 'projectId', label: 'GA4 property ID (Admin → Property details, a number)', placeholder: '123456789', required: true }],
   instructions: (env) => {
+    if (env.GOOGLE_CLIENT_ID) return 'Click "Connect Google Analytics" to sign in with Google and pick the property. Read-only.';
     const sa = serviceAccount(env);
-    return sa
-      ? `In Google Analytics, Admin → Property access management → Add users, add ${sa.client_email} with the Viewer role. Then enter your property ID.`
-      : 'Google Analytics is not configured on this deployment.';
+    return sa ? `In Google Analytics, Admin → Property access management → Add users, add ${sa.client_email} with the Viewer role. Then enter your property ID.` : 'Google Analytics is not configured on this deployment.';
   },
   async read(cfg, env) {
-    const sa = serviceAccount(env);
-    if (!sa) return 'Google Analytics is not configured on this deployment';
-    const token = await googleAccessToken(sa);
-    if (token.startsWith('google token error')) return token;
-    const r = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${encodeURIComponent(cfg.projectId ?? '')}:runReport`, {
-      method: 'POST',
-      headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json', 'user-agent': UA },
-      body: JSON.stringify({
-        dateRanges: [{ startDate: '30daysAgo', endDate: 'yesterday' }],
-        dimensions: [{ name: 'newVsReturning' }],
-        metrics: [{ name: 'activeUsers' }],
-      }),
-    });
-    if (r.status === 403) return `Google Analytics denied access: add ${sa.client_email} as Viewer on property ${cfg.projectId}`;
-    if (r.status === 404) return `GA4 property ${cfg.projectId} not found (use the numeric property ID, not the measurement ID)`;
-    if (!r.ok) return `Google Analytics returned ${r.status}: ${(await r.text()).slice(0, 120)}`;
-    const j = (await r.json()) as { rows?: { dimensionValues: { value: string }[]; metricValues: { value: string }[] }[] };
-    let visitors = 0;
-    let returning = 0;
-    for (const row of j.rows ?? []) {
-      const n = Number(row.metricValues[0]?.value ?? 0);
-      visitors += n;
-      if (row.dimensionValues[0]?.value === 'returning') returning += n;
+    let token: string | null = null;
+    if (cfg.refreshToken && env.GOOGLE_CLIENT_ID) token = await googleUserToken(env, cfg.refreshToken);
+    else {
+      const sa = serviceAccount(env);
+      if (!sa) return 'Google Analytics is not configured on this deployment';
+      const t = await googleAccessToken(sa);
+      if (t.startsWith('google token error')) return t;
+      token = t;
     }
-    return { provider: 'ga4', visitors, returning, window: '30d' };
+    if (!token) return 'Google sign-in expired; connect Google Analytics again';
+    return ga4Report(token, cfg.projectId ?? '');
   },
 };
 
 export const PROVIDERS: Record<string, AnalyticsProvider> = { ga4, posthog, plausible };
 
 export function providerList(env: ProviderEnv) {
-  return Object.values(PROVIDERS).map((p) => ({ id: p.id, name: p.name, fields: p.fields, instructions: p.instructions?.(env) ?? null, available: p.id !== 'ga4' || !!serviceAccount(env) }));
+  return Object.values(PROVIDERS).map((p) => ({ id: p.id, name: p.name, fields: p.fields, instructions: p.instructions?.(env) ?? null, available: p.id !== 'ga4' || !!env.GOOGLE_CLIENT_ID || !!serviceAccount(env), oauth: p.id === 'ga4' && !!env.GOOGLE_CLIENT_ID }));
 }

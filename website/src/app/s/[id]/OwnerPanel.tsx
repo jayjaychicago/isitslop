@@ -5,8 +5,10 @@ import { API, api, type Entry, type Grade } from "@/lib/api";
 
 type StartResp = { verificationId: string; method: string; text: string; record?: { type: string; name: string; value: string }; file?: { url?: string; path?: string; content: string }; email?: string };
 
-export function OwnerPanel({ entry, grade, ownerKey, onOwnerKey, onChange }: { entry: Entry; grade: Grade | null; ownerKey: string | null; onOwnerKey: (k: string | null) => void; onChange: () => void }) {
-  const [tab, setTab] = useState<"verify" | "grade" | "repo" | "analytics" | "appeal">(ownerKey ? "grade" : "verify");
+type Tab = "verify" | "grade" | "repo" | "analytics" | "appeal";
+
+export function OwnerPanel({ entry, grade, ownerKey, onOwnerKey, onChange, gaPick, initialTab }: { entry: Entry; grade: Grade | null; ownerKey: string | null; onOwnerKey: (k: string | null) => void; onChange: () => void; gaPick?: { id: string; name: string }[] | null; initialTab?: Tab }) {
+  const [tab, setTab] = useState<Tab>(initialTab ?? (ownerKey ? "grade" : "verify"));
   return (
     <section className="mt-12 card p-5 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -30,7 +32,7 @@ export function OwnerPanel({ entry, grade, ownerKey, onOwnerKey, onChange }: { e
         {tab === "verify" && <Verify entry={entry} onKey={(k) => { onOwnerKey(k); onChange(); setTab("grade"); }} />}
         {tab === "grade" && <RequestGrade entry={entry} ownerKey={ownerKey} onDone={onChange} />}
         {tab === "repo" && <LinkRepo entry={entry} ownerKey={ownerKey} onDone={onChange} />}
-        {tab === "analytics" && <Analytics entry={entry} ownerKey={ownerKey} onDone={onChange} />}
+        {tab === "analytics" && <Analytics entry={entry} ownerKey={ownerKey} onDone={onChange} gaPick={gaPick ?? null} />}
         {tab === "appeal" && <Appeal entry={entry} grade={grade} ownerKey={ownerKey} onDone={onChange} />}
       </div>
     </section>
@@ -229,9 +231,9 @@ function LinkRepo({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string 
   );
 }
 
-type Provider = { id: string; name: string; fields: { key: string; label: string; placeholder: string; required: boolean }[]; instructions: string | null; available: boolean };
+type Provider = { id: string; name: string; fields: { key: string; label: string; placeholder: string; required: boolean }[]; instructions: string | null; available: boolean; oauth: boolean };
 
-function Analytics({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string | null; onDone: () => void }) {
+function Analytics({ entry, ownerKey, onDone, gaPick }: { entry: Entry; ownerKey: string | null; onDone: () => void; gaPick: { id: string; name: string }[] | null }) {
   const [providers, setProviders] = useState<Provider[]>([]);
   const [provider, setProvider] = useState("ga4");
   const [values, setValues] = useState<Record<string, string>>({});
@@ -247,10 +249,10 @@ function Analytics({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string
       .catch(() => {});
   }, []);
   const p = providers.find((x) => x.id === provider);
-  async function connect() {
+  async function connect(override?: Record<string, string>) {
     setBusy(true); setMsg(null);
     try {
-      const r = await api<{ reading: { visitors: number; returning: number } }>(`/entries/${entry.id}/analytics`, { method: "POST", ownerKey: ownerKey ?? undefined, body: JSON.stringify({ provider, ...values }) });
+      const r = await api<{ reading: { visitors: number; returning: number } }>(`/entries/${entry.id}/analytics`, { method: "POST", ownerKey: ownerKey ?? undefined, body: JSON.stringify({ provider, ...values, ...override }) });
       setMsg(`Connected. Last 30 days: ${r.reading.visitors.toLocaleString()} visitors, ${r.reading.returning.toLocaleString()} came back on another day. Request a grade.`);
       onDone();
     } catch (e) { setMsg((e as Error).message); }
@@ -273,7 +275,20 @@ function Analytics({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string
         ))}
       </div>
       {p?.instructions && <p className="text-ink-2 card p-3 bg-paper">{p.instructions}</p>}
-      {p && (
+      {p?.oauth && gaPick && gaPick.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <span className="text-ink-2">Pick the property for {entry.domain}:</span>
+          {gaPick.map((g) => (
+            <button key={g.id} className="btn btn-ghost justify-start" disabled={busy} onClick={() => connect({ projectId: g.id })}>{g.name} <span className="text-muted ml-2">#{g.id}</span></button>
+          ))}
+        </div>
+      )}
+      {p?.oauth && !gaPick && (
+        <div>
+          <a className="btn" href={`${API}/google/login?entry=${entry.id}&ownerKey=${encodeURIComponent(ownerKey ?? "")}`} aria-disabled={!ownerKey}>Connect Google Analytics</a>
+        </div>
+      )}
+      {p && !p.oauth && (
         <div className="grid sm:grid-cols-2 gap-3">
           {p.fields.map((f) => (
             <label key={f.key} className="block">
@@ -284,7 +299,7 @@ function Analytics({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: string
         </div>
       )}
       <div className="flex gap-2">
-        <button className="btn" onClick={connect} disabled={!ownerKey || busy || !p || !p.available}>{busy ? "Testing…" : "Connect and test"}</button>
+        {p && !p.oauth && <button className="btn" onClick={() => connect()} disabled={!ownerKey || busy || !p.available}>{busy ? "Testing…" : "Connect and test"}</button>}
         {entry.analyticsProvider && <button className="btn btn-ghost" onClick={disconnect} disabled={!ownerKey || busy}>Disconnect</button>}
       </div>
       <p className="text-xs text-muted">Matomo, Fathom, Umami, Mixpanel and others are an open contribution: one object in <code>api/src/lib/analytics.ts</code>.</p>

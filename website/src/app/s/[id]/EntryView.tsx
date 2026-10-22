@@ -22,6 +22,7 @@ export function EntryView({ id }: { id: string }) {
   }, [id]);
 
   const [flash, setFlash] = useState<string | null>(null);
+  const [gaPick, setGaPick] = useState<{ id: string; name: string }[] | null>(null);
 
   useEffect(() => {
     reload();
@@ -34,6 +35,16 @@ export function EntryView({ id }: { id: string }) {
       window.history.replaceState(null, "", window.location.pathname);
     } else if (h.get("github") === "error") {
       setFlash(`GitHub: ${h.get("detail")}`);
+      window.history.replaceState(null, "", window.location.pathname);
+    } else if (h.get("google") === "ok") {
+      setFlash(`Google Analytics connected: ${h.get("property")}. ${h.get("detail") ?? `Last 30 days: ${h.get("visitors")} visitors, ${h.get("returning")} came back. Request a grade.`}`);
+      window.history.replaceState(null, "", window.location.pathname);
+    } else if (h.get("google") === "pick") {
+      try { setGaPick(JSON.parse(h.get("properties") ?? "[]")); } catch { /* ignore */ }
+      setFlash("Google signed in. Pick the GA4 property in the analytics tab.");
+      window.history.replaceState(null, "", window.location.pathname);
+    } else if (h.get("google") === "error") {
+      setFlash(`Google: ${h.get("detail")}`);
       window.history.replaceState(null, "", window.location.pathname);
     }
     setOwnerKey(loadOwnerKey(id));
@@ -88,7 +99,7 @@ export function EntryView({ id }: { id: string }) {
 
       {grade && <Breakdown grade={grade} />}
 
-      <OwnerPanel entry={entry} grade={grade} ownerKey={ownerKey} onOwnerKey={(k) => { setOwnerKey(k); saveOwnerKey(id, k); }} onChange={reload} />
+      <OwnerPanel key={gaPick ? "pick" : "panel"} entry={entry} grade={grade} ownerKey={ownerKey} onOwnerKey={(k) => { setOwnerKey(k); saveOwnerKey(id, k); }} onChange={reload} gaPick={gaPick} initialTab={gaPick ? "analytics" : undefined} />
 
       <section className="mt-12">
         <h2 className="display text-3xl mb-3">Appeals</h2>

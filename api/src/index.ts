@@ -8,6 +8,7 @@ import { appeals } from './routes/appeals.ts';
 import { methodology } from './routes/methodology.ts';
 import { github } from './routes/github.ts';
 import { analytics } from './routes/analytics.ts';
+import { google } from './routes/google.ts';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -28,6 +29,7 @@ app.get('/', (c) =>
       'GET  /v1/github/login?entry=&ownerKey=   connect the owner GitHub account (repo entries: this is the ownership proof)',
       'POST /v1/entries/:id/verify/check {verificationId, code?}',
       'GET  /v1/analytics/providers',
+      'GET  /v1/google/login?entry=&ownerKey=   connect Google Analytics with Google sign-in (read-only)',
       'POST /v1/entries/:id/analytics (Bearer owner key) {provider, apiKey, projectId|siteId, host?}   connect analytics; read-only, stored encrypted',
       'DELETE /v1/entries/:id/analytics (Bearer owner key)',
       'POST /v1/entries/:id/grade  (Bearer owner key) {acceptTerms: true}',
@@ -48,6 +50,7 @@ app.route('/v1', grade);
 app.route('/v1', appeals);
 app.route('/v1', github);
 app.route('/v1', analytics);
+app.route('/v1', google);
 
 app.notFound((c) => c.json({ error: 'not found' }, 404));
 app.onError((err, c) => {

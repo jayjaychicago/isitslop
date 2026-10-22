@@ -22,6 +22,11 @@ analytics.post('/entries/:id/analytics', async (c) => {
   const provider = PROVIDERS[String(body.provider ?? '')];
   if (!provider) return c.json({ error: `provider must be one of ${Object.keys(PROVIDERS).join(', ')}` }, 400);
   const cfg: AnalyticsConfig = { apiKey: String(body.apiKey ?? '').trim() };
+  // Google: keep the refresh token from the sign-in step; the owner only picks the property here.
+  if (provider.id === 'ga4' && e.analytics_provider === 'ga4' && e.analytics_config) {
+    const prev = await open(c.env, e.analytics_config);
+    if (prev) cfg.refreshToken = (JSON.parse(prev) as AnalyticsConfig).refreshToken;
+  }
   for (const f of provider.fields) {
     const v = body[f.key];
     if (typeof v === 'string' && v.trim()) cfg[f.key] = v.trim();
