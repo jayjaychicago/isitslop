@@ -49,7 +49,7 @@ export function scorePopularity(p: PopularityInput): PopularityResult {
   const returningRate = returning / visitors;
   const reach = band(Math.log10(visitors), REACH_BANDS);
   const score = Math.round(100 * reach * (1 - RETURN_SHARE + RETURN_SHARE * band(returningRate, RETURN_BANDS)));
-  return { score, returningRate, note: `${visitors.toLocaleString()} visitors, ${returning.toLocaleString()} came back on another day, read from Google Analytics.`, version: POPULARITY_VERSION };
+  return { score, returningRate, note: `${visitors.toLocaleString()} active users in 30 days, ${returning.toLocaleString()} returning, read from Google Analytics.`, version: POPULARITY_VERSION };
 }
 
 export function methodologyPopularity() {
