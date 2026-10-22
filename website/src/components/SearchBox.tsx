@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api, entryLabel, verdictClass, verdictLabel, type Entry, type GradeSummary } from "@/lib/api";
+import { api, verdictClass, verdictLabel, type Entry, type GradeSummary } from "@/lib/api";
 import { MiniScores } from "./Score";
 
 type Item = Entry & { grade: GradeSummary | null };
