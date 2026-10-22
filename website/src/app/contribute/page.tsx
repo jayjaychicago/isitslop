@@ -71,7 +71,7 @@ export default function Contribute() {
       <section className="mt-12">
         <h2 className="display text-3xl">Open problems worth a pull request</h2>
         <ul className="mt-3 grid sm:grid-cols-2 gap-3 text-sm text-ink-2">
-          <li className="card p-4">More analytics providers for Popularity: Google Analytics, Fathom, Umami, Cloudflare. Each is one object in <code>analytics.ts</code>.</li>
+          <li className="card p-4">More analytics providers for Popularity: Matomo, Fathom, Umami, Mixpanel, Cloudflare. Each is one object in <code>analytics.ts</code>.</li>
           <li className="card p-4">GitLab, Codeberg and self-hosted repos. Everything in v0 is GitHub.</li>
           <li className="card p-4">Better fraud resistance: detecting commit-cadence bots, sock-puppet contributors, issue farms.</li>
           <li className="card p-4">Pull request signals: reviewed merges from outside contributors. Releases were dropped as too cheap; argue for them back with data.</li>
