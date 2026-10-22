@@ -168,8 +168,8 @@ function Breakdown({ grade }: { grade: Grade }) {
                     </div>
                   )}
                 </div>
-                <div className={`text-right tabular-nums font-semibold ${sig.weight < 0 ? "text-slop" : "text-ink"}`}>
-                  {sig.weight < 0 ? "" : "+"}{pts} <span className="text-muted font-normal">/ {sig.weight}</span>
+                <div className="text-right tabular-nums font-semibold text-ink">
+                  {sig.weight === 0 ? `×${sig.score.toFixed(1)}` : <>+{pts} <span className="text-muted font-normal">/ {sig.weight}</span></>}
                 </div>
               </li>
             );

@@ -12,7 +12,7 @@
  */
 import type { QualityResult, Signal } from './types.ts';
 
-export const QUALITY_VERSION = '0.3.0';
+export const QUALITY_VERSION = '0.4.0';
 
 const UA = 'isitslop-bot/0.3 (+https://isitslop.org/methodology)';
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n));
@@ -49,46 +49,62 @@ export type RepoFacts = {
   readmeWords: number;
 };
 
-type Rule = { id: string; description: string; weight: number; run: (f: RepoFacts) => { score: number; evidence: string[] } };
+type Rule = {
+  id: string;
+  description: string;
+  /** Points: weight > 0, summing to 100. Multipliers: weight 0, applied to the total; they can only lower it. */
+  weight: number;
+  kind: 'points' | 'multiplier';
+  run: (f: RepoFacts) => { score: number; evidence: string[] };
+};
 
+/**
+ * Only things that take time score points. Things that take a minute (a README,
+ * a license, a CI file, a tests folder) are multipliers: missing them costs you,
+ * having them earns nothing. A repo born today with one author scores 0.
+ */
 export const RULES: Rule[] = [
   {
     id: 'activity',
+    kind: 'points',
     description:
-      'Sustained work over time: the share of the last 52 weeks with at least one commit, discounted for repos younger than six months. Months of history cannot be bought.',
-    weight: 25,
+      'Sustained work over time: the share of the last 52 weeks with at least one commit, times how long the repo has existed (nothing under one month, full credit from six months). Months of history cannot be bought.',
+    weight: 35,
     run: (f) => {
       const ageMonths = days(f.createdAt) / 30;
-      const ageFactor = band(ageMonths, [[0, 0.2], [1, 0.35], [3, 0.6], [6, 1]]);
+      const ageFactor = band(ageMonths, [[1, 0], [3, 0.5], [6, 1]]);
       const cadence = f.weeksWithCommits / 52;
       return { score: clamp01(cadence * ageFactor), evidence: [`${f.weeksWithCommits} of 52 weeks with commits`, `${ageMonths.toFixed(1)} months old`] };
     },
   },
   {
     id: 'contributors',
+    kind: 'points',
     description:
-      'People other than a single author have put real work in: humans (not bots) with at least two commits. Sock puppets are possible but cost effort.',
-    weight: 20,
-    run: (f) => ({ score: band(f.humansWithTwoPlusCommits, [[0, 0], [1, 0.25], [2, 0.55], [4, 0.8], [8, 1]]), evidence: [`${f.humansWithTwoPlusCommits} humans with 2+ commits`] }),
+      'People other than the author have put real work in: humans (not bots) with at least two commits, not counting the first one. One person is zero.',
+    weight: 25,
+    run: (f) => ({ score: band(Math.max(0, f.humansWithTwoPlusCommits - 1), [[0, 0], [1, 0.4], [3, 0.75], [7, 1]]), evidence: [`${f.humansWithTwoPlusCommits} humans with 2+ commits`] }),
   },
   {
     id: 'issues',
+    kind: 'points',
     description:
-      'Other people file issues and they get resolved: share of non-PR issues closed, scaled by whether anyone outside the owner has filed one. Fewer than three issues is no signal and scores low.',
-    weight: 20,
+      'Other people file issues and they get resolved: share of issues closed, times whether outsiders file them. Fewer than three issues, or no outside authors, is zero.',
+    weight: 25,
     run: (f) => {
-      if (f.issuesTotal < 3) return { score: 0.15, evidence: [`${f.issuesTotal} issues: too few to tell`] };
+      if (f.issuesTotal < 3 || f.issueAuthorsOutsideOwner === 0) return { score: 0, evidence: [`${f.issuesTotal} issues, ${f.issueAuthorsOutsideOwner} from outside`] };
       const ratio = f.issuesClosed / f.issuesTotal;
-      const outside = band(f.issueAuthorsOutsideOwner, [[0, 0.4], [1, 0.7], [3, 1]]);
+      const outside = band(f.issueAuthorsOutsideOwner, [[1, 0.5], [3, 0.8], [10, 1]]);
       return { score: clamp01(ratio * outside), evidence: [`${f.issuesClosed} of ${f.issuesTotal} issues closed`, `${f.issueAuthorsOutsideOwner} outside issue authors`] };
     },
   },
   {
     id: 'releases',
-    description: 'Versions get cut and shipped: number of releases or tags, with a bonus if the latest is under six months old.',
+    kind: 'points',
+    description: 'Versions get cut and shipped: number of releases or tags, with a cut if the latest is over six months old.',
     weight: 15,
     run: (f) => {
-      const count = band(f.releases, [[0, 0], [1, 0.4], [3, 0.7], [10, 1]]);
+      const count = band(f.releases, [[0, 0], [1, 0.3], [3, 0.6], [10, 1]]);
       const recent = f.lastReleaseAt && days(f.lastReleaseAt) < 180 ? 1 : 0.6;
       const ev = [`${f.releases} releases/tags`];
       if (f.lastReleaseAt) ev.push(`latest ${Math.round(days(f.lastReleaseAt))} days ago`);
@@ -96,27 +112,34 @@ export const RULES: Rule[] = [
     },
   },
   {
-    id: 'tests_ci',
-    description: 'Someone cared enough to automate checking it: a GitHub Actions workflow exists, and a test directory exists at the repo root.',
-    weight: 10,
-    run: (f) => ({ score: (f.hasWorkflows ? 0.5 : 0) + (f.hasTests ? 0.5 : 0), evidence: [f.hasWorkflows ? 'CI workflows present' : 'no CI workflows', f.hasTests ? 'tests directory present' : 'no tests directory'] }),
-  },
-  {
-    id: 'docs_license',
-    description: 'It can be understood and legally used: README of at least 300 words, and a license file GitHub recognises.',
-    weight: 10,
-    run: (f) => ({ score: (f.readmeWords >= 300 ? 0.6 : band(f.readmeWords, [[0, 0], [300, 0.6]])) + (f.license ? 0.4 : 0), evidence: [`README ~${f.readmeWords} words`, f.license ? `license: ${f.license}` : 'no license'] }),
+    id: 'hygiene',
+    kind: 'multiplier',
+    description:
+      'Multiplier, 0.6 to 1.0: a CI workflow, a tests directory, a README of at least 300 words, and a license each add 0.1. These take minutes, so they earn nothing on their own; missing them cuts the score.',
+    weight: 0,
+    run: (f) => {
+      const parts: [boolean, string][] = [
+        [f.hasWorkflows, 'CI workflows'],
+        [f.hasTests, 'tests directory'],
+        [f.readmeWords >= 300, `README ~${f.readmeWords} words`],
+        [!!f.license, f.license ? `license: ${f.license}` : 'license'],
+      ];
+      const have = parts.filter(([ok]) => ok).length;
+      return { score: 0.6 + 0.1 * have, evidence: parts.map(([ok, label]) => `${ok ? '✓' : '✗'} ${label}`) };
+    },
   },
 ];
 
-export const MAX_POINTS = RULES.reduce((a, r) => a + r.weight, 0);
+export const MAX_POINTS = RULES.filter((r) => r.kind === 'points').reduce((a, r) => a + r.weight, 0);
 
 export function scoreQuality(f: RepoFacts): QualityResult {
   const signals: Signal[] = RULES.map((r) => {
     const { score, evidence } = r.run(f);
     return { id: r.id, description: r.description, weight: r.weight, score, evidence };
   });
-  let score = Math.round(clamp01(signals.reduce((a, s) => a + s.weight * s.score, 0) / MAX_POINTS) * 100);
+  const points = RULES.filter((r) => r.kind === 'points').reduce((a, r) => a + r.weight * signals[RULES.indexOf(r)].score, 0);
+  const multiplier = RULES.filter((r) => r.kind === 'multiplier').reduce((a, r) => a * signals[RULES.indexOf(r)].score, 1);
+  let score = Math.round(clamp01((points / MAX_POINTS) * multiplier) * 100);
   let note: string | undefined;
   if (f.archived) {
     score = Math.min(score, 20);
@@ -126,7 +149,7 @@ export function scoreQuality(f: RepoFacts): QualityResult {
 }
 
 export function methodologyQuality() {
-  return RULES.map((r) => ({ id: r.id, description: r.description, weight: r.weight }));
+  return RULES.map((r) => ({ id: r.id, description: r.description, weight: r.weight, kind: r.kind }));
 }
 
 /* ---------------- GitHub REST collection ---------------- */

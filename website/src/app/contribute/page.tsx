@@ -24,7 +24,7 @@ export default function Contribute() {
         <h2 className="display text-3xl">How a score is made</h2>
         <ol className="mt-3 space-y-3 text-ink-2">
           <li className="card p-4"><strong className="text-ink">1. Read the repo.</strong> At grading time the API reads the GitHub repository with the owner&apos;s own login: commit history, contributors, issues, releases, the file tree, the README. About ten API calls, nothing stored but the result.</li>
-          <li className="card p-4"><strong className="text-ink">2. Run the rules.</strong> Each rule in <code>quality.ts</code> turns those facts into a number between 0 and 1 plus the evidence it saw. Rules have weights that sum to 100. That is the Quality score: real, maintained work by more than one person over time.</li>
+          <li className="card p-4"><strong className="text-ink">2. Run the rules.</strong> Each rule in <code>quality.ts</code> turns those facts into a number between 0 and 1 plus the evidence it saw. Only things that take time score points, with weights summing to 100; a README, license, CI and tests are a multiplier that can only lower the score. That is the Quality score: real, maintained work by more than one person over time.</li>
           <li className="card p-4"><strong className="text-ink">3. Popularity.</strong> The API reads the owner&apos;s connected analytics (<code>analytics.ts</code>): unique visitors in 30 days and how many came back on another day. The bands in <code>popularity.ts</code> turn that into the score. This answers: do the people who find it use it?</li>
           <li className="card p-4"><strong className="text-ink">4. Verdict.</strong> <code>verdict.ts</code> combines the two halves: both good is Not slop, either bad is Slop, anything else is Mixed. The <Link href="/methodology" className="underline">methodology page</Link> is generated from these files.</li>
         </ol>
@@ -36,11 +36,11 @@ export default function Contribute() {
         <pre className="mt-3">{`{
   id: 'contributors',
   description:
-    'People other than a single author have put real work in: humans (not bots) ' +
-    'with at least two commits. Sock puppets are possible but cost effort.',
-  weight: 20,
+    'People other than the author have put real work in: humans (not bots) ' +
+    'with at least two commits, not counting the first one. One person is zero.',
+  weight: 25,
   run: (f) => ({
-    score: band(f.humansWithTwoPlusCommits, [[0, 0], [1, 0.25], [2, 0.55], [4, 0.8], [8, 1]]),
+    score: band(Math.max(0, f.humansWithTwoPlusCommits - 1), [[0, 0], [1, 0.4], [3, 0.75], [7, 1]]),
     evidence: [\`\${f.humansWithTwoPlusCommits} humans with 2+ commits\`],
   }),
 }`}</pre>

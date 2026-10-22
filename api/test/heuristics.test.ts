@@ -18,16 +18,20 @@ const FRESH: RepoFacts = {
   releases: 0, lastReleaseAt: null, hasWorkflows: true, hasTests: true, readmeWords: 400,
 };
 
-test('a long-lived, multi-contributor repo scores high; a day-old solo repo scores low', () => {
+test('a long-lived, multi-contributor repo scores high; a day-old solo repo scores zero', () => {
   const h = scoreQuality(HEALTHY);
   const f = scoreQuality(FRESH);
   assert.ok(h.score >= 85, `healthy=${h.score} ${JSON.stringify(h.signals.map((s) => [s.id, s.score]))}`);
-  assert.ok(f.score < 30, `fresh=${f.score} ${JSON.stringify(f.signals.map((s) => [s.id, s.score]))}`);
+  assert.equal(f.score, 0, `fresh=${f.score} ${JSON.stringify(f.signals.map((s) => [s.id, s.score]))}`);
+  // Scaffolding earns nothing: README, license, CI, tests on a fresh solo repo still zero.
+  assert.equal(scoreQuality({ ...FRESH, readmeWords: 5000, hasTests: true, hasWorkflows: true, license: 'MIT' }).score, 0);
+  // But missing them costs a real project.
+  assert.ok(scoreQuality({ ...HEALTHY, hasTests: false, hasWorkflows: false, license: null, readmeWords: 10 }).score < h.score * 0.7);
 });
 
 test('archived repos are capped; every rule is described; weights sum to 100', () => {
   assert.ok(scoreQuality({ ...HEALTHY, archived: true }).score <= 20);
-  for (const r of RULES) assert.ok(r.description.length > 20 && r.weight > 0, r.id);
+  for (const r of RULES) assert.ok(r.description.length > 20 && (r.kind === 'multiplier' || r.weight > 0), r.id);
   assert.equal(MAX_POINTS, 100);
   assert.equal(band(0, [[0, 0], [1, 1]]), 0);
   assert.equal(band(2, [[0, 0], [1, 1]]), 1);

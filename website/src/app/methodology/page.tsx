@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 type Methodology = {
   heuristicsVersion: string;
   termsVersion: string;
-  quality: { question: string; source: string; maxPoints: number; rules: { id: string; description: string; weight: number }[] };
+  quality: { question: string; source: string; maxPoints: number; rules: { id: string; description: string; weight: number; kind: 'points' | 'multiplier' }[] };
   popularity: { question: string; version: string; source: string; weights: { returning: number; reach: number }; returnBands: [number, number][]; reachBands: [number, number][]; caveat: string; missing: string };
   verdict: { rule: string; thresholds: { notSlop: number; slop: number } };
 };
@@ -60,11 +60,11 @@ export default async function MethodologyPage() {
                 <li key={r.id} className="p-4 grid grid-cols-[6rem_1fr_4rem] gap-3 items-start">
                   <a className="text-sm underline decoration-line hover:decoration-ink" href={`https://github.com/jayjaychicago/isitslop/blob/main/api/src/heuristics/quality.ts`} title="View this rule's source"><code>{r.id}</code></a>
                   <span className="text-sm text-ink-2">{r.description}</span>
-                  <span className={`text-right font-semibold tabular-nums ${r.weight < 0 ? "text-slop" : ""}`}>{r.weight > 0 ? "+" : ""}{r.weight}</span>
+                  <span className="text-right font-semibold tabular-nums">{r.kind === "multiplier" ? "×" : `+${r.weight}`}</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-sm text-muted">Weights sum to {m.quality.maxPoints}. Each signal scores 0 to 1 and is multiplied by its weight. Archived repos are capped at 20. Read with the owner&apos;s own GitHub login, so private repos work and nothing is shared.</p>
+            <p className="mt-2 text-sm text-muted">Only things that take time score points; weights sum to {m.quality.maxPoints}. Things that take a minute (README, license, CI, tests) are a multiplier between 0.6 and 1: they can only lower the score. A repo born today with one author scores 0. Archived repos are capped at 20. Read with the owner&apos;s own GitHub login, so private repos work and nothing is shared.</p>
           </section>
 
           <section className="mt-10">
