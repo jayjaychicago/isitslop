@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api, verdictClass, verdictLabel, type EntryDetail, type Grade } from "@/lib/api";
-import { ScoreTile, VerdictBadge } from "@/components/Score";
+import { ScoreTile, VerdictBadge, popularityWord, qualityWord } from "@/components/Score";
 import { OwnerPanel } from "./OwnerPanel";
 
 export function EntryView({ id }: { id: string }) {
@@ -63,31 +63,33 @@ export function EntryView({ id }: { id: string }) {
 
       {flash && <div className="mt-4 card p-3 text-sm">{flash}</div>}
 
-      <div className="grid sm:grid-cols-[1fr_1fr_1.4fr] gap-4 mt-8">
-        <ScoreTile
-          label="Quality"
-          question="Is this real, maintained work by more than one person over time? Read from the repository."
-          value={grade?.quality ?? null}
-          sub={grade ? grade.qualityBreakdown.note ?? `Read from ${grade.qualityBreakdown.repo}, rules v${grade.heuristicsVersion}` : "Not graded yet"}
-          big
-          onClick={grade ? () => setDetail(detail === "quality" ? null : "quality") : undefined}
-          open={detail === "quality"}
-        />
-        <ScoreTile
-          label="Popularity"
-          question="Do the people who find it actually use it? Read from Google Analytics."
-          value={grade?.popularity ?? null}
-          sub={grade ? grade.popularityInput?.note ?? "Google Analytics not connected: unknown." : "Not graded yet"}
-          big
-          onClick={grade ? () => setDetail(detail === "popularity" ? null : "popularity") : undefined}
-          open={detail === "popularity"}
-        />
-        <div className="card p-5 sm:p-6 flex flex-col justify-center gap-2">
+      <div className="card mt-8 overflow-hidden">
+        <div className="p-5 sm:p-6 border-b border-line">
           <div className="text-xs uppercase tracking-wider text-muted font-semibold">Verdict</div>
-          <div className={`display text-4xl sm:text-5xl leading-[1.05] ${grade ? verdictClass(grade.verdict).split(" ")[0] : "text-muted"}`}>
+          <div className={`display text-4xl sm:text-6xl leading-[1.05] mt-1 ${grade ? verdictClass(grade.verdict).split(" ")[0] : "text-muted"}`}>
             {grade ? verdictLabel(grade.verdict) : entry.verified ? "Not graded yet" : "Unclaimed"}
           </div>
-          <div className="text-sm text-ink-2">Below 50 on quality is Slop, above is Craft. Below 50 on popularity is Fringe, above is Popular.</div>
+          {grade && <div className="text-sm text-muted mt-2">Two words, one per score below. The cut is 50 on each.</div>}
+        </div>
+        <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-line">
+          <ScoreTile
+            label="Quality"
+            question="Is this real, maintained work by more than one person over time? Read from the repository."
+            value={grade?.quality ?? null}
+            word={grade ? qualityWord(grade.quality) : undefined}
+            sub={grade ? grade.qualityBreakdown.note ?? `Read from ${grade.qualityBreakdown.repo}, rules v${grade.heuristicsVersion}` : "Not graded yet"}
+            onClick={grade ? () => setDetail(detail === "quality" ? null : "quality") : undefined}
+            open={detail === "quality"}
+          />
+          <ScoreTile
+            label="Popularity"
+            question="Do the people who find it actually use it? Read from Google Analytics."
+            value={grade?.popularity ?? null}
+            word={grade ? popularityWord(grade.popularity) : undefined}
+            sub={grade ? grade.popularityInput?.note ?? "Google Analytics not connected: unknown." : "Not graded yet"}
+            onClick={grade ? () => setDetail(detail === "popularity" ? null : "popularity") : undefined}
+            open={detail === "popularity"}
+          />
         </div>
       </div>
 
