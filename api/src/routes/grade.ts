@@ -34,18 +34,18 @@ grade.post('/entries/:id/grade', async (c) => {
     return c.json({ error: `you must accept the terms (version ${TERMS_VERSION}) by sending acceptTerms: true`, termsUrl: `${c.env.PUBLIC_SITE_URL}/terms`, termsVersion: TERMS_VERSION }, 400);
   }
 
-  // Popularity: read from the owner's connected analytics. Nothing connected is nobody, which is zero.
+  // Popularity: read from the owner's connected analytics. Nothing connected is unknown; connected and empty is zero.
   const reading = await readAnalytics(c.env, sql, e);
   if (typeof reading === 'string') return c.json({ error: `analytics: ${reading}` }, 422);
   const popularity = reading ? scorePopularity(reading) : null;
-  const popularityScore = popularity?.score ?? 0;
-  const popularityInput = reading ? { ...reading, ...popularity, note: popularity?.note } : { note: 'No analytics connected. Nobody using it counts as zero.' };
+  const popularityScore: number | null = popularity ? popularity.score : null;
+  const popularityInput = reading ? { ...reading, ...popularity, note: popularity?.note } : { note: 'No analytics connected: popularity is unknown.' };
 
-  // Quality: GitHub signals on the repo (the entry itself, or the repo linked to the site). No repo is zero.
+  // Quality: GitHub signals on the repo (the entry itself, or the repo linked to the site). No repo is unknown.
   const repoUrl = e.kind === 'github' ? e.url : e.repo_url;
-  let quality: { score: number; signals: unknown[]; repo: string | null; version: string; note?: string };
+  let quality: { score: number | null; signals: unknown[]; repo: string | null; version: string; note?: string };
   if (!repoUrl) {
-    quality = { score: 0, signals: [], repo: null, version: QUALITY_VERSION, note: 'No repository linked. No visible work means a quality of zero. Link a repo to be scored.' };
+    quality = { score: null, signals: [], repo: null, version: QUALITY_VERSION, note: 'No repository linked: quality is unknown. Link a repo to be scored.' };
   } else {
     const t = normalizeTarget(repoUrl);
     if (typeof t === 'string' || !t.repo) return c.json({ error: 'linked repo is not a valid github.com/owner/repo URL' }, 400);

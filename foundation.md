@@ -21,7 +21,7 @@ So the score has two halves:
 
 The first attempt at Quality was regex heuristics over landing-page text (does it say what, why, who). It was dropped on day two as complexity without relevance. Repository history is harder to fake than prose.
 
-A thing is **Not Slop** when both halves are good. It is **Slop** when either half is bad. Everything else is **Mixed**. Missing data is not "unknown": no repo is a quality of zero, no users is a popularity of zero. A thing nobody uses is slop, however well built.
+The verdict is two words, one per axis. Quality below the cut is **Slop**, above it is **Craft**. Popularity below the cut is **Fringe**, above it is **Popular**. So a thing is Fringe Slop, Popular Slop, Fringe Craft or Popular Craft. Nothing connected is **Unknown**, not zero. Connected and empty (no history, no visitors) is zero.
 
 ## Rules that do not change without a very good reason
 

@@ -79,7 +79,7 @@ export function EntryView({ id }: { id: string }) {
           label="Popularity"
           question="Do the people who find it actually use it?"
           value={grade?.popularity ?? null}
-          sub={grade ? grade.popularityInput?.note ?? "No analytics connected. Nobody using it counts as zero." : "Not graded yet"}
+          sub={grade ? grade.popularityInput?.note ?? "No analytics connected: unknown." : "Not graded yet"}
           big
         />
       </div>
@@ -124,8 +124,8 @@ export function EntryView({ id }: { id: string }) {
               {history.map((h) => (
                 <tr key={h.id} className="border-t border-line">
                   <td className="py-1.5">{new Date(h.createdAt).toLocaleString()}</td>
-                  <td className="text-right tabular-nums">{h.quality}</td>
-                  <td className="text-right tabular-nums">{h.popularity}</td>
+                  <td className="text-right tabular-nums">{h.quality ?? "?"}</td>
+                  <td className="text-right tabular-nums">{h.popularity ?? "?"}</td>
                   <td className="text-right"><VerdictBadge verdict={h.verdict} size="sm" /></td>
                   <td className="text-right text-muted">v{h.heuristicsVersion}</td>
                 </tr>

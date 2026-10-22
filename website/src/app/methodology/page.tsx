@@ -30,7 +30,7 @@ export default async function MethodologyPage() {
         The score has two halves. <strong className="text-ink">Quality</strong> asks whether this is real, maintained work by more than one person
         over time, read from the GitHub repository: a year of pushes, other humans committing, issues being filed. <strong className="text-ink">Popularity</strong> asks
         whether the people who find it actually use it, read from the owner&apos;s connected analytics. The verdict is two words, one per axis: below the cut on
-        quality is <strong className="text-ink">Slop</strong>, above is <strong className="text-ink">Craft</strong>; below the cut on popularity is <strong className="text-ink">Fringe</strong>, above is <strong className="text-ink">Popular</strong>. No repo is a quality of zero. No users is a popularity of zero.
+        quality is <strong className="text-ink">Slop</strong>, above is <strong className="text-ink">Craft</strong>; below the cut on popularity is <strong className="text-ink">Fringe</strong>, above is <strong className="text-ink">Popular</strong>. Nothing connected is Unknown, not zero. Connected and empty is zero.
       </p>
       <p className="mt-4 text-ink-2 leading-relaxed">
         This page is generated from the code that computes the score, so it is always current. Every rule is a plain function anyone can read in{" "}
@@ -64,7 +64,7 @@ export default async function MethodologyPage() {
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-sm text-muted">Three things, all of which take time; weights sum to {m.quality.maxPoints}. Nothing that can be scaffolded in an afternoon counts: no README, license, CI, tests, stars or forks. A repo born today with one author scores 0, and full credit on history needs twelve months of pushes. Archived repos are capped at 20. Read with the owner&apos;s own GitHub login, so private repos work and nothing is shared.</p>
+            <p className="mt-2 text-sm text-muted">Three things, all of which take time; weights sum to {m.quality.maxPoints}. Nothing that can be scaffolded in an afternoon counts: no README, license, CI, tests, stars or forks. A repo born today with one author scores 0, and full credit on history needs twelve months of pushes. No repo linked is unknown, not zero. Archived repos are capped at 20. Read with the owner&apos;s own GitHub login, so private repos work and nothing is shared.</p>
           </section>
 
           <section className="mt-10">

@@ -1,8 +1,9 @@
 export const API = (process.env.NEXT_PUBLIC_API_URL ?? "https://api.isitslop.org/v1").replace(/\/$/, "");
 
-export type Verdict = "fringe_slop" | "popular_slop" | "fringe_craft" | "popular_craft";
+/** `${popularity}_${quality}`: fringe|popular|unknown _ slop|craft|unknown */
+export type Verdict = string;
 
-export type GradeSummary = { quality: number; popularity: number; overall: number; verdict: string; createdAt: string };
+export type GradeSummary = { quality: number | null; popularity: number | null; overall: number | null; verdict: string; createdAt: string };
 
 export type Entry = {
   id: string;
@@ -22,11 +23,11 @@ export type Signal = { id: string; description: string; weight: number; score: n
 
 export type Grade = {
   id: string;
-  quality: number;
-  popularity: number;
-  overall: number;
+  quality: number | null;
+  popularity: number | null;
+  overall: number | null;
   verdict: Verdict;
-  qualityBreakdown: { score: number; signals: Signal[]; repo: string | null; version: string; note?: string };
+  qualityBreakdown: { score: number | null; signals: Signal[]; repo: string | null; version: string; note?: string };
   popularityInput: { provider?: string; visitors?: number; returning?: number; returningRate?: number; window?: string; note: string } | null;
   heuristicsVersion: string;
   createdAt: string;
@@ -46,23 +47,15 @@ export async function api<T>(path: string, init?: RequestInit & { ownerKey?: str
 }
 
 export function verdictLabel(v: string | null | undefined): string {
-  switch (v) {
-    case "popular_craft": return "Popular Craft";
-    case "fringe_craft": return "Fringe Craft";
-    case "popular_slop": return "Popular Slop";
-    case "fringe_slop": return "Fringe Slop";
-    default: return "Unrated";
-  }
+  if (!v || !v.includes("_")) return "Unrated";
+  return v.split("_").map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
 }
 
 export function verdictClass(v: string | null | undefined): string {
-  switch (v) {
-    case "popular_craft": return "text-fresh bg-fresh-bg";
-    case "fringe_craft":
-    case "popular_slop": return "text-mixed bg-mixed-bg";
-    case "fringe_slop": return "text-slop bg-slop-bg";
-    default: return "text-unrated bg-unrated-bg";
-  }
+  if (!v || v.includes("unknown")) return "text-unrated bg-unrated-bg";
+  if (v === "popular_craft") return "text-fresh bg-fresh-bg";
+  if (v === "fringe_slop") return "text-slop bg-slop-bg";
+  return "text-mixed bg-mixed-bg";
 }
 
 export function scoreClass(n: number | null | undefined): string {

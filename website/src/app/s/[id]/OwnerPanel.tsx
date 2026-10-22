@@ -168,12 +168,12 @@ function RequestGrade({ entry, ownerKey, onDone }: { entry: Entry; ownerKey: str
         </li>
         {entry.kind === "site" && (
           <li className={entry.repoUrl ? "text-fresh" : "text-slop"}>
-            {entry.repoUrl ? `✓ Repo linked: ${entry.repoUrl.replace(/^https?:\/\/github\.com\//, "")}` : "✗ No repo linked: Quality will be 0"}
+            {entry.repoUrl ? `✓ Repo linked: ${entry.repoUrl.replace(/^https?:\/\/github\.com\//, "")}` : "✗ No repo linked: Quality will be unknown"}
             {!entry.repoUrl && <span className="text-muted ml-2">(repo tab)</span>}
           </li>
         )}
         <li className={entry.analyticsProvider ? "text-fresh" : "text-slop"}>
-          {entry.analyticsProvider ? `✓ Analytics connected: ${entry.analyticsProvider}` : "✗ No analytics connected: Popularity will be 0"}
+          {entry.analyticsProvider ? `✓ Analytics connected: ${entry.analyticsProvider}` : "✗ No analytics connected: Popularity will be unknown"}
           {!entry.analyticsProvider && <span className="text-muted ml-2">(analytics tab)</span>}
         </li>
       </ul>

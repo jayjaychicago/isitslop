@@ -23,9 +23,9 @@ export type EntryRow = {
 export type GradeRow = {
   id: string;
   entry_id: string;
-  quality_score: number;
-  popularity_score: number;
-  overall: number;
+  quality_score: number | null;
+  popularity_score: number | null;
+  overall: number | null;
   verdict: string;
   quality_breakdown: unknown;
   popularity_input: unknown;

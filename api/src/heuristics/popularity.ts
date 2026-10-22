@@ -58,7 +58,7 @@ export function methodologyPopularity() {
     weights: { returning: RETURN_WEIGHT, reach: REACH_WEIGHT },
     returnBands: RETURN_BANDS,
     reachBands: REACH_BANDS,
-    missing: 'No analytics connected, or no visitors, is a popularity of 0. A thing nobody uses is slop, however well built.',
+    missing: 'No analytics connected is unknown, not zero. Connected with no visitors is zero: a thing nobody uses is slop, however well built.',
     caveat: 'Analytics keys are stored encrypted and used read-only at grading time. Google Analytics and others are open contributions.',
   };
 }

@@ -50,9 +50,9 @@ alter table verifications add constraint verifications_method_check check (metho
 create table if not exists grades (
   id                 uuid primary key default gen_random_uuid(),
   entry_id           uuid not null references entries(id) on delete cascade,
-  quality_score      int not null,
-  popularity_score   int not null default 0,
-  overall            int not null default 0,
+  quality_score      int,
+  popularity_score   int,
+  overall            int,
   verdict            text not null,
   quality_breakdown  jsonb not null,
   popularity_input   jsonb,
@@ -89,6 +89,11 @@ create index if not exists appeals_entry_idx on appeals (entry_id, created_at de
 -- 0.6.0: two-word verdicts (fringe/popular + slop/craft); recompute from scores
 update grades set verdict = (case when popularity_score >= 50 then 'popular' else 'fringe' end) || '_' || (case when quality_score >= 50 then 'craft' else 'slop' end)
   where verdict in ('not_slop', 'mixed', 'slop');
+
+-- 0.6.1: unknown is null, not zero
+alter table grades alter column quality_score drop not null;
+alter table grades alter column popularity_score drop not null, alter column popularity_score drop default;
+alter table grades alter column overall drop not null, alter column overall drop default;
 
 -- crude per-IP rate limiting, portable across hosts
 create table if not exists rate_limits (

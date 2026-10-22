@@ -32,4 +32,5 @@ export type PopularityResult = {
   version: string;
 };
 
-export type Verdict = 'fringe_slop' | 'popular_slop' | 'fringe_craft' | 'popular_craft';
+/** `${popularity}_${quality}` where popularity is fringe | popular | unknown and quality is slop | craft | unknown. */
+export type Verdict = string;

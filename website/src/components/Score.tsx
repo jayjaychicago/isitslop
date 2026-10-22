@@ -6,7 +6,7 @@ export function VerdictBadge({ verdict, size = "md" }: { verdict: string | null 
 }
 
 export function ScoreTile({ label, question, value, sub, big = false }: { label: string; question: string; value: number | null | undefined; sub?: string; big?: boolean }) {
-  const num = value === null || value === undefined ? "–" : String(value);
+  const num = value === null || value === undefined ? "?" : String(value);
   return (
     <div className="card p-5 sm:p-6 flex flex-col gap-2">
       <div className="text-xs uppercase tracking-wider text-muted font-semibold">{label}</div>
@@ -25,11 +25,11 @@ export function MiniScores({ quality, popularity }: { quality: number | null | u
     <div className="flex items-center gap-3 text-sm tabular-nums">
       <span title="Quality: real, maintained work by more than one person">
         <span className="text-muted mr-1">Q</span>
-        <span className={`font-semibold ${scoreClass(quality)}`}>{quality ?? "–"}</span>
+        <span className={`font-semibold ${scoreClass(quality)}`}>{quality ?? "?"}</span>
       </span>
       <span title="Popularity: do people who find it use it">
         <span className="text-muted mr-1">P</span>
-        <span className={`font-semibold ${scoreClass(popularity)}`}>{popularity ?? "–"}</span>
+        <span className={`font-semibold ${scoreClass(popularity)}`}>{popularity ?? "?"}</span>
       </span>
     </div>
   );

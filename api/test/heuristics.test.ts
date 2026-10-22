@@ -53,6 +53,9 @@ test('verdict: two words, one per axis', () => {
   assert.equal(verdict(30, 80), 'popular_slop');
   assert.equal(verdict(49, 49), 'fringe_slop');
   assert.equal(verdict(95, 0), 'fringe_craft');
+  assert.equal(verdict(null, 80), 'popular_unknown');
+  assert.equal(verdict(20, null), 'unknown_slop');
+  assert.equal(overall(80, null), null);
   assert.equal(overall(80, 40), 60);
   assert.equal(overall(80, 0), 40);
 });
