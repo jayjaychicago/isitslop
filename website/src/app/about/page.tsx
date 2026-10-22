@@ -46,7 +46,10 @@ export default function AboutPage() {
       <section className="mt-8">
         <h2 className="display text-3xl">Who</h2>
         <p className="mt-2 text-ink-2 leading-relaxed">
-          Maintained by people who want an honest, public answer to &quot;was this worth building?&quot;. Operated by API Blaze, LLC. Free to use, the code is MIT licensed, and the rules are a pull request away:{" "}
+          Maintained by you, a community that wants a public answer to &quot;was this worth building?&quot;. Operated by API Blaze, LLC, a bunch of people who were bitter that years of craft was getting lost in all the slop.
+        </p>
+        <p className="mt-2 text-ink-2 leading-relaxed">
+          Free to use, the code is MIT licensed, and the rules are a pull request away:{" "}
           <Link href="/contribute" className="underline">change them</Link>. Heuristics only, no LLMs, no paid data. The API is self-sustaining by design, so it runs on free tiers and modest hosting.
         </p>
         <p className="mt-2 text-ink-2 leading-relaxed">
