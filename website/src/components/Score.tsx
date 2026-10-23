@@ -97,10 +97,10 @@ export function VerdictColumns({ quality, popularity, align = "start", className
   ];
   const side = align === "end" ? "lg:items-end lg:text-right" : "";
   return (
-    <div className={`grid grid-cols-2 gap-x-5 sm:gap-x-8 ${className}`}>
+    <div className={`grid grid-cols-[auto_auto] justify-start gap-x-6 sm:gap-x-8 ${className}`}>
       {cells.map((c) => (
-        <div key={c.label} className={`flex flex-col items-start gap-2 min-w-0 ${side}`} title={c.title}>
-          <div className={`display text-4xl sm:text-5xl lg:text-6xl leading-none flex items-center gap-2 whitespace-nowrap ${scoreClass(c.value)}`}>
+        <div key={c.label} className={`flex flex-col items-start gap-1 sm:gap-2 min-w-0 ${side}`} title={c.title}>
+          <div className={`display text-3xl sm:text-5xl lg:text-6xl leading-none flex items-center gap-1.5 sm:gap-2 whitespace-nowrap ${scoreClass(c.value)}`}>
             <WordIcon word={c.word} size="0.8em" className="shrink-0" />
             <span>{c.word}</span>
           </div>
