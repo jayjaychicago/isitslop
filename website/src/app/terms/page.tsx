@@ -57,7 +57,8 @@ export default function Terms() {
         To be graded you connect a GitHub account and a Google Analytics property. By connecting them you authorise us to read from them, read-only,
         when you request a grade, and you represent that you are entitled to grant that access. We never write to them. From GitHub we read
         repository metadata, commit history, contributors and issue counts. From Google Analytics we read aggregate active-user counts for the
-        last 30 days and the list of properties your account can see, so you can pick one. Credentials are stored encrypted and deleted when you
+        last 30 days and the list of properties your account can see, so you can pick one. By connecting Google Analytics you explicitly consent to
+        those two counts being published as your Popularity score, which is public. Credentials are stored encrypted and deleted when you
         disconnect or remove the entry. Feeding the Service fabricated repository activity or analytics data is a breach of these terms and may
         result in removal of the grade and the entry.
       </p>
