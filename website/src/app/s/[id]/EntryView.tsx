@@ -72,7 +72,7 @@ export function EntryView({ id }: { id: string }) {
             <div className="display text-4xl sm:text-6xl leading-[1.05] mt-1">
               <VerdictWords verdict={grade?.verdict} fallback={entry.verified ? "Not graded yet" : "Unclaimed"} />
             </div>
-            {grade && <div className="text-sm text-muted mt-2">Two words, one per score below. The cut is 50 on each.</div>}
+            {grade && <div className="text-sm text-muted mt-2">The two scores below, in words. The cut is 50 on each.</div>}
           </div>
           {grade && (
             <div className="sm:text-right shrink-0">
@@ -80,7 +80,7 @@ export function EntryView({ id }: { id: string }) {
                 {grade.sloppy ?? "?"}<span className="text-[0.5em]">%</span>
               </div>
               <div className="text-xs uppercase tracking-wider text-muted font-semibold mt-1">sloppy</div>
-              <div className="text-xs text-muted mt-1">{grade.sloppy === null ? "Unknown until both halves are connected" : "Popularity and Quality averaged, then inverted. 0% is the goal."}</div>
+              <div className="text-xs text-muted mt-1">{grade.sloppy === null ? "Unknown until both halves are connected" : "Popularity and Quality averaged, subtracted from 100."}</div>
             </div>
           )}
         </div>

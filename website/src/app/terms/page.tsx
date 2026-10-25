@@ -12,17 +12,18 @@ export default function Terms() {
 
       <h2>1. What the Service is</h2>
       <p>
-        The Service is a public index of websites and software repositories, and an automated opinion about each one on two axes. <strong>Quality</strong>: is
-        this real, maintained work by more than one person over time, read from the GitHub repository. <strong>Popularity</strong>: do the people who
-        find it use it, read from the owner&apos;s Google Analytics. The verdict is two words, one per axis. Scores are produced by publicly published rules
+        The Service is a public index of websites and software repositories, and an automated opinion about each one: how sloppy it is, as a percentage,
+        built from two measurements. <strong>Popularity</strong>: do the people who find it use it, read from the owner&apos;s Google Analytics. <strong>Quality</strong>: is
+        this real, maintained work by more than one person over time, read from the GitHub repository. The two are averaged and subtracted from 100; the
+        same two measurements are also stated as a two-word verdict. Scores are produced by publicly published rules
         that run without human judgment and without any artificial intelligence model. A score is an <strong>opinion</strong>, not a statement of fact,
         and not a professional, financial or business assessment.
       </p>
 
       <h2>2. The index</h2>
       <p>
-        Anyone may add a publicly reachable URL to the index. Adding a URL does not grade it. The index records the URL, the domain, a title and
-        timestamps. A verified owner may remove their entry at any time; see section 9.
+        A URL enters the index only when a signed-in person proves they own it (section 3). The index records the URL, the domain, a title and
+        timestamps. A private repository&apos;s URL is never published. A verified owner may remove their entry at any time; see section 9.
       </p>
 
       <h2>3. Grades are only produced on the owner&apos;s request</h2>

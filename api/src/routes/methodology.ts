@@ -22,7 +22,7 @@ methodology.get('/methodology', (c) =>
     verdict: {
       rule: 'Two words, one per axis. Quality below the cut is Slop, at or above is Craft. Popularity below the cut is Fringe, at or above is Popular. Nothing connected is Unknown, not zero. Connected and empty (no history, no visitors) is zero.',
       thresholds: VERDICT_THRESHOLDS,
-      sloppy: 'The headline number is how sloppy it is, as a percentage: Popularity and Quality averaged, then inverted, so 0% is the goal and 100% sloppy is the floor. It is unknown if either half is unknown.',
+      sloppy: 'Popularity and Quality averaged, then subtracted from 100: how sloppy it is, as a percentage. Unknown if either half is unknown.',
       sloppyFormula: 'sloppy = 100 − round((Popularity + Quality) / 2)',
     },
   }),

@@ -28,10 +28,14 @@ export default async function MethodologyPage() {
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="display text-5xl">What the score is made of</h1>
       <p className="mt-4 text-ink-2 leading-relaxed">
-        The headline number is <strong className="text-ink">percent sloppy</strong>: two scores out of 100 averaged, then inverted, so 0% is the goal and 100% is the floor. The two halves: <strong className="text-ink">Quality</strong> asks whether this is real, maintained work by more than one person
-        over time, read from the GitHub repository: a year of pushes, other humans committing, issues being filed. <strong className="text-ink">Popularity</strong> asks
-        whether the people who find it actually use it, read from the owner&apos;s Google Analytics. The verdict is two words, one per axis: below the cut on
-        quality is <strong className="text-ink">Slop</strong>, above is <strong className="text-ink">Craft</strong>; below the cut on popularity is <strong className="text-ink">Fringe</strong>, above is <strong className="text-ink">Popular</strong>. Nothing connected is Unknown, not zero. Connected and empty is zero.
+        One question, <em>was it worth it?</em>, answered as a percentage of slop. Two things get measured, each out of 100:
+        {" "}<strong className="text-ink">Popularity</strong>, do the people who find it actually use it, read from the owner&apos;s Google Analytics;
+        and <strong className="text-ink">Quality</strong>, is this real, maintained work by more than one person over time, read from the GitHub repository.
+        The two are averaged and the average is turned upside down, so a thing nobody uses and nobody maintains is 100% sloppy and the best possible outcome is 0%.
+        The same two measurements also become the two-word verdict: <strong className="text-ink">Fringe</strong> or <strong className="text-ink">Popular</strong>, <strong className="text-ink">Slop</strong> or <strong className="text-ink">Craft</strong>.
+      </p>
+      <p className="mt-4 text-ink-2 leading-relaxed">
+        Nothing connected is unknown, not zero: no analytics means an unknown Popularity, no repository means an unknown Quality, and the percentage stays unknown until both are in. Connected and empty is zero.
       </p>
       <p className="mt-4 text-ink-2 leading-relaxed">
         This page is generated from the code that computes the score, so it is always current. Every rule is a plain function anyone can read in{" "}
@@ -49,25 +53,6 @@ export default async function MethodologyPage() {
         <p className="mt-8 text-slop">The API is unreachable right now. The rules live at the link above.</p>
       ) : (
         <>
-          <section className="mt-10">
-            <div className="flex items-baseline justify-between">
-              <h2 className="display text-3xl">Quality</h2>
-              <span className="text-xs text-muted">heuristics v{m.heuristicsVersion}</span>
-            </div>
-            <p className="mt-2 text-ink-2">{m.quality.question}</p>
-            <p className="text-sm text-muted">{m.quality.source}</p>
-            <ul className="card mt-4 divide-y divide-line">
-              {m.quality.rules.map((r) => (
-                <li key={r.id} className="p-4 grid grid-cols-[1fr_auto] sm:grid-cols-[6rem_1fr_4rem] gap-x-3 gap-y-1 items-start">
-                  <a className="text-sm underline decoration-line hover:decoration-ink" href={`https://github.com/jayjaychicago/isitslop/blob/main/api/src/heuristics/quality.ts`} title="View this rule's source"><code>{r.id}</code></a>
-                  <span className="text-sm text-ink-2 order-3 sm:order-none col-span-2 sm:col-span-1">{r.description}</span>
-                  <span className="text-right font-semibold tabular-nums order-2 sm:order-none">{r.kind === "multiplier" ? "×" : `+${r.weight}`}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-2 text-sm text-muted">Three things, all of which take time; weights sum to {m.quality.maxPoints}. Nothing that can be scaffolded in an afternoon counts: no README, license, CI, tests, stars or forks. A repo born today with one author scores 0, and full credit on history needs twelve months of pushes. No repo linked is unknown, not zero. Archived repos are capped at 20. Read with the owner&apos;s own GitHub login, so private repos work and nothing is shared.</p>
-          </section>
-
           <section className="mt-10">
             <div className="flex items-baseline justify-between">
               <h2 className="display text-3xl">Popularity</h2>
@@ -92,33 +77,53 @@ export default async function MethodologyPage() {
           </section>
 
           <section className="mt-10">
-            <h2 className="display text-3xl">Percent sloppy</h2>
-            {m.verdict.sloppy && <p className="mt-2 text-ink-2">{m.verdict.sloppy}</p>}
-            <div className="card mt-4 p-4 text-sm">
-              <code className="text-base">{m.verdict.sloppyFormula ?? "sloppy = 100 − round((Popularity + Quality) / 2)"}</code>
-              <table className="mt-3 text-xs tabular-nums">
-                <thead className="text-muted"><tr><th className="text-left pr-4 font-normal">Popularity</th><th className="text-left pr-4 font-normal">Quality</th><th className="text-left font-normal">Sloppy</th></tr></thead>
-                <tbody>
-                  <tr><td className="pr-4">0</td><td className="pr-4">0</td><td className="text-slop font-semibold">100%</td></tr>
-                  <tr><td className="pr-4">0</td><td className="pr-4">84</td><td className="text-slop font-semibold">58%</td></tr>
-                  <tr><td className="pr-4">60</td><td className="pr-4">80</td><td className="text-fresh font-semibold">30%</td></tr>
-                  <tr><td className="pr-4">100</td><td className="pr-4">100</td><td className="text-fresh font-semibold">0%</td></tr>
-                  <tr><td className="pr-4">unknown</td><td className="pr-4">80</td><td className="text-muted font-semibold">unknown</td></tr>
-                </tbody>
-              </table>
+            <div className="flex items-baseline justify-between">
+              <h2 className="display text-3xl">Quality</h2>
+              <span className="text-xs text-muted">heuristics v{m.heuristicsVersion}</span>
             </div>
-            <p className="mt-2 text-sm text-muted">Red at 50% and above, green below. Popularity and Quality themselves stay out of 100, higher is better; only the headline is inverted.</p>
+            <p className="mt-2 text-ink-2">{m.quality.question}</p>
+            <p className="text-sm text-muted">{m.quality.source}</p>
+            <ul className="card mt-4 divide-y divide-line">
+              {m.quality.rules.map((r) => (
+                <li key={r.id} className="p-4 grid grid-cols-[1fr_auto] sm:grid-cols-[6rem_1fr_4rem] gap-x-3 gap-y-1 items-start">
+                  <a className="text-sm underline decoration-line hover:decoration-ink" href={`https://github.com/jayjaychicago/isitslop/blob/main/api/src/heuristics/quality.ts`} title="View this rule's source"><code>{r.id}</code></a>
+                  <span className="text-sm text-ink-2 order-3 sm:order-none col-span-2 sm:col-span-1">{r.description}</span>
+                  <span className="text-right font-semibold tabular-nums order-2 sm:order-none">{r.kind === "multiplier" ? "×" : `+${r.weight}`}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-sm text-muted">Three things, all of which take time; weights sum to {m.quality.maxPoints}. Nothing that can be scaffolded in an afternoon counts: no README, license, CI, tests, stars or forks. A repo born today with one author scores 0, and full credit on history needs twelve months of pushes. No repo linked is unknown, not zero. Archived repos are capped at 20. Read with the owner&apos;s own GitHub login, so private repos work and nothing is shared.</p>
           </section>
 
           <section className="mt-10">
-            <h2 className="display text-3xl">Verdict</h2>
+            <h2 className="display text-3xl">The number</h2>
+            <p className="mt-2 text-ink-2">
+              Popularity and Quality are averaged, then subtracted from 100. That is the percentage on every entry: how sloppy it is. Red from 50% up, green below. Unknown if either half is unknown.
+            </p>
+            <div className="card mt-4 p-4">
+              <code className="text-base">{m.verdict.sloppyFormula ?? "sloppy = 100 − round((Popularity + Quality) / 2)"}</code>
+              <table className="mt-3 text-sm tabular-nums">
+                <thead className="text-xs uppercase tracking-wider text-muted"><tr><th className="text-left pr-6 font-semibold">Popularity</th><th className="text-left pr-6 font-semibold">Quality</th><th className="text-left font-semibold">Sloppy</th></tr></thead>
+                <tbody>
+                  <tr><td className="pr-6">0</td><td className="pr-6">0</td><td className="text-slop font-semibold">100%</td></tr>
+                  <tr><td className="pr-6">0</td><td className="pr-6">84</td><td className="text-slop font-semibold">58%</td></tr>
+                  <tr><td className="pr-6">60</td><td className="pr-6">80</td><td className="text-fresh font-semibold">30%</td></tr>
+                  <tr><td className="pr-6">100</td><td className="pr-6">100</td><td className="text-fresh font-semibold">0%</td></tr>
+                  <tr><td className="pr-6">unknown</td><td className="pr-6">80</td><td className="text-muted font-semibold">unknown</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="mt-10">
+            <h2 className="display text-3xl">The words</h2>
             <p className="mt-2 text-ink-2">{m.verdict.rule}</p>
-            <p className="text-sm text-muted">Craft at {m.verdict.thresholds.craft} and above, Popular at {m.verdict.thresholds.popular} and above.</p>
+            <p className="text-sm text-muted">Popular at {m.verdict.thresholds.popular} and above, Craft at {m.verdict.thresholds.craft} and above.</p>
             <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 display text-2xl">
-              <li className="text-slop flex items-center gap-2"><WordIcon word="slop" /> Slop <span className="text-sm text-muted font-sans">quality below the cut</span></li>
-              <li className="text-fresh flex items-center gap-2"><WordIcon word="craft" /> Craft <span className="text-sm text-muted font-sans">quality at or above</span></li>
               <li className="text-mixed flex items-center gap-2"><WordIcon word="fringe" /> Fringe <span className="text-sm text-muted font-sans">popularity below the cut</span></li>
               <li className="text-fresh flex items-center gap-2"><WordIcon word="popular" /> Popular <span className="text-sm text-muted font-sans">popularity at or above</span></li>
+              <li className="text-slop flex items-center gap-2"><WordIcon word="slop" /> Slop <span className="text-sm text-muted font-sans">quality below the cut</span></li>
+              <li className="text-fresh flex items-center gap-2"><WordIcon word="craft" /> Craft <span className="text-sm text-muted font-sans">quality at or above</span></li>
               <li className="text-muted flex items-center gap-2"><WordIcon word="unknown" /> Unknown <span className="text-sm text-muted font-sans">nothing connected</span></li>
             </ul>
           </section>

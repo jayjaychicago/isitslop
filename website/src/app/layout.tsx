@@ -14,9 +14,9 @@ const display = Instrument_Serif({ variable: "--font-display", subsets: ["latin"
 
 export const metadata: Metadata = {
   title: "Is it slop?",
-  description: "A sloppiness score for things on the internet. Quality: real, maintained work? Popularity: do the people who find it use it?",
+  description: "How sloppy is it, 0% to 100%? Popularity: do the people who find it use it? Quality: real, maintained work? Read from the owner's own analytics and repo by public rules.",
   metadataBase: new URL("https://isitslop.org"),
-  openGraph: { title: "Is it slop?", description: "A sloppiness score for things on the internet.", url: "https://isitslop.org", images: [{ url: "/og.png", width: 1200, height: 630 }] },
+  openGraph: { title: "Is it slop?", description: "How sloppy is it, 0% to 100%?", url: "https://isitslop.org", images: [{ url: "/og.png", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image", images: ["/og.png"] },
 };
 

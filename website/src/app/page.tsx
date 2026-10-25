@@ -10,7 +10,7 @@ export default function Home() {
           <em>Was it worth it?</em>
         </h1>
         <p className="mt-5 max-w-2xl text-lg sm:text-xl text-ink-2 leading-relaxed">
-          A sloppiness score for anything built with AI (so everything).
+          How sloppy is it, 0% to 100%, for anything built with AI (so everything).
           Read from the owner&apos;s analytics and repo by open rules the community can <Link href="/methodology" className="underline decoration-line hover:decoration-ink">read</Link> and <Link href="/contribute" className="underline decoration-line hover:decoration-ink">change</Link>.
         </p>
       </section>

@@ -9,21 +9,20 @@ export default function AboutPage() {
       <h1 className="display text-5xl">About</h1>
 
       <p className="mt-5 text-lg text-ink-2 leading-relaxed">
-        AI can build anything. This site asks whether a thing was worth building, and answers in two words.
+        AI can build anything. This site asks whether a thing was worth building, and answers with one number: how sloppy it is, from 0% to 100%.
       </p>
 
       <section className="mt-8">
-        <h2 className="display text-3xl">Two plain questions</h2>
+        <h2 className="display text-3xl">Where the number comes from</h2>
         <p className="mt-2 text-ink-2 leading-relaxed">
-          <strong className="text-ink">Popularity</strong>: do the people who find it actually use it? Read from the owner&apos;s Google Analytics: who visited, who came back.
-          Below the cut is <span className="text-mixed font-semibold">Fringe</span>, above is <span className="text-fresh font-semibold">Popular</span>.
+          Two things are measured, each out of 100. <strong className="text-ink">Popularity</strong>: do the people who find it actually use it? Read from the owner&apos;s Google Analytics: who visited, who came back.
+          {" "}<strong className="text-ink">Quality</strong>: is this real, maintained work by more than one person over time? Read from the GitHub repo, using signals you cannot buy, so no stars, no README, no badges.
         </p>
         <p className="mt-2 text-ink-2 leading-relaxed">
-          <strong className="text-ink">Quality</strong>: is this real, maintained work by more than one person over time? Read from the GitHub repo, using signals you cannot buy, so no stars, no README, no badges.
-          Below the cut is <span className="text-slop font-semibold">Slop</span>, above is <span className="text-fresh font-semibold">Craft</span>.
+          Average the two and subtract from 100. Unused and unmaintained is 100% sloppy; the best you can do is 0%. Nothing connected is unknown, not zero, and the percentage stays unknown until both halves are in.
         </p>
         <p className="mt-2 text-ink-2 leading-relaxed">
-          The two average into one number, inverted and shown as <strong className="text-ink">percent sloppy</strong>: 0% is the goal, 100% sloppy is the floor. Nothing connected is unknown, not zero, and the total is unknown until both halves are. The exact rules, with their weights, are on the <Link href="/methodology" className="underline">methodology</Link> page, which is generated from the code that computes the score.
+          The same two measurements are also said in words. Popularity below the cut is <span className="text-mixed font-semibold">Fringe</span>, above is <span className="text-fresh font-semibold">Popular</span>; quality below the cut is <span className="text-slop font-semibold">Slop</span>, above is <span className="text-fresh font-semibold">Craft</span>. The exact rules, with their weights, are on the <Link href="/methodology" className="underline">methodology</Link> page, which is generated from the code that computes the score.
         </p>
       </section>
 
