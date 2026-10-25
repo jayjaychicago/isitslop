@@ -1,4 +1,4 @@
-import { scoreClass, verdictClass, verdictLabel } from "@/lib/api";
+import { SLOPPY_TITLE, scoreClass, sloppyClass, verdictClass, verdictLabel } from "@/lib/api";
 import { WordIcon } from "./Icons";
 
 const WORD_CLASS: Record<string, string> = { slop: "text-slop", craft: "text-fresh", fringe: "text-mixed", popular: "text-fresh" };
@@ -61,14 +61,14 @@ export function ScoreTile({ label, question, value, sub, word, onClick, open = f
 export const qualityWord = (n: number | null | undefined) => (n === null || n === undefined ? "Unknown" : n >= 50 ? "Craft" : "Slop");
 export const popularityWord = (n: number | null | undefined) => (n === null || n === undefined ? "Unknown" : n >= 50 ? "Popular" : "Fringe");
 
-export function MiniScores({ quality, popularity, overall }: { quality: number | null | undefined; popularity: number | null | undefined; overall?: number | null }) {
+export function MiniScores({ quality, popularity, sloppy }: { quality: number | null | undefined; popularity: number | null | undefined; sloppy?: number | null }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm tabular-nums [&>span]:whitespace-nowrap">
-      {overall !== undefined && (
+      {sloppy !== undefined && (
         <>
-          <span title="Overall score: Popularity and Quality averaged, higher is better">
-            <span className="text-muted mr-1">Overall</span>
-            <span className={`font-bold ${scoreClass(overall)}`}>{overall ?? "?"}<span className="text-muted font-normal">/100</span></span>
+          <span title={SLOPPY_TITLE}>
+            <span className={`font-bold ${sloppyClass(sloppy)}`}>{sloppy ?? "?"}%</span>
+            <span className="text-muted ml-1">sloppy</span>
           </span>
           <span className="text-line">·</span>
         </>

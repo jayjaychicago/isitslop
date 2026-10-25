@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { scoreQuality, RULES, MAX_POINTS, band, type RepoFacts } from '../src/heuristics/quality.ts';
 import { scorePopularity } from '../src/heuristics/popularity.ts';
-import { verdict, overall } from '../src/heuristics/verdict.ts';
+import { verdict, sloppy } from '../src/heuristics/verdict.ts';
 import { normalizeTarget } from '../src/lib/url.ts';
 
 const ago = (d: number) => new Date(Date.now() - d * 86_400_000).toISOString();
@@ -57,9 +57,11 @@ test('verdict: two words, one per axis', () => {
   assert.equal(verdict(95, 0), 'fringe_craft');
   assert.equal(verdict(null, 80), 'popular_unknown');
   assert.equal(verdict(20, null), 'unknown_slop');
-  assert.equal(overall(80, null), null);
-  assert.equal(overall(80, 40), 60);
-  assert.equal(overall(80, 0), 40);
+  assert.equal(sloppy(80, null), null);
+  assert.equal(sloppy(80, 40), 40);
+  assert.equal(sloppy(80, 0), 60);
+  assert.equal(sloppy(0, 0), 100);
+  assert.equal(sloppy(100, 100), 0);
 });
 
 test('url normalisation', () => {

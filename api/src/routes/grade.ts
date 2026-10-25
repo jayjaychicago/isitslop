@@ -8,7 +8,7 @@ import { normalizeTarget } from '../lib/url.ts';
 import { collectRepoFacts, scoreQuality, QUALITY_VERSION } from '../heuristics/quality.ts';
 import { scorePopularity } from '../heuristics/popularity.ts';
 import { readAnalytics } from './analytics.ts';
-import { overall, verdict } from '../heuristics/verdict.ts';
+import { sloppy, verdict } from '../heuristics/verdict.ts';
 import { getEntry, publicGrade, type EntryRow, type GradeRow } from '../lib/entries.ts';
 import { ownerGithubToken } from './github.ts';
 import { currentUser } from '../lib/session.ts';
@@ -76,10 +76,10 @@ export async function runGrade(env: Env, sql: Sql, e: EntryRow, opts: GradeOptio
   }
 
   const v = verdict(quality.score, popularityScore);
-  const ov = overall(quality.score, popularityScore);
+  const sl = sloppy(quality.score, popularityScore);
   const rows = (await sql`
-    insert into grades (entry_id, quality_score, popularity_score, overall, verdict, quality_breakdown, popularity_input, heuristics_version)
-    values (${e.id}, ${quality.score}, ${popularityScore}, ${ov}, ${v}, ${JSON.stringify(quality)}::jsonb, ${JSON.stringify(popularityInput)}::jsonb, ${QUALITY_VERSION})
+    insert into grades (entry_id, quality_score, popularity_score, sloppy, verdict, quality_breakdown, popularity_input, heuristics_version)
+    values (${e.id}, ${quality.score}, ${popularityScore}, ${sl}, ${v}, ${JSON.stringify(quality)}::jsonb, ${JSON.stringify(popularityInput)}::jsonb, ${QUALITY_VERSION})
     returning *
   `) as GradeRow[];
   return rows[0];

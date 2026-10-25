@@ -9,7 +9,7 @@ type Methodology = {
   termsVersion: string;
   quality: { question: string; source: string; maxPoints: number; rules: { id: string; description: string; weight: number; kind: 'points' | 'multiplier' }[] };
   popularity: { question: string; version: string; source: string; formula?: string; weights: { returning: number; reach: number }; returnBands: [number, number][]; reachBands: [number, number][]; caveat: string; missing: string };
-  verdict: { rule: string; thresholds: { craft: number; popular: number }; overall?: string };
+  verdict: { rule: string; thresholds: { craft: number; popular: number }; sloppy?: string; sloppyFormula?: string };
 };
 
 async function load(): Promise<Methodology | null> {
@@ -28,7 +28,7 @@ export default async function MethodologyPage() {
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="display text-5xl">What the score is made of</h1>
       <p className="mt-4 text-ink-2 leading-relaxed">
-        The score has two halves. <strong className="text-ink">Quality</strong> asks whether this is real, maintained work by more than one person
+        The headline number is <strong className="text-ink">percent sloppy</strong>: two scores out of 100 averaged, then inverted, so 0% is the goal and 100% is the floor. The two halves: <strong className="text-ink">Quality</strong> asks whether this is real, maintained work by more than one person
         over time, read from the GitHub repository: a year of pushes, other humans committing, issues being filed. <strong className="text-ink">Popularity</strong> asks
         whether the people who find it actually use it, read from the owner&apos;s Google Analytics. The verdict is two words, one per axis: below the cut on
         quality is <strong className="text-ink">Slop</strong>, above is <strong className="text-ink">Craft</strong>; below the cut on popularity is <strong className="text-ink">Fringe</strong>, above is <strong className="text-ink">Popular</strong>. Nothing connected is Unknown, not zero. Connected and empty is zero.
@@ -92,10 +92,28 @@ export default async function MethodologyPage() {
           </section>
 
           <section className="mt-10">
+            <h2 className="display text-3xl">Percent sloppy</h2>
+            {m.verdict.sloppy && <p className="mt-2 text-ink-2">{m.verdict.sloppy}</p>}
+            <div className="card mt-4 p-4 text-sm">
+              <code className="text-base">{m.verdict.sloppyFormula ?? "sloppy = 100 − round((Popularity + Quality) / 2)"}</code>
+              <table className="mt-3 text-xs tabular-nums">
+                <thead className="text-muted"><tr><th className="text-left pr-4 font-normal">Popularity</th><th className="text-left pr-4 font-normal">Quality</th><th className="text-left font-normal">Sloppy</th></tr></thead>
+                <tbody>
+                  <tr><td className="pr-4">0</td><td className="pr-4">0</td><td className="text-slop font-semibold">100%</td></tr>
+                  <tr><td className="pr-4">0</td><td className="pr-4">84</td><td className="text-slop font-semibold">58%</td></tr>
+                  <tr><td className="pr-4">60</td><td className="pr-4">80</td><td className="text-fresh font-semibold">30%</td></tr>
+                  <tr><td className="pr-4">100</td><td className="pr-4">100</td><td className="text-fresh font-semibold">0%</td></tr>
+                  <tr><td className="pr-4">unknown</td><td className="pr-4">80</td><td className="text-muted font-semibold">unknown</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-2 text-sm text-muted">Red at 50% and above, green below. Popularity and Quality themselves stay out of 100, higher is better; only the headline is inverted.</p>
+          </section>
+
+          <section className="mt-10">
             <h2 className="display text-3xl">Verdict</h2>
             <p className="mt-2 text-ink-2">{m.verdict.rule}</p>
             <p className="text-sm text-muted">Craft at {m.verdict.thresholds.craft} and above, Popular at {m.verdict.thresholds.popular} and above.</p>
-            {m.verdict.overall && <p className="mt-2 text-ink-2">{m.verdict.overall}</p>}
             <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 display text-2xl">
               <li className="text-slop flex items-center gap-2"><WordIcon word="slop" /> Slop <span className="text-sm text-muted font-sans">quality below the cut</span></li>
               <li className="text-fresh flex items-center gap-2"><WordIcon word="craft" /> Craft <span className="text-sm text-muted font-sans">quality at or above</span></li>

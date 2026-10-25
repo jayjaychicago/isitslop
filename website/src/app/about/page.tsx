@@ -23,7 +23,7 @@ export default function AboutPage() {
           Below the cut is <span className="text-slop font-semibold">Slop</span>, above is <span className="text-fresh font-semibold">Craft</span>.
         </p>
         <p className="mt-2 text-ink-2 leading-relaxed">
-          The two average into one <strong className="text-ink">overall score</strong> out of 100, higher is better. Nothing connected is unknown, not zero, and the total is unknown until both halves are. The exact rules, with their weights, are on the <Link href="/methodology" className="underline">methodology</Link> page, which is generated from the code that computes the score.
+          The two average into one number, inverted and shown as <strong className="text-ink">percent sloppy</strong>: 0% is the goal, 100% sloppy is the floor. Nothing connected is unknown, not zero, and the total is unknown until both halves are. The exact rules, with their weights, are on the <Link href="/methodology" className="underline">methodology</Link> page, which is generated from the code that computes the score.
         </p>
       </section>
 

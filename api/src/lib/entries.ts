@@ -27,7 +27,8 @@ export type GradeRow = {
   entry_id: string;
   quality_score: number | null;
   popularity_score: number | null;
-  overall: number | null;
+  /** percent sloppy: Popularity and Quality averaged then inverted; null if either is unknown */
+  sloppy: number | null;
   verdict: string;
   quality_breakdown: unknown;
   popularity_input: unknown;
@@ -72,7 +73,7 @@ export function publicGrade(g: GradeRow, privateRepo = false) {
     id: g.id,
     quality: g.quality_score,
     popularity: g.popularity_score,
-    overall: g.overall,
+    sloppy: g.sloppy,
     verdict: g.verdict,
     qualityBreakdown,
     popularityInput: g.popularity_input,

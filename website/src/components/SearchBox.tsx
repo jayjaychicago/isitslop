@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api, type Entry, type GradeSummary } from "@/lib/api";
 import { VerdictColumns, VerdictWords } from "./Score";
-import { scoreClass } from "@/lib/api";
+import { SLOPPY_TITLE, sloppyClass } from "@/lib/api";
 
 type Item = Entry & { grade: GradeSummary | null };
 
@@ -74,16 +74,18 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
         {items.map((it) => (
           <li key={it.id}>
             <Link href={`/s/${it.id}`} className="flex flex-col lg:flex-row lg:items-center gap-4 lg:gap-8 p-4 sm:p-6 hover:bg-paper transition-colors">
-              {/* Phones: URL first, overall number on its right. Desktop: overall number left of the URL. */}
+              {/* Phones: URL first, percent sloppy on its right. Desktop: percent sloppy left of the URL. */}
               <div className="flex items-start justify-between lg:justify-start lg:items-center gap-4 sm:gap-6 min-w-0 lg:flex-1">
                 <div className="min-w-0 order-1 lg:order-2">
                   <div className="display text-3xl sm:text-5xl lg:text-6xl leading-none break-words">{it.url ? it.url.replace(/^https?:\/\//, "") : "Private repository"}</div>
                   {it.title && it.url && <div className="mt-1 sm:mt-1.5 text-sm sm:text-base text-ink-2 truncate">{it.title}</div>}
                 </div>
                 {it.grade && (
-                  <div className="shrink-0 text-right lg:text-center lg:w-28 order-2 lg:order-1" title="Overall score: Popularity and Quality averaged, higher is better">
-                    <div className={`score-num text-5xl sm:text-7xl lg:text-8xl leading-none ${scoreClass(it.grade.overall)}`}>{it.grade.overall ?? "?"}</div>
-                    <div className="text-[10px] sm:text-xs uppercase tracking-wider text-muted font-semibold mt-1 whitespace-nowrap">Overall /100</div>
+                  <div className="shrink-0 text-right lg:text-center lg:w-36 order-2 lg:order-1" title={SLOPPY_TITLE}>
+                    <div className={`score-num text-5xl sm:text-7xl lg:text-8xl leading-none whitespace-nowrap ${sloppyClass(it.grade.sloppy)}`}>
+                      {it.grade.sloppy ?? "?"}<span className="text-[0.5em]">%</span>
+                    </div>
+                    <div className="text-[10px] sm:text-xs uppercase tracking-wider text-muted font-semibold mt-1 whitespace-nowrap">sloppy</div>
                   </div>
                 )}
               </div>

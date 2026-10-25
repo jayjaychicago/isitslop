@@ -14,9 +14,10 @@ export function verdict(quality: number | null, popularity: number | null): Verd
 }
 
 /**
- * The overall score: Popularity and Quality averaged, 0 to 100, higher is better.
- * Unknown (null) if either half is unknown, so a missing connection is never read as zero.
+ * The headline number: how sloppy it is, as a percentage. Popularity and Quality averaged, then inverted,
+ * so 0% is the goal and 100% is the floor (two zeros). Unknown (null) if either half is unknown,
+ * so a missing connection is never read as slop.
  */
-export function overall(quality: number | null, popularity: number | null): number | null {
-  return quality === null || popularity === null ? null : Math.round((quality + popularity) / 2);
+export function sloppy(quality: number | null, popularity: number | null): number | null {
+  return quality === null || popularity === null ? null : 100 - Math.round((quality + popularity) / 2);
 }

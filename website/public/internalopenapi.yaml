@@ -75,7 +75,7 @@ components:
       properties:
         quality: { type: [integer, "null"], minimum: 0, maximum: 100 }
         popularity: { type: [integer, "null"], minimum: 0, maximum: 100 }
-        overall: { type: [integer, "null"] }
+        sloppy: { type: [integer, "null"], description: Percent sloppy; Popularity and Quality averaged then inverted. }
         verdict: { $ref: "#/components/schemas/Verdict" }
         createdAt: { type: string, format: date-time }
     Signal:
@@ -92,7 +92,7 @@ components:
         id: { type: string, format: uuid }
         quality: { type: [integer, "null"] }
         popularity: { type: [integer, "null"] }
-        overall: { type: [integer, "null"] }
+        sloppy: { type: [integer, "null"], description: Percent sloppy; Popularity and Quality averaged then inverted. }
         verdict: { $ref: "#/components/schemas/Verdict" }
         qualityBreakdown:
           type: object
@@ -208,7 +208,7 @@ paths:
                 properties:
                   found: { type: boolean, const: true }
                   url: { type: [string, "null"] }
-                  overall: { type: [integer, "null"], description: Popularity and Quality averaged; null if either is unknown. }
+                  sloppy: { type: [integer, "null"], description: Percent sloppy, Popularity and Quality averaged then inverted; null if either is unknown. }
                   quality: { type: [integer, "null"] }
                   popularity: { type: [integer, "null"] }
                   verdict: { $ref: "#/components/schemas/Verdict" }

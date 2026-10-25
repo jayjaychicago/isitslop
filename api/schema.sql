@@ -82,7 +82,7 @@ create table if not exists grades (
   entry_id           uuid not null references entries(id) on delete cascade,
   quality_score      int,
   popularity_score   int,
-  overall            int,
+  sloppy             int,
   verdict            text not null,
   quality_breakdown  jsonb not null,
   popularity_input   jsonb,
@@ -101,6 +101,14 @@ do $$ begin
     update grades set overall = 0 where overall is null;
     alter table grades alter column popularity_score set not null, alter column popularity_score set default 0;
     alter table grades alter column overall set not null, alter column overall set default 0;
+  end if;
+end $$;
+
+-- 0.7.0: the headline number is percent sloppy (the old overall, inverted: 0 overall = 100 sloppy)
+do $$ begin
+  if exists (select 1 from information_schema.columns where table_name='grades' and column_name='overall') then
+    alter table grades rename column overall to sloppy;
+    update grades set sloppy = 100 - sloppy where sloppy is not null;
   end if;
 end $$;
 
@@ -123,7 +131,7 @@ update grades set verdict = (case when popularity_score >= 50 then 'popular' els
 -- 0.6.1: unknown is null, not zero
 alter table grades alter column quality_score drop not null;
 alter table grades alter column popularity_score drop not null, alter column popularity_score drop default;
-alter table grades alter column overall drop not null, alter column overall drop default;
+alter table grades alter column sloppy drop not null, alter column sloppy drop default;
 
 -- crude per-IP rate limiting, portable across hosts
 create table if not exists cache (

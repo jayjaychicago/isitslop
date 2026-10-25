@@ -25,7 +25,7 @@ entries.get('/entries', async (c) => {
   const offset = Math.max(0, Number(c.req.query('offset') ?? 0) || 0);
   const like = `%${q.replace(/[%_]/g, '')}%`;
   const rows = (await sql`
-    select e.*, g.quality_score, g.popularity_score, g.overall, g.verdict, g.created_at as graded_at,
+    select e.*, g.quality_score, g.popularity_score, g.sloppy, g.verdict, g.created_at as graded_at,
       case
         when ${q} = '' then 0
         when e.domain = ${q} then 3
@@ -39,11 +39,11 @@ entries.get('/entries', async (c) => {
        or (coalesce(e.title,'') ilike ${like} and not (e.kind = 'github' and e.repo_private)))
     order by rank desc, (g.verdict is not null) desc, e.created_at desc
     limit ${limit} offset ${offset}
-  `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; overall: number | null; verdict: string | null; graded_at: string | null })[];
+  `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; sloppy: number | null; verdict: string | null; graded_at: string | null })[];
   return c.json({
     items: rows.map((r) => ({
       ...publicEntry(r),
-      grade: r.verdict ? { quality: r.quality_score, popularity: r.popularity_score, overall: r.overall, verdict: r.verdict, createdAt: r.graded_at } : null,
+      grade: r.verdict ? { quality: r.quality_score, popularity: r.popularity_score, sloppy: r.sloppy, verdict: r.verdict, createdAt: r.graded_at } : null,
     })),
     limit,
     offset,
@@ -53,7 +53,7 @@ entries.get('/entries', async (c) => {
 /**
  * The simplest thing: the current score of a URL. One fixed API key, no side effects.
  *   GET /v1/score?url=example.com  (Authorization: Bearer <API_KEY>)
- * -> { found, url, quality, popularity, verdict, label, gradedAt, page }
+ * -> { found, url, sloppy, quality, popularity, verdict, label, gradedAt, page }
  */
 entries.get('/score', async (c) => {
   const presented = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim() || (c.req.header('x-api-key') ?? '').trim();
@@ -63,13 +63,13 @@ entries.get('/score', async (c) => {
   const t = normalizeTarget(c.req.query('url') ?? '');
   if (typeof t === 'string') return c.json({ error: t }, 400);
   const rows = (await sql`
-    select e.*, g.quality_score, g.popularity_score, g.overall, g.verdict, g.created_at as graded_at
+    select e.*, g.quality_score, g.popularity_score, g.sloppy, g.verdict, g.created_at as graded_at
     from entries e
     left join lateral (select * from grades where entry_id = e.id order by created_at desc limit 1) g on true
     where e.url = ${t.url} or (e.kind = 'site' and e.domain = ${t.domain} and ${t.kind} = 'site')
     order by (e.url = ${t.url}) desc, e.created_at asc
     limit 1
-  `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; overall: number | null; verdict: string | null; graded_at: string | null })[];
+  `) as (EntryRow & { quality_score: number | null; popularity_score: number | null; sloppy: number | null; verdict: string | null; graded_at: string | null })[];
   const e = rows[0];
   // A private repository is never confirmed to exist here, so its path cannot be probed.
   if (!e || (e.kind === 'github' && e.repo_private)) return c.json({ found: false, url: t.url, label: 'Not in the index' }, 404);
@@ -77,7 +77,7 @@ entries.get('/score', async (c) => {
   return c.json({
     found: true,
     url: e.url,
-    overall: e.overall,
+    sloppy: e.sloppy,
     popularity: e.popularity_score,
     quality: e.quality_score,
     verdict: e.verdict,
@@ -103,12 +103,12 @@ entries.get('/entries/:id', async (c) => {
   const e = await getEntry(sql, c.req.param('id'));
   if (!e) return c.json({ error: 'not found' }, 404);
   const g = await latestGrade(sql, e.id);
-  const history = (await sql`select id, quality_score, popularity_score, overall, verdict, heuristics_version, created_at from grades where entry_id = ${e.id} order by created_at desc limit 20`) as GradeRow[];
+  const history = (await sql`select id, quality_score, popularity_score, sloppy, verdict, heuristics_version, created_at from grades where entry_id = ${e.id} order by created_at desc limit 20`) as GradeRow[];
   const appeals = (await sql`select * from appeals where entry_id = ${e.id} order by created_at desc`) as AppealRow[];
   return c.json({
     entry: publicEntry(e),
     grade: g ? publicGrade(g, e.repo_private) : null,
-    history: history.map((h) => ({ id: h.id, quality: h.quality_score, popularity: h.popularity_score, overall: h.overall, verdict: h.verdict, heuristicsVersion: h.heuristics_version, createdAt: h.created_at })),
+    history: history.map((h) => ({ id: h.id, quality: h.quality_score, popularity: h.popularity_score, sloppy: h.sloppy, verdict: h.verdict, heuristicsVersion: h.heuristics_version, createdAt: h.created_at })),
     appeals: appeals.map(publicAppeal),
   });
 });

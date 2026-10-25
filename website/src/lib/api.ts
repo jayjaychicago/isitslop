@@ -3,8 +3,8 @@ export const API = (process.env.NEXT_PUBLIC_API_URL ?? "https://internalapi.isit
 /** `${popularity}_${quality}`: fringe|popular|unknown _ slop|craft|unknown */
 export type Verdict = string;
 
-/** `overall` is the overall score: Popularity and Quality averaged, null if either is unknown. */
-export type GradeSummary = { quality: number | null; popularity: number | null; overall: number | null; verdict: string; createdAt: string };
+/** `sloppy` is the headline number: percent sloppy, Popularity and Quality averaged then inverted (0 overall = 100% sloppy). Null if either half is unknown. */
+export type GradeSummary = { quality: number | null; popularity: number | null; sloppy: number | null; verdict: string; createdAt: string };
 
 export type Entry = {
   id: string;
@@ -30,7 +30,7 @@ export type Grade = {
   id: string;
   quality: number | null;
   popularity: number | null;
-  overall: number | null;
+  sloppy: number | null;
   verdict: Verdict;
   qualityBreakdown: { score: number | null; signals: Signal[]; repo: string | null; version: string; note?: string };
   popularityInput: { provider?: string; visitors?: number; returning?: number; returningRate?: number; window?: string; property?: string; note: string } | null;
@@ -73,6 +73,13 @@ export function scoreClass(n: number | null | undefined): string {
   if (n >= 50) return "text-fresh";
   return "text-slop";
 }
+
+/** Colour for the percent-sloppy number, where lower is better: 50% and up is red. */
+export function sloppyClass(n: number | null | undefined): string {
+  return scoreClass(n === null || n === undefined ? n : 100 - n);
+}
+
+export const SLOPPY_TITLE = "Percent sloppy: Popularity and Quality averaged, then inverted. 0% is the goal.";
 
 export const me = () => api<Me>("/me");
 export const signInUrl = (returnTo: string) => `${API}/auth/github?return=${encodeURIComponent(returnTo)}`;

@@ -5,7 +5,7 @@ A sloppiness score for things on the internet. It asks two plain questions:
 - **Quality**: is this real, maintained work by more than one person over time? Read from the GitHub repository with the owner's own login. Three signals, all of which take time: a year of pushes, other humans committing, issues being filed. Nothing that can be scaffolded in an afternoon counts: no README, license, CI, tests, stars or forks.
 - **Popularity**: do the people who find it actually use it? Read from the owner's connected analytics (Google Analytics, PostHog or Plausible in v0): unique visitors in 30 days and how many came back on another day. Nothing is typed in.
 
-The verdict is two words, one per axis: **Fringe** or **Popular**, **Slop** or **Craft**. Nothing connected is unknown, not zero. Connected and empty is zero.
+Both are scored out of 100. The headline number is **percent sloppy**: the two averaged, then inverted (`100 - round((popularity + quality) / 2)`), so 0% is the goal and 100% is the floor. The verdict is two words, one per axis: **Fringe** or **Popular**, **Slop** or **Craft**. Nothing connected is unknown, not zero. Connected and empty is zero.
 
 Built for founders and open source maintainers who want an honest, public answer to "was it worth building?", and for the contributors who think the rules could be better. It exists because AI made the "what" cheap: anyone can ship a spec in an afternoon, so the thing that separates a product from slop is the definition behind it, and nobody was measuring that.
 
