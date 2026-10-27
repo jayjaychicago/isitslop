@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@next/third-parties": "^16.4.2",
+    "apiblaze": "^0.21.56",
     "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0"

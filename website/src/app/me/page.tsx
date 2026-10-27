@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useSession } from "@/components/Session";
 import { signInUrl } from "@/lib/api";
 import { VerdictWords } from "@/components/Score";
+import { ApiKeys } from "@/components/ApiKeys";
 
 export default function MePage() {
   const { me } = useSession();
@@ -34,6 +35,12 @@ export default function MePage() {
           </li>
         ))}
       </ul>
+
+      <section className="mt-12">
+        <h2 className="display text-3xl">API keys</h2>
+        <p className="mt-2 text-ink-2">For the score API: <code>GET /v1/score?url=</code> with the key as <code>X-API-Key</code>. See the <Link href="/api-docs" className="underline">API page</Link>.</p>
+        <div className="mt-4"><ApiKeys /></div>
+      </section>
     </div>
   );
 }
