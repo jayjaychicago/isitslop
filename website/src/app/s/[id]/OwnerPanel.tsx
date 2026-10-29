@@ -142,7 +142,7 @@ function Analytics({ entry, onDone, gaPick, onPicked }: { entry: Entry; onDone: 
   }
   async function disconnect() {
     setBusy(true); setMsg(null);
-    try { await api(`/entries/${entry.id}/analytics`, { method: "DELETE" }); setMsg("Disconnected and revoked at Google."); onDone(); } catch (e) { setMsg((e as Error).message); }
+    try { await api(`/entries/${entry.id}/analytics`, { method: "DELETE" }); setMsg("Disconnected. Is It Slop no longer has access to your Google Analytics and has been removed from the apps connected to your Google account."); onDone(); } catch (e) { setMsg((e as Error).message); }
     setBusy(false);
   }
   return (
@@ -150,7 +150,7 @@ function Analytics({ entry, onDone, gaPick, onPicked }: { entry: Entry; onDone: 
       <p className="text-ink-2">
         Popularity is read from your Google Analytics 4 property: active users in the last 30 days and how many of them came back. You sign in with
         Google and grant read-only access to Analytics; nothing is typed in and nothing is written. By connecting you agree that the two counts become your public Popularity score on this page. The connection is stored encrypted; when
-        you disconnect or delete the entry it is erased and the grant is revoked at Google. {entry.analyticsConnected ? "Currently connected." : "Nothing connected yet."}
+        you disconnect or delete the entry it is erased and Is It Slop is removed from the apps connected to your Google account. {entry.analyticsConnected ? "Currently connected." : "Nothing connected yet."}
       </p>
       {picked ? (
         <div className="text-ink-2">Connected: {picked}.</div>
