@@ -167,7 +167,6 @@ function Analytics({ entry, onDone, gaPick, onPicked }: { entry: Entry; onDone: 
           {entry.analyticsConnected && <button className="btn btn-ghost" onClick={disconnect} disabled={busy}>Disconnect</button>}
         </div>
       )}
-      <p className="text-xs text-muted">Other analytics products are an open contribution: see <code>api/src/lib/analytics.ts</code>.</p>
       {msg && <div className={msg.startsWith("Connected") || msg.startsWith("Disconnected") ? "text-fresh" : "text-slop"}>{msg}</div>}
     </div>
   );
