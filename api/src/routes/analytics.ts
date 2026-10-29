@@ -5,6 +5,7 @@ import { readGa4, revokeGoogleToken, type AnalyticsConfig, type AnalyticsReading
 import { open, seal } from '../lib/github-auth.ts';
 import { getEntry, publicEntry, type EntryRow } from '../lib/entries.ts';
 import { requireOwner } from './grade.ts';
+import { currentUser, isAdminUser } from '../lib/session.ts';
 import type { Sql } from '../lib/db.ts';
 
 export const analytics = new Hono<{ Bindings: Env }>();
@@ -36,6 +37,28 @@ analytics.delete('/entries/:id/analytics', async (c) => {
   const revoked = await revokeStoredGoogle(c.env, e);
   await sql`update entries set analytics_provider = null, analytics_config = null where id = ${e.id}`;
   return c.json({ ok: true, revoked });
+});
+
+/**
+ * Erase every trace of Google Analytics for an entry: revoke the grant, drop the connection, and strip the
+ * popularity half out of every grade (score, the two counts, the property name), leaving quality in place.
+ * Owner, operator (ADMIN_GITHUB_LOGINS) or admin token.
+ */
+analytics.delete('/entries/:id/analytics/data', async (c) => {
+  const sql = db(c.env.DATABASE_URL);
+  const e = await getEntry(sql, c.req.param('id'));
+  if (!e) return c.json({ error: 'not found' }, 404);
+  const auth = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+  const isAdmin = (!!c.env.ADMIN_TOKEN && auth === c.env.ADMIN_TOKEN) || isAdminUser(c.env, await currentUser(c, sql));
+  if (!isAdmin && !(await requireOwner(c, e, sql))) return c.json({ error: 'sign in as the owner' }, 401);
+  const revoked = await revokeStoredGoogle(c.env, e);
+  await sql`update entries set analytics_provider = null, analytics_config = null where id = ${e.id}`;
+  const rows = await sql`
+    update grades set popularity_score = null, popularity_input = null, sloppy = null,
+      verdict = 'unknown_' || split_part(verdict, '_', 2)
+    where entry_id = ${e.id} and (popularity_score is not null or popularity_input is not null)
+    returning id` as { id: string }[];
+  return c.json({ ok: true, revoked, gradesPurged: rows.length });
 });
 
 /** Revoke the entry's Google grant, if any, before its stored token is erased. True when Google confirmed. */
