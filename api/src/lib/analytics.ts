@@ -23,6 +23,24 @@ export async function googleUserToken(env: GoogleEnv, refreshToken: string): Pro
   return j.access_token ?? null;
 }
 
+/**
+ * Revoke the owner's grant at Google. Called when the owner disconnects or deletes the entry, so the app
+ * disappears from their Google permissions page without them having to go there. Best effort: Google
+ * answers 400 for a token it no longer knows, and the stored copy is erased regardless.
+ */
+export async function revokeGoogleToken(refreshToken: string): Promise<boolean> {
+  try {
+    const r = await fetch('https://oauth2.googleapis.com/revoke', {
+      method: 'POST',
+      headers: { 'content-type': 'application/x-www-form-urlencoded', 'user-agent': UA },
+      body: new URLSearchParams({ token: refreshToken }),
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
 /** GA4 properties the signed-in account can see, for the picker. */
 export async function listGa4Properties(token: string): Promise<{ id: string; name: string }[]> {
   const r = await fetch('https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200', { headers: { authorization: `Bearer ${token}`, 'user-agent': UA } });

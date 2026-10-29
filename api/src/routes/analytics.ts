@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../lib/env.ts';
 import { db } from '../lib/db.ts';
-import { readGa4, type AnalyticsConfig, type AnalyticsReading } from '../lib/analytics.ts';
+import { readGa4, revokeGoogleToken, type AnalyticsConfig, type AnalyticsReading } from '../lib/analytics.ts';
 import { open, seal } from '../lib/github-auth.ts';
 import { getEntry, publicEntry, type EntryRow } from '../lib/entries.ts';
 import { requireOwner } from './grade.ts';
@@ -33,9 +33,19 @@ analytics.delete('/entries/:id/analytics', async (c) => {
   const e = await getEntry(sql, c.req.param('id'));
   if (!e) return c.json({ error: 'not found' }, 404);
   if (!(await requireOwner(c, e, sql))) return c.json({ error: 'sign in as the owner' }, 401);
+  const revoked = await revokeStoredGoogle(c.env, e);
   await sql`update entries set analytics_provider = null, analytics_config = null where id = ${e.id}`;
-  return c.json({ ok: true });
+  return c.json({ ok: true, revoked });
 });
+
+/** Revoke the entry's Google grant, if any, before its stored token is erased. True when Google confirmed. */
+export async function revokeStoredGoogle(env: Env, e: EntryRow): Promise<boolean> {
+  if (e.analytics_provider !== 'ga4' || !e.analytics_config) return false;
+  const raw = await open(env, e.analytics_config);
+  if (!raw) return false;
+  const cfg = JSON.parse(raw) as AnalyticsConfig;
+  return cfg.refreshToken ? revokeGoogleToken(cfg.refreshToken) : false;
+}
 
 /** Read the entry's connected Google Analytics now. Null if none connected or no property picked; string on error. */
 export async function readAnalytics(env: Env, _sql: Sql, e: EntryRow): Promise<AnalyticsReading | string | null> {

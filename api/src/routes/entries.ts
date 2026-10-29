@@ -4,6 +4,7 @@ import { db } from '../lib/db.ts';
 import { normalizeTarget } from '../lib/url.ts';
 import { rateLimit } from '../lib/ratelimit.ts';
 import { requireOwner } from './grade.ts';
+import { revokeStoredGoogle } from './analytics.ts';
 import { collectRepoFacts, scoreQuality } from '../heuristics/quality.ts';
 import { userGithubToken } from './github.ts';
 import { repoPermission, repoInfo } from '../lib/github-auth.ts';
@@ -148,6 +149,7 @@ entries.delete('/entries/:id', async (c) => {
   const auth = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
   const isAdmin = (!!c.env.ADMIN_TOKEN && auth === c.env.ADMIN_TOKEN) || isAdminUser(c.env, await currentUser(c, sql));
   if (!isAdmin && !(await requireOwner(c, e, sql))) return c.json({ error: 'sign in as the owner' }, 401);
+  await revokeStoredGoogle(c.env, e);
   await sql`delete from entries where id = ${e.id}`;
   return c.json({ deleted: e.id });
 });
