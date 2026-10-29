@@ -11,7 +11,7 @@
  */
 import type { PopularityInput, PopularityResult } from './types.ts';
 
-export const POPULARITY_VERSION = '0.5.0';
+export const POPULARITY_VERSION = '0.6.0';
 
 /** Piecewise-linear bands. Values past the last point saturate at 1. */
 const RETURN_BANDS: [number, number][] = [
@@ -45,17 +45,18 @@ export function band(x: number, pts: [number, number][]): number {
 export function scorePopularity(p: PopularityInput): PopularityResult {
   const visitors = Math.max(0, p.visitors);
   const returning = Math.min(visitors, Math.max(0, p.returning));
-  if (visitors === 0) return { score: 0, returningRate: 0, note: 'No visitors in the last 30 days.', version: POPULARITY_VERSION };
-  const returningRate = returning / visitors;
+  if (visitors === 0) return { score: 0, reach: 0, returning: 0, note: 'No visitors in the last 30 days.', version: POPULARITY_VERSION };
   const reach = band(Math.log10(visitors), REACH_BANDS);
-  const score = Math.round(100 * reach * (1 - RETURN_SHARE + RETURN_SHARE * band(returningRate, RETURN_BANDS)));
-  return { score, returningRate, note: `${visitors.toLocaleString()} active users in 30 days, ${returning.toLocaleString()} returning, read from Google Analytics.`, version: POPULARITY_VERSION };
+  const ret = band(returning / visitors, RETURN_BANDS);
+  const score = Math.round(100 * reach * (1 - RETURN_SHARE + RETURN_SHARE * ret));
+  // The counts themselves are not returned: a grade keeps only the two bands and the score.
+  return { score, reach: Math.round(100 * reach), returning: Math.round(100 * ret), note: 'Read from Google Analytics, last 30 days.', version: POPULARITY_VERSION };
 }
 
 export function methodologyPopularity() {
   return {
     version: POPULARITY_VERSION,
-    source: 'Read from the owner\'s Google Analytics 4 property, connected with Google sign-in, for the last 30 days: active users, and how many of them Google classes as returning.',
+    source: 'Read from the owner\'s Google Analytics 4 property, connected with Google, for the last 30 days: active users, and how many of them Google classes as returning. The counts are scored and discarded; a grade keeps only the two subscores and the score.',
     formula: 'popularity = reach × (0.5 + 0.5 × returning). Reach gates everything: nobody there means zero, however loyal.',
     weights: { returning: RETURN_SHARE, reach: 1 },
     returnBands: RETURN_BANDS,

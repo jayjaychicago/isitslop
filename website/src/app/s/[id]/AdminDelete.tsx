@@ -28,13 +28,13 @@ export function AdminDelete({ entry }: { entry: Entry }) {
   }
 
   async function removeAnalytics() {
-    if (!window.confirm(`Delete all Google Analytics data for ${name}? The Google connection is revoked and removed, and the Popularity score and counts are stripped from every grade. Quality stays. This cannot be undone.`)) return;
+    if (!window.confirm(`Wipe Popularity for ${name}? The Google connection is revoked and removed, and the Popularity score and subscores are stripped from every grade. Quality stays. This cannot be undone.`)) return;
     setBusy(true);
     setErr(null);
     setMsg(null);
     try {
       const r = await api<{ revoked: boolean; gradesPurged: number }>(`/entries/${entry.id}/analytics/data`, { method: "DELETE" });
-      setMsg(`Google Analytics data deleted: connection removed${r.revoked ? " and revoked at Google" : ""}, ${r.gradesPurged} grade${r.gradesPurged === 1 ? "" : "s"} stripped of Popularity.`);
+      setMsg(`Popularity wiped: connection removed${r.revoked ? " and revoked at Google" : ""}, ${r.gradesPurged} grade${r.gradesPurged === 1 ? "" : "s"} stripped.`);
       router.refresh();
     } catch (e) {
       setErr((e as Error).message);
@@ -48,11 +48,11 @@ export function AdminDelete({ entry }: { entry: Entry }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h2 className="display text-2xl">Operator</h2>
-          <p className="text-sm text-muted mt-1">Signed in as {me.user.githubLogin}. Delete the Google Analytics data alone, or the entry and everything attached to it.</p>
+          <p className="text-sm text-muted mt-1">Signed in as {me.user.githubLogin}. Wipe Popularity alone, or delete the entry and everything attached to it.</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 shrink-0">
           <button className="btn btn-ghost border-slop/60 text-slop hover:opacity-90" onClick={removeAnalytics} disabled={busy}>
-            {busy ? "Working…" : "Delete Google Analytics data"}
+            {busy ? "Working…" : "Wipe Popularity"}
           </button>
           <button className="btn bg-slop text-white border-slop hover:opacity-90" onClick={remove} disabled={busy}>
             {busy ? "Working…" : "Delete all data for this entry"}

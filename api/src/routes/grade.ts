@@ -44,7 +44,8 @@ export async function runGrade(env: Env, sql: Sql, e: EntryRow, opts: GradeOptio
     if (typeof reading === 'string') return `analytics: ${reading}`;
     const popularity = reading ? scorePopularity(reading) : null;
     popularityScore = popularity ? popularity.score : null;
-    popularityInput = reading ? { ...reading, ...popularity, note: popularity?.note } : { note: 'No analytics connected: popularity is unknown.' };
+    // Nothing from Google is kept: not the counts, not the property. Only the subscores and the score.
+    popularityInput = reading && popularity ? { provider: reading.provider, window: reading.window, reach: popularity.reach, returning: popularity.returning, note: popularity.note, version: popularity.version } : { note: 'No analytics connected: popularity is unknown.' };
   } else {
     popularityScore = prev.popularity_score;
     popularityInput = prev.popularity_input;

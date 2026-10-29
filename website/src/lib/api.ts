@@ -33,7 +33,8 @@ export type Grade = {
   sloppy: number | null;
   verdict: Verdict;
   qualityBreakdown: { score: number | null; signals: Signal[]; repo: string | null; version: string; note?: string };
-  popularityInput: { provider?: string; visitors?: number; returning?: number; returningRate?: number; window?: string; property?: string; note: string } | null;
+  /** The two subscores, 0 to 100. A grade keeps nothing else from Google: no counts, no property. */
+  popularityInput: { provider?: string; reach?: number; returning?: number; window?: string; version?: string; note: string } | null;
   heuristicsVersion: string;
   createdAt: string;
 };

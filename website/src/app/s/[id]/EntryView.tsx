@@ -212,7 +212,7 @@ function QualityDetails({ grade }: { grade: Grade }) {
 
 function PopularityDetails({ grade }: { grade: Grade }) {
   const p = grade.popularityInput;
-  if (!p || p.visitors === undefined) {
+  if (!p || p.reach === undefined || p.returning === undefined) {
     return (
       <section className="mt-4">
         <div className="text-xs uppercase tracking-wider text-muted font-semibold mb-2">Popularity subscores</div>
@@ -220,20 +220,12 @@ function PopularityDetails({ grade }: { grade: Grade }) {
       </section>
     );
   }
-  const visitors = p.visitors ?? 0;
-  const returning = p.returning ?? 0;
-  const rate = visitors ? returning / visitors : 0;
-  // Mirrors api/src/heuristics/popularity.ts: popularity = reach × (0.5 + 0.5 × returning).
-  const band = (x: number, pts: [number, number][]) => {
-    if (x <= pts[0][0]) return pts[0][1];
-    for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1]; const [x1, y1] = pts[i]; if (x <= x1) return y0 + ((x - x0) / (x1 - x0)) * (y1 - y0); }
-    return pts[pts.length - 1][1];
-  };
-  const reach = band(Math.log10(Math.max(1, visitors)), [[2, 0], [3, 0.3], [4, 0.6], [5, 0.85], [6, 1]]);
-  const ret = band(rate, [[0, 0], [0.1, 0.3], [0.25, 0.6], [0.4, 0.85], [0.6, 1]]);
+  // Mirrors api/src/heuristics/popularity.ts: popularity = reach × (0.5 + 0.5 × returning), both subscores out of 100.
+  const reach = p.reach / 100;
+  const ret = p.returning / 100;
   const rows: [string, string, string, string][] = [
-    ["reach", "How many people at all: active users in the last 30 days on a log scale. 100 is zero, 1,000 is 30%, 10,000 is 60%, 100,000 is 85%, a million is full. Reach multiplies everything: nobody there means zero, however loyal.", `${visitors.toLocaleString()} active users`, `×${reach.toFixed(2)}`],
-    ["returning", "People who came back: returning active users as a share of all active users. Moves half of the reach-gated score.", `${returning.toLocaleString()} of ${visitors.toLocaleString()} (${(rate * 100).toFixed(1)}%)`, `×${(0.5 + 0.5 * ret).toFixed(2)}`],
+    ["reach", "How many people at all: active users in the last 30 days on a log scale. 100 users is 0, 1,000 is 30, 10,000 is 60, 100,000 is 85, a million is 100. Reach multiplies everything: nobody there means zero, however loyal.", `${p.reach}/100`, `×${reach.toFixed(2)}`],
+    ["returning", "People who came back: returning active users as a share of all active users, banded. 10% is 30, 25% is 60, 40% is 85, 60% is 100. Moves half of the reach-gated score.", `${p.returning}/100`, `×${(0.5 + 0.5 * ret).toFixed(2)}`],
   ];
   return (
     <section className="mt-4">
@@ -250,7 +242,7 @@ function PopularityDetails({ grade }: { grade: Grade }) {
           </li>
         ))}
         <li className="p-4 text-sm text-ink-2">100 × {reach.toFixed(2)} × {(0.5 + 0.5 * ret).toFixed(2)} = <strong className="text-ink">{Math.round(100 * reach * (0.5 + 0.5 * ret))}</strong></li>
-        <li className="p-3 text-xs text-muted">Read from Google Analytics{p.property ? ` (${p.property})` : ""}, last 30 days. Bands live in <code>api/src/heuristics/popularity.ts</code>.</li>
+        <li className="p-3 text-xs text-muted">Read from Google Analytics, last 30 days. The counts are scored and discarded: these two subscores are all that is kept. Bands live in <code>api/src/heuristics/popularity.ts</code>.</li>
       </ul>
     </section>
   );

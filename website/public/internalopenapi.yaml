@@ -106,11 +106,10 @@ components:
           type: [object, "null"]
           properties:
             provider: { type: string, enum: [ga4] }
-            visitors: { type: integer, description: Active users, last 30 days }
-            returning: { type: integer, description: Returning active users, last 30 days }
-            returningRate: { type: number }
+            reach: { type: integer, description: Reach subscore, 0 to 100 (active users on a log scale). The counts themselves are not kept. }
+            returning: { type: integer, description: Returning subscore, 0 to 100 (share of active users who came back, banded) }
             window: { type: string, examples: [30d] }
-            property: { type: string }
+            version: { type: string }
             note: { type: string }
         heuristicsVersion: { type: string }
         createdAt: { type: string, format: date-time }

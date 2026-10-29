@@ -145,3 +145,23 @@ create table if not exists rate_limits (
   count      int not null default 0,
   window_end timestamptz not null
 );
+
+-- 0.8.0: a grade keeps nothing from Google. The raw counts in older grades become the two subscores (bands out of 100).
+with src as (
+  select id, (popularity_input->>'visitors')::numeric as v, coalesce((popularity_input->>'returning')::numeric, 0) as rt, popularity_input->>'window' as w
+  from grades where popularity_input ? 'visitors'
+), calc as (
+  select id, w, v,
+    case when v < 100 then 0 when v < 1000 then 0.3*(log(v)-2) when v < 10000 then 0.3+0.3*(log(v)-3)
+         when v < 100000 then 0.6+0.25*(log(v)-4) when v < 1000000 then 0.85+0.15*(log(v)-5) else 1 end as reach,
+    case when v <= 0 then 0 else least(rt, v)/v end as r
+  from src
+)
+update grades g set popularity_input = jsonb_build_object(
+  'provider', 'ga4', 'window', coalesce(c.w, '30d'),
+  'reach', round(100*c.reach)::int,
+  'returning', round(100*(case when c.r <= 0 then 0 when c.r <= 0.1 then 3*c.r when c.r <= 0.25 then 0.3+2*(c.r-0.1)
+                               when c.r <= 0.4 then 0.6+(0.25/0.15)*(c.r-0.25) when c.r <= 0.6 then 0.85+0.75*(c.r-0.4) else 1 end))::int,
+  'note', case when c.v = 0 then 'No visitors in the last 30 days.' else 'Read from Google Analytics, last 30 days.' end,
+  'version', '0.6.0')
+from calc c where g.id = c.id;

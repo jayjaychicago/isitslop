@@ -4,8 +4,8 @@
  *   visitors   active users
  *   returning  of those, the ones Google classes as returning
  */
-export type AnalyticsConfig = { refreshToken: string; propertyId: string; propertyName?: string };
-export type AnalyticsReading = { provider: 'ga4'; visitors: number; returning: number; window: string; property?: string };
+export type AnalyticsConfig = { refreshToken: string; propertyId: string };
+export type AnalyticsReading = { provider: 'ga4'; visitors: number; returning: number; window: string };
 export type GoogleEnv = { GOOGLE_CLIENT_ID?: string; GOOGLE_CLIENT_SECRET?: string };
 
 const UA = 'isitslop-bot/0.6 (+https://isitslop.org/methodology)';
@@ -76,6 +76,5 @@ export async function readGa4(env: GoogleEnv, cfg: AnalyticsConfig): Promise<Ana
   if (!googleEnabled(env)) return 'Google Analytics is not configured on this deployment';
   const token = await googleUserToken(env, cfg.refreshToken);
   if (!token) return 'Google sign-in expired; connect Google Analytics again';
-  const reading = await ga4Report(token, cfg.propertyId);
-  return typeof reading === 'string' ? reading : { ...reading, property: cfg.propertyName };
+  return ga4Report(token, cfg.propertyId);
 }

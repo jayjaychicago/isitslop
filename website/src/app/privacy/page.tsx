@@ -18,7 +18,7 @@ export default function Privacy() {
         <li><strong>Owner keys.</strong> We store only a SHA-256 hash of your owner key. We cannot recover it. The website stores the key in your browser&apos;s local storage so you do not have to paste it; clearing site data removes it.</li>
         <li><strong>GitHub connection.</strong> Your GitHub login name, and the access and refresh tokens issued by the Is It Slop GitHub App, encrypted at rest with a key held only by the API. Used solely to read your repository when you request a grade: metadata, commit history, contributors and issue counts. We never write to GitHub. Deleted when you disconnect or remove the entry.</li>
         <li><strong>Google Analytics connection.</strong> See section 3.</li>
-        <li><strong>Grades and appeals.</strong> The scores, the signal breakdown with its evidence (counts and dates), the aggregate analytics numbers, and any appeal text. All of this is public.</li>
+        <li><strong>Grades and appeals.</strong> The scores, the Quality breakdown with its evidence (counts and dates from GitHub), the two Popularity subscores, and any appeal text. All of this is public.</li>
         <li><strong>IP addresses.</strong> Used transiently for rate limiting, keyed by a per-feature bucket that is overwritten as windows expire. Not joined to entries, grades or appeals.</li>
         <li><strong>Terms acceptance.</strong> The terms version and timestamp of your acceptance, attached to your entry.</li>
         <li><strong>Session cookie.</strong> If you sign in with GitHub, a random session ID in a cookie on isitslop.org, valid 30 days, deleted on sign-out.</li>
@@ -35,8 +35,8 @@ export default function Privacy() {
       </p>
       <ul>
         <li><strong>What we access.</strong> The list of Google Analytics accounts and properties your Google account can see (names and IDs), so you can choose one; and for the chosen property, a single aggregate report: active users for the last 30 days, split new versus returning. Nothing about individual visitors, nothing from other Google services.</li>
-        <li><strong>How we use it.</strong> Only to compute and display the Popularity score for the entry you chose. The two aggregate numbers, and the display name of the property you chose, are shown publicly on the entry page next to the score. Your Google account name is not published.</li>
-        <li><strong>What we store.</strong> The chosen property ID and name, and the OAuth refresh token Google issues, encrypted at rest. Access tokens are short-lived and not stored. We do not store the report beyond the two numbers in the public grade.</li>
+        <li><strong>How we use it.</strong> Only to compute the Popularity score for the entry you chose. The report is read, turned into two subscores out of 100 and a score, and discarded. The score and subscores are public; the counts, the property name and your Google account name are never published and never stored.</li>
+        <li><strong>What we store.</strong> Two things, and nothing else: the numeric ID of the property you chose, and the OAuth refresh token Google issues so the score can be refreshed daily. Both encrypted at rest. Access tokens are short-lived and not stored. The report itself is never stored: a grade holds only the site&apos;s own score and subscores.</li>
         <li><strong>Sharing.</strong> We do not share, sell, or transfer Google user data to anyone. It is not used for advertising, not used to train any model, and not read by humans except to debug a problem you report.</li>
         <li><strong>Deleting it.</strong> Click Disconnect on the entry page or delete the entry: the Service revokes its grant at Google and erases the stored token immediately, so the app disappears from your Google permissions page. You can also revoke it yourself at myaccount.google.com/permissions at any time, with the same effect.</li>
       </ul>

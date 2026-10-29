@@ -27,7 +27,9 @@ export type PopularityInput = {
 
 export type PopularityResult = {
   score: number;
-  returningRate: number;
+  /** The two subscores, each 0 to 100: all a grade keeps of the reading. */
+  reach: number;
+  returning: number;
   note: string;
   version: string;
 };
