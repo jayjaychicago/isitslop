@@ -4,7 +4,7 @@ export default function Privacy() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 prose-legal">
       <h1 className="display text-5xl">Privacy Policy</h1>
-      <p className="text-muted">Version 2026-10-22. Effective October 22, 2026.</p>
+      <p className="text-muted">Version 2026-10-29. Effective October 29, 2026.</p>
       <p>
         This policy describes what isitslop.org and api.isitslop.org (the <strong>Service</strong>), operated by <strong><a className="underline" href="https://apiblaze.com">API Blaze, LLC</a></strong>,
         collect and why. The short version: as little as possible, most of it is public by design, and what you connect is read-only and yours to
@@ -39,6 +39,16 @@ export default function Privacy() {
         <li><strong>What we store.</strong> The chosen property ID and name, and the OAuth refresh token Google issues, encrypted at rest. Access tokens are short-lived and not stored. We do not store the report beyond the two numbers in the public grade.</li>
         <li><strong>Sharing.</strong> We do not share, sell, or transfer Google user data to anyone. It is not used for advertising, not used to train any model, and not read by humans except to debug a problem you report.</li>
         <li><strong>Deleting it.</strong> Click Disconnect on the entry page, delete the entry, or revoke the Service at myaccount.google.com/permissions. Any of these removes the stored token immediately.</li>
+      </ul>
+      <p><strong>How we protect it.</strong> The refresh token is the only sensitive piece of Google data we hold, and it is protected like this:</p>
+      <ul>
+        <li><strong>Encrypted at rest.</strong> The token is encrypted with AES-GCM (a fresh random nonce per record) before it is written to the database. The encryption key is a secret of the API runtime (Cloudflare Workers), is never stored in the database or in source code, and is never sent to the browser. The database provider holds only ciphertext.</li>
+        <li><strong>Encrypted in transit.</strong> Every connection involved is TLS: your browser to the Service, the Service to Google, and the Service to its database.</li>
+        <li><strong>Access control.</strong> No API endpoint ever returns the token, encrypted or not. It is decrypted in memory only at the moment the Service refreshes your analytics reading, and only for an entry you own: a reading can be triggered only by the owner&apos;s session or owner key, or by the scheduled daily refresh. Production secrets and the database are reachable only by the operator&apos;s accounts, each protected by multi-factor authentication.</li>
+        <li><strong>Least privilege.</strong> We request a single read-only scope (<code>analytics.readonly</code>) and call only two endpoints: the property list, and one aggregate report. Short-lived access tokens live in memory for the duration of a request and are never stored or logged.</li>
+        <li><strong>No logging of tokens.</strong> Tokens and report contents are excluded from application logs. Logs hold error messages and status codes only.</li>
+        <li><strong>Deletion.</strong> Disconnecting, deleting the entry, or revoking access at Google erases the stored ciphertext immediately. The Service keeps no other copy; the database provider&apos;s point-in-time recovery history, measured in days, is the only place it can briefly outlive that.</li>
+        <li><strong>Incidents.</strong> If we learn of unauthorised access to Google user data, we will revoke every affected token at Google, rotate the encryption key, and notify affected owners by the email on their GitHub account within 72 hours.</li>
       </ul>
       <p>
         The Service&apos;s use of information received from Google APIs adheres to the{" "}
