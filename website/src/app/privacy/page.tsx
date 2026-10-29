@@ -1,4 +1,4 @@
-export const metadata = { title: "Privacy Policy · Is it slop?" };
+export const metadata = { title: "Privacy Policy · Is it slop?", description: "What isitslop.org collects, how Google and GitHub data is used and protected, and how to delete it." };
 
 export default function Privacy() {
   return (
@@ -42,14 +42,15 @@ export default function Privacy() {
       </ul>
       <p><strong>How we protect it.</strong> The refresh token is the only sensitive piece of Google data we hold, and it is protected like this:</p>
       <ul>
-        <li><strong>Encrypted at rest.</strong> The token is encrypted with AES-GCM (a fresh random nonce per record) before it is written to the database. The encryption key is a secret of the API runtime (Cloudflare Workers), is never stored in the database or in source code, and is never sent to the browser. The database provider holds only ciphertext.</li>
+        <li><strong>Encrypted at rest.</strong> The token is encrypted with AES-256-GCM (a fresh random nonce per record) before it is written to the database. The encryption key is a secret of the API runtime (Cloudflare Workers), is never stored in the database or in source code, and is never sent to the browser. The database provider holds only ciphertext.</li>
         <li><strong>Encrypted in transit.</strong> Every connection involved is TLS: your browser to the Service, the Service to Google, and the Service to its database.</li>
         <li><strong>Access control.</strong> No API endpoint ever returns the token, encrypted or not. It is decrypted in memory only at the moment the Service refreshes your analytics reading, and only for an entry you own: a reading can be triggered only by the owner&apos;s session or owner key, or by the scheduled daily refresh. Production secrets and the database are reachable only by the operator&apos;s accounts, each protected by multi-factor authentication.</li>
         <li><strong>Least privilege.</strong> We request a single read-only scope (<code>analytics.readonly</code>) and call only two endpoints: the property list, and one aggregate report. Short-lived access tokens live in memory for the duration of a request and are never stored or logged.</li>
         <li><strong>No logging of tokens.</strong> Tokens and report contents are excluded from application logs. Logs hold error messages and status codes only.</li>
         <li><strong>Deletion.</strong> Disconnecting, deleting the entry, or revoking access at Google erases the stored ciphertext immediately. The Service keeps no other copy; the database provider&apos;s point-in-time recovery history, measured in days, is the only place it can briefly outlive that.</li>
-        <li><strong>Incidents.</strong> If we learn of unauthorised access to Google user data, we will revoke every affected token at Google, rotate the encryption key, and notify affected owners by the email on their GitHub account within 72 hours.</li>
+        <li><strong>Incidents.</strong> If we learn of unauthorised access to Google user data, we will revoke every affected token at Google, rotate the encryption key, and notify affected owners without undue delay and within the time required by applicable law, by the email on their GitHub account.</li>
       </ul>
+      <p>No method of storage or transmission is completely secure. We apply the measures above and keep them under review, but we cannot guarantee absolute security, and you connect Google Analytics on that understanding.</p>
       <p>
         The Service&apos;s use of information received from Google APIs adheres to the{" "}
         <a className="underline" href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the
@@ -71,7 +72,7 @@ export default function Privacy() {
       <p>Each may keep its own operational logs (including IP addresses) under its own policy.</p>
 
       <h2>6. Retention</h2>
-      <p>Entries, grades and appeals are kept indefinitely because they are the index, until the owner removes them. Verification records expire after 24 hours. Rate-limit buckets are overwritten continuously. Connected credentials live exactly as long as the connection.</p>
+      <p>Entries, grades and appeals are kept indefinitely because they are the index, until the owner removes them. Verification records expire after 24 hours. Rate-limit buckets are overwritten continuously. Connected credentials, including the Google refresh token, live exactly as long as the connection and are erased the moment it ends. The two aggregate analytics counts in a grade are kept with the grade, since they are the public score.</p>
 
       <h2>7. Your rights</h2>
       <p>If you are in a jurisdiction that grants you rights over personal data (such as the EU, UK or California), you may exercise them by removing your entry, by filing a public appeal from your entry page, or by opening an issue on GitHub. Because we hold almost no personal data, the usual answer is &quot;it is already public, and you can delete it yourself&quot;.</p>
@@ -83,7 +84,7 @@ export default function Privacy() {
       <p>We may update this policy. The version in force is shown at the top of this page.</p>
 
       <h2>10. Contact</h2>
-      <p>API Blaze, LLC. github.com/jayjaychicago/isitslop.</p>
+      <p>API Blaze, LLC, Michigan, USA. Email <a className="underline" href="mailto:support@isitslop.org">support@isitslop.org</a>, or open an issue at github.com/jayjaychicago/isitslop. Privacy requests about Google user data are answered within 30 days.</p>
     </div>
   );
 }
