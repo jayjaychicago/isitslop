@@ -164,7 +164,7 @@ function Analytics({ entry, onDone, gaPick, onPicked }: { entry: Entry; onDone: 
       ) : (
         <div className="flex flex-wrap gap-2">
           <a className="btn" href={`${API}/google/login?entry=${entry.id}`}>{entry.analyticsConnected ? "Reconnect Google Analytics" : "Connect Google Analytics"}</a>
-          {entry.analyticsConnected && <button className="btn btn-ghost" onClick={disconnect} disabled={busy}>Disconnect</button>}
+          {entry.analyticsConnected && <button className="btn btn-ghost" onClick={disconnect} disabled={busy}>Disconnect and delete Google data</button>}
         </div>
       )}
       {msg && <div className={msg.startsWith("Connected") || msg.startsWith("Disconnected") ? "text-fresh" : "text-slop"}>{msg}</div>}
