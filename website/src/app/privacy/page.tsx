@@ -30,7 +30,7 @@ export default function Privacy() {
 
       <h2>3. Google user data</h2>
       <p>
-        If you connect Google Analytics, you sign in with Google and grant the Service the <code>analytics.readonly</code> scope. Here is exactly what
+        If you connect Google Analytics, you authorise the Service with Google and grant it the <code>analytics.readonly</code> scope. Here is exactly what
         happens with that access:
       </p>
       <ul>
@@ -38,7 +38,7 @@ export default function Privacy() {
         <li><strong>How we use it.</strong> Only to compute the Popularity score for the entry you chose. The report is read, turned into two subscores out of 100 and a score, and discarded. The score and subscores are public; the counts, the property name and your Google account name are never published and never stored.</li>
         <li><strong>What we store.</strong> Two things, and nothing else: the numeric ID of the property you chose, and the OAuth refresh token Google issues so the score can be refreshed daily. Both encrypted at rest. Access tokens are short-lived and not stored. The report itself is never stored: a grade holds only the site&apos;s own score and subscores.</li>
         <li><strong>Sharing.</strong> We do not share, sell, or transfer Google user data to anyone. It is not used for advertising, not used to train any model, and not read by humans except to debug a problem you report.</li>
-        <li><strong>Deleting it.</strong> Click Disconnect on the entry page or delete the entry: the Service revokes its grant at Google and erases the stored token immediately, so the app disappears from your Google permissions page. You can also revoke it yourself at myaccount.google.com/permissions at any time, with the same effect.</li>
+        <li><strong>Deleting it.</strong> Click Disconnect on the entry page or delete the entry: the Service revokes its grant at Google and erases the stored token and property ID immediately, so the app disappears from your Google permissions page. You can also revoke it yourself at myaccount.google.com/permissions at any time, with the same effect.</li>
       </ul>
       <p><strong>How we protect it.</strong> The refresh token is the only sensitive piece of Google data we hold, and it is protected like this:</p>
       <ul>
