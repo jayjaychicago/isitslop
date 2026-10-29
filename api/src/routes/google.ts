@@ -3,7 +3,7 @@ import type { Env } from '../lib/env.ts';
 import { db } from '../lib/db.ts';
 import { randomToken, sha256 } from '../lib/crypto.ts';
 import { seal, signState, verifyState } from '../lib/github-auth.ts';
-import { ga4Report, listGa4Properties } from '../lib/analytics.ts';
+import { ga4Report, listGa4Properties, revokeGoogleToken } from '../lib/analytics.ts';
 import { getEntry } from '../lib/entries.ts';
 import { currentUser } from '../lib/session.ts';
 
@@ -56,18 +56,23 @@ google.get('/google/callback', async (c) => {
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ code, client_id: c.env.GOOGLE_CLIENT_ID!, client_secret: c.env.GOOGLE_CLIENT_SECRET!, redirect_uri: `${c.env.OAUTH_CALLBACK_ORIGIN}/v1/google/callback`, grant_type: 'authorization_code' }),
   });
-  const t = (await r.json().catch(() => ({}))) as { access_token?: string; refresh_token?: string; error_description?: string };
+  const t = (await r.json().catch(() => ({}))) as { access_token?: string; refresh_token?: string; scope?: string; error_description?: string };
   if (!t.access_token || !t.refresh_token) return back(e.id, { google: 'error', detail: t.error_description ?? 'token exchange failed (no refresh token: revoke the app at myaccount.google.com/permissions and retry)' });
+  // Google lets the user grant a subset of what was asked. Without the Analytics permission there is nothing to read.
+  if (!(t.scope ?? '').split(' ').includes(SCOPE)) {
+    await revokeGoogleToken(t.refresh_token);
+    return back(e.id, { google: 'error', detail: 'Analytics read access was not granted. Connect again and allow "See and download your Google Analytics data".' });
+  }
 
   const props = await listGa4Properties(t.access_token);
-  if (!props.length) return back(e.id, { google: 'error', detail: 'that Google account has no GA4 properties' });
-
-  // Park the refresh token on the entry (encrypted) with no property yet; the picker completes it.
-  const cfg = { refreshToken: t.refresh_token, propertyId: props.length === 1 ? props[0].id : '', propertyName: props.length === 1 ? props[0].name : undefined };
-  await sql`update entries set analytics_provider = 'ga4', analytics_config = ${await seal(c.env, JSON.stringify(cfg))} where id = ${e.id}`;
-  if (props.length === 1) {
-    const reading = await ga4Report(t.access_token, props[0].id);
-    return back(e.id, { google: 'ok', property: props[0].name, ...(typeof reading === 'string' ? { detail: reading } : { visitors: String(reading.visitors), returning: String(reading.returning) }) });
+  if (!props.length) {
+    await revokeGoogleToken(t.refresh_token);
+    return back(e.id, { google: 'error', detail: 'that Google account has no GA4 properties' });
   }
+
+  // Park the refresh token on the entry (encrypted) with no property yet. The owner always picks the
+  // property, even when there is only one: nothing is read until they have.
+  const cfg = { refreshToken: t.refresh_token, propertyId: '' };
+  await sql`update entries set analytics_provider = 'ga4', analytics_config = ${await seal(c.env, JSON.stringify(cfg))} where id = ${e.id}`;
   return back(e.id, { google: 'pick', properties: JSON.stringify(props) });
 });

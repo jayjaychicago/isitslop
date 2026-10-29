@@ -35,7 +35,7 @@ export default function Privacy() {
       </p>
       <ul>
         <li><strong>What we access.</strong> The list of Google Analytics accounts and properties your Google account can see (names and IDs), so you can choose one; and for the chosen property, a single aggregate report: active users for the last 30 days, split new versus returning. Nothing about individual visitors, nothing from other Google services.</li>
-        <li><strong>How we use it.</strong> Only to compute and display the Popularity score for the entry you chose. The two aggregate numbers are shown publicly on the entry page next to the score.</li>
+        <li><strong>How we use it.</strong> Only to compute and display the Popularity score for the entry you chose. The two aggregate numbers, and the display name of the property you chose, are shown publicly on the entry page next to the score. Your Google account name is not published.</li>
         <li><strong>What we store.</strong> The chosen property ID and name, and the OAuth refresh token Google issues, encrypted at rest. Access tokens are short-lived and not stored. We do not store the report beyond the two numbers in the public grade.</li>
         <li><strong>Sharing.</strong> We do not share, sell, or transfer Google user data to anyone. It is not used for advertising, not used to train any model, and not read by humans except to debug a problem you report.</li>
         <li><strong>Deleting it.</strong> Click Disconnect on the entry page or delete the entry: the Service revokes its grant at Google and erases the stored token immediately, so the app disappears from your Google permissions page. You can also revoke it yourself at myaccount.google.com/permissions at any time, with the same effect.</li>

@@ -47,7 +47,7 @@ export async function listGa4Properties(token: string): Promise<{ id: string; na
   if (!r.ok) return [];
   const j = (await r.json()) as { accountSummaries?: { displayName: string; propertySummaries?: { property: string; displayName: string }[] }[] };
   const out: { id: string; name: string }[] = [];
-  for (const a of j.accountSummaries ?? []) for (const p of a.propertySummaries ?? []) out.push({ id: p.property.replace('properties/', ''), name: `${a.displayName} / ${p.displayName}` });
+  for (const a of j.accountSummaries ?? []) for (const p of a.propertySummaries ?? []) out.push({ id: p.property.replace('properties/', ''), name: p.displayName }); // the property's own name only: the account name is not published
   return out;
 }
 
