@@ -57,18 +57,36 @@ export function RepoPicker({ value, onChange, returnTo, wanted }: { value: strin
           <a className="underline" href={installAppUrl(returnTo)}>add it on GitHub</a>.
         </p>
       )}
-      {data.repos.length > 8 && <input className="input" placeholder="Filter repositories" value={filter} onChange={(e) => setFilter(e.target.value)} />}
-      <select className="input" value={value} onChange={(e) => onChange(e.target.value)} size={Math.min(8, Math.max(2, shown.length + accounts.length))}>
-        {!value && <option value="">Choose a repository</option>}
+      {data.repos.length > 6 && <input className="input" placeholder="Filter repositories" value={filter} onChange={(e) => setFilter(e.target.value)} autoFocus />}
+      <div className="card overflow-hidden max-h-80 overflow-y-auto" role="listbox" aria-label="Your repositories">
         {accounts.map((a) => {
           const rs = shown.filter((r) => r.account === a);
-          return rs.length ? (
-            <optgroup key={a} label={a}>
-              {rs.map((r) => <option key={r.fullName} value={r.url}>{r.fullName}{r.private ? " (private)" : ""}</option>)}
-            </optgroup>
-          ) : null;
+          if (!rs.length) return null;
+          return (
+            <div key={a}>
+              {accounts.length > 1 && <div className="px-4 pt-3 pb-1 text-xs uppercase tracking-wider text-muted font-semibold">{a}</div>}
+              {rs.map((r) => {
+                const on = r.url === value;
+                return (
+                  <button
+                    type="button"
+                    key={r.fullName}
+                    role="option"
+                    aria-selected={on}
+                    onClick={() => onChange(r.url)}
+                    className={`w-full text-left px-4 py-2.5 flex items-center gap-3 border-t border-line first:border-t-0 transition-colors ${on ? "bg-fresh-bg text-ink" : "hover:bg-paper text-ink-2"}`}
+                  >
+                    <span className={`w-4 h-4 rounded-full border shrink-0 flex items-center justify-center ${on ? "border-fresh" : "border-line"}`}>{on && <span className="w-2 h-2 rounded-full bg-fresh" />}</span>
+                    <span className="truncate">{r.fullName}</span>
+                    {r.private && <span className="ml-auto text-xs text-muted shrink-0">private</span>}
+                  </button>
+                );
+              })}
+            </div>
+          );
         })}
-      </select>
+        {shown.length === 0 && <div className="px-4 py-3 text-muted">Nothing matches.</div>}
+      </div>
       <p className="text-xs text-muted">
         Repositories you can push to that the app can read, across {accounts.length === 1 ? `the ${accounts[0]} account` : `${accounts.length} accounts`}. Missing one?{" "}
         <a className="underline" href={installAppUrl(returnTo)}>Add it on GitHub</a>.
