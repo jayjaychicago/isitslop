@@ -46,7 +46,8 @@ export type EntryDetail = { entry: Entry; grade: Grade | null; history: (GradeSu
 export async function api<T>(path: string, init?: RequestInit & { ownerKey?: string }): Promise<T> {
   const headers: Record<string, string> = { "content-type": "application/json", ...(init?.headers as Record<string, string>) };
   if (init?.ownerKey) headers.authorization = `Bearer ${init.ownerKey}`;
-  const r = await fetch(`${API}${path}`, { ...init, headers, credentials: "include" });
+  // no-store: the edge may cache public reads for a while, but the browser must not hold them (Cloudflare rewrites the browser TTL on a hit).
+  const r = await fetch(`${API}${path}`, { ...init, headers, credentials: "include", cache: "no-store" });
   const j = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error((j as { error?: string }).error ?? `request failed (${r.status})`);
   return j as T;
