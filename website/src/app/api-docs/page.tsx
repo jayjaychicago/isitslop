@@ -4,6 +4,8 @@ export default function ApiDocs() {
   // The public score API is served by the operator's proxy at api.isitslop.org; everything else is the Worker itself.
   const score = "https://api.isitslop.org/v1";
   const base = "https://internalapi.isitslop.org/v1";
+  // The score API's developer portal, run by the operator's proxy.
+  const PORTAL = "https://isitslop.portal.apiblaze.com/1.0.0";
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="display text-5xl">API</h1>
@@ -16,11 +18,12 @@ export default function ApiDocs() {
         <pre>{`curl -H "X-API-Key: $ISITSLOP_API_KEY" "${score}/score?url=apiblaze.com"
 # {"found":true,"sloppy":45,"popularity":32,"quality":79,"verdict":"fringe_craft","label":"Fringe Craft","gradedAt":"...","page":"..."}
 # 404 {"found":false} when the URL is not in the index`}</pre>
-        <p className="text-sm text-muted">Send your API key as <code>X-API-Key</code>. The spec for this one call is at <a className="underline" href="/openapi.yaml">/openapi.yaml</a>. Everything below needs no key to read.</p>
+        <p className="text-sm text-muted">Send your API key as <code>X-API-Key</code>. The spec for this one call is at <a className="underline" href="/openapi.yaml">/openapi.yaml</a>, and the <a className="underline" href={PORTAL} target="_blank" rel="noreferrer">developer portal</a> has it as interactive docs, with a playground to try calls and your usage. Everything below needs no key to read.</p>
       </Section>
       <Section title="Get a key">
         <p className="text-sm text-muted">Keys are tied to your GitHub account. Create as many as you need and revoke them here; a key is shown once, when it is made.</p>
         <ApiKeys title="Your API keys" />
+        <p className="text-sm text-muted">Prefer a full console? The <a className="underline" href={PORTAL} target="_blank" rel="noreferrer">developer portal</a> manages the same keys and shows what each one has used.</p>
       </Section>
       <Section title="Try the quality rules on any public repo (nothing stored)">
         <pre>{`curl "${base}/preview?url=github.com/honojs/hono"`}</pre>
