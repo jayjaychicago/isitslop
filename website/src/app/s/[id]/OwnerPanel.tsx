@@ -3,7 +3,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { API, api, signInUrl, type Entry, type Grade } from "@/lib/api";
 import { useSession } from "@/components/Session";
-import { ClaimRepo, INSTALL_APP, VerifySite } from "@/components/VerifySite";
+import { ClaimRepo, installAppUrl, VerifySite } from "@/components/VerifySite";
 
 type Tab = "verify" | "grade" | "repo" | "analytics" | "appeal";
 
@@ -118,7 +118,7 @@ function LinkRepo({ entry, onDone }: { entry: Entry; onDone: () => void }) {
       <div className="flex flex-wrap gap-2">
         <button className="btn" onClick={() => go(false)} disabled={!repo.trim() || busy}>{busy ? "Linking…" : "Link repo"}</button>
         {(entry.repoUrl || entry.repoPrivate) && <button className="btn btn-ghost" onClick={() => go(true)} disabled={busy}>Unlink</button>}
-        <a className="btn btn-ghost" href={INSTALL_APP}>Install the app</a>
+        <a className="btn btn-ghost" href={installAppUrl(`/s/${entry.id}`)}>Install the app</a>
       </div>
       {msg && <div className={msg.startsWith("Repo") ? "text-fresh" : "text-slop"}>{msg}</div>}
     </div>

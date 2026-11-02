@@ -72,8 +72,9 @@ export function VerifySite({ url, onDone }: { url: string; onDone: (entry: Entry
 }
 
 /**
- * Install link for the GitHub App. The URL being claimed rides along as `state`: after the install GitHub
- * sends the person to the app's Setup URL (/claim) with that state, so they land back on the same repo.
+ * Install link for the GitHub App. Where the person came from rides along as `state` (a URL to claim, or a
+ * site path like /s/<id>): after the install GitHub sends them to the app's Setup URL (/claim) with that
+ * state, and the claim page puts them back where they were.
  */
 export const INSTALL_APP = "https://github.com/apps/is-it-slop/installations/new";
 export const installAppUrl = (url: string) => `${INSTALL_APP}?state=${encodeURIComponent(url)}`;

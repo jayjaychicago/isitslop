@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "@/components/Session";
 import { signInUrl } from "@/lib/api";
@@ -13,10 +13,13 @@ export function ClaimView() {
   const params = useSearchParams();
   const router = useRouter();
   const { me, reload } = useSession();
-  // `state` is how GitHub hands the URL back after the app is installed (see installAppUrl).
-  const given = params.get("url") ?? params.get("state") ?? "";
+  // `state` is how GitHub hands back where the person came from after the app is installed (see installAppUrl):
+  // a URL to claim, or a site path such as /s/<id> to return to.
+  const state = params.get("state") ?? "";
+  const given = params.get("url") ?? (state.startsWith("/") ? "" : state);
   const [url, setUrl] = useState(given);
   const [locked, setLocked] = useState(!!given);
+  useEffect(() => { if (state.startsWith("/")) router.replace(state); }, [state, router]);
   const here = `/claim?url=${encodeURIComponent(url)}`;
   const ok = looksLikeUrl(url);
 
