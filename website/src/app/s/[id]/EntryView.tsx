@@ -66,7 +66,6 @@ export function EntryView({ id }: { id: string }) {
 
       {flash && <div className="mt-4 card p-3 text-sm">{flash}</div>}
 
-      {entry.domain === "isitslop.org" && grade && <div className="mt-8"><SelfGrade sloppy={grade.sloppy} /></div>}
 
       <div className="card mt-8 overflow-hidden">
         <div className="p-5 sm:p-6 border-b border-line flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -87,6 +86,7 @@ export function EntryView({ id }: { id: string }) {
             </div>
           )}
         </div>
+        {entry.domain === "isitslop.org" && grade && <div className="border-b border-line pt-5 sm:pt-6"><SelfGrade sloppy={grade.sloppy} inline /></div>}
         <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-line">
           <ScoreTile
             label="Popularity"

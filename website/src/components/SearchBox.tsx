@@ -102,29 +102,30 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
                 )}
               </div>
             </Link>
+            {it.id === self?.id && it.grade && <SelfGrade sloppy={it.grade.sloppy} inline />}
           </li>
         ))}
       </ul>
-      {self?.grade && <SelfGrade sloppy={self.grade.sloppy} id={self.id} />}
     </div>
   );
 }
 
-/** Said out loud, because the first thing on the page is our own grade and it is not flattering. */
-export function SelfGrade({ sloppy, id }: { sloppy: number | null; id?: string }) {
+/** Said out loud, right under our own grade, because it is the first thing on the page and it is not flattering. */
+export function SelfGrade({ sloppy, inline = false }: { sloppy: number | null; inline?: boolean }) {
   if (sloppy === null) return null;
   const slop = sloppy >= 50;
   return (
-    <div className="card p-5 sm:p-6 border-ink">
-      <h2 className="display text-2xl sm:text-3xl leading-tight">
-        {slop ? <>Yes, this site is <span className={sloppyClass(sloppy)}>{sloppy}% sloppy</span>.</> : <>This site is <span className={sloppyClass(sloppy)}>{sloppy}% sloppy</span>, by the same rules as everything else.</>}
-      </h2>
-      <p className="mt-2 text-ink-2 leading-relaxed">
-        {slop
-          ? "By its own rules: one person, a repo with no track record, nobody using it yet. The rules do not bend for the people who wrote them, and our number moves the only way yours does: other people putting in work, and people coming back. Watch it."
-          : "It was 100% sloppy on day one. The rules did not change for us; the work did."}
-        {id && <>{" "}<Link href={`/s/${id}`} className="underline">The breakdown.</Link></>}
-      </p>
+    <div className={inline ? "px-4 sm:px-6 pb-5 sm:pb-6 -mt-1" : "card p-5 sm:p-6 border-ink"}>
+      <div className={inline ? "border-l-2 border-slop pl-4" : ""}>
+        <h2 className={`display leading-tight ${inline ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"}`}>
+          {slop ? <>Yes, {inline ? "that is us, and we are" : "this site is"} <span className={sloppyClass(sloppy)}>{sloppy}% sloppy</span>.</> : <>{inline ? "That is us:" : "This site is"} <span className={sloppyClass(sloppy)}>{sloppy}% sloppy</span>, by the same rules as everything else.</>}
+        </h2>
+        <p className="mt-1.5 text-sm sm:text-base text-ink-2 leading-relaxed">
+          {slop
+            ? "By our own rules: one person, a repo with no track record, nobody using it yet. The rules do not bend for the people who wrote them, and our number moves the only way yours does: other people putting in work, and people coming back. Watch it."
+            : "It was 100% sloppy on day one. The rules did not change for us; the work did."}
+        </p>
+      </div>
     </div>
   );
 }
