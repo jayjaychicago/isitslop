@@ -71,7 +71,12 @@ export function VerifySite({ url, onDone }: { url: string; onDone: (entry: Entry
   );
 }
 
+/**
+ * Install link for the GitHub App. The URL being claimed rides along as `state`: after the install GitHub
+ * sends the person to the app's Setup URL (/claim) with that state, so they land back on the same repo.
+ */
 export const INSTALL_APP = "https://github.com/apps/is-it-slop/installations/new";
+export const installAppUrl = (url: string) => `${INSTALL_APP}?state=${encodeURIComponent(url)}`;
 
 /** Claim a repository with the signed-in GitHub account. The entry is created on success. */
 export function ClaimRepo({ url, onDone, label = "Claim with GitHub" }: { url: string; onDone: (entry: Entry) => void; label?: string }) {
@@ -86,7 +91,7 @@ export function ClaimRepo({ url, onDone, label = "Claim with GitHub" }: { url: s
       <p className="text-ink-2">Your GitHub account must have push access to this repository, and the Is It Slop app must be installed on the account that owns it. The repository can be private; its URL is never published.</p>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="btn" onClick={go} disabled={busy}>{busy ? "Checking…" : label}</button>
-        <a className="btn btn-ghost" href={INSTALL_APP}>Install the app</a>
+        <a className="btn btn-ghost" href={installAppUrl(url)}>Install the app</a>
       </div>
       {msg && <div className="text-slop">{msg}</div>}
     </div>

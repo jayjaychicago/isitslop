@@ -13,8 +13,10 @@ export function ClaimView() {
   const params = useSearchParams();
   const router = useRouter();
   const { me, reload } = useSession();
-  const [url, setUrl] = useState(params.get("url") ?? "");
-  const [locked, setLocked] = useState(!!params.get("url"));
+  // `state` is how GitHub hands the URL back after the app is installed (see installAppUrl).
+  const given = params.get("url") ?? params.get("state") ?? "";
+  const [url, setUrl] = useState(given);
+  const [locked, setLocked] = useState(!!given);
   const here = `/claim?url=${encodeURIComponent(url)}`;
   const ok = looksLikeUrl(url);
 
