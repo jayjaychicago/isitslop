@@ -102,3 +102,33 @@ export async function repoPermission(token: string, owner: string, name: string)
   if (j.permissions?.pull) return 'pull';
   return 'none';
 }
+
+export type VisibleRepo = { fullName: string; url: string; private: boolean; account: string };
+
+/**
+ * The repositories the signed-in person can push to AND the app can see: every installation of the
+ * app this user has access to, and the repos each one grants. This is the repo picker on the website.
+ */
+export async function visibleRepos(token: string): Promise<{ installations: { id: number; account: string }[]; repos: VisibleRepo[] } | 'expired'> {
+  const headers = { authorization: `Bearer ${token}`, accept: 'application/vnd.github+json', 'user-agent': 'isitslop-bot/0.3' };
+  const ir = await fetch('https://api.github.com/user/installations?per_page=100', { headers });
+  if (ir.status === 401) return 'expired';
+  if (!ir.ok) return { installations: [], repos: [] };
+  const ij = (await ir.json()) as { installations?: { id: number; account: { login: string } }[] };
+  const installations = (ij.installations ?? []).map((i) => ({ id: i.id, account: i.account.login }));
+  const repos: VisibleRepo[] = [];
+  for (const inst of installations) {
+    for (let page = 1; page <= 5; page++) {
+      const rr = await fetch(`https://api.github.com/user/installations/${inst.id}/repositories?per_page=100&page=${page}`, { headers });
+      if (!rr.ok) break;
+      const rj = (await rr.json()) as { repositories?: { full_name: string; html_url: string; private: boolean; permissions?: { admin?: boolean; push?: boolean } }[] };
+      const list = rj.repositories ?? [];
+      for (const r of list) {
+        if (r.permissions?.admin || r.permissions?.push) repos.push({ fullName: r.full_name, url: r.html_url, private: r.private, account: inst.account });
+      }
+      if (list.length < 100) break;
+    }
+  }
+  repos.sort((a, b) => a.fullName.localeCompare(b.fullName));
+  return { installations, repos };
+}

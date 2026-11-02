@@ -1,7 +1,9 @@
 import { Hono } from 'hono';
 import type { Env } from '../lib/env.ts';
 import type { Sql } from '../lib/db.ts';
-import { open, refreshTokens, seal } from '../lib/github-auth.ts';
+import { open, refreshTokens, seal, visibleRepos } from '../lib/github-auth.ts';
+import { db } from '../lib/db.ts';
+import { currentUser } from '../lib/session.ts';
 import type { EntryRow } from '../lib/entries.ts';
 import type { User } from '../lib/session.ts';
 
@@ -27,3 +29,18 @@ export async function ownerGithubToken(env: Env, sql: Sql, e: EntryRow): Promise
   const rows = (await sql`select * from users where id = ${e.owner_user_id}`) as User[];
   return rows[0] ? userGithubToken(env, sql, rows[0]) : null;
 }
+
+/**
+ * The repositories the signed-in person can link or claim: push access, and the app installed on the
+ * owning account. Empty `installations` means the app is not installed anywhere this person can see.
+ */
+github.get('/github/repos', async (c) => {
+  const sql = db(c.env.DATABASE_URL);
+  const u = await currentUser(c, sql);
+  if (!u) return c.json({ error: 'sign in with GitHub first' }, 401);
+  const token = await userGithubToken(c.env, sql, u);
+  if (!token) return c.json({ error: 'your GitHub sign-in has expired; sign in again' }, 428);
+  const r = await visibleRepos(token);
+  if (r === 'expired') return c.json({ error: 'your GitHub sign-in has expired; sign in again' }, 428);
+  return c.json({ ...r, installUrl: `https://github.com/apps/${c.env.GITHUB_APP_SLUG ?? 'is-it-slop'}/installations/new` });
+});

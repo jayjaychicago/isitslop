@@ -3,7 +3,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { API, api, signInUrl, type Entry, type Grade } from "@/lib/api";
 import { useSession } from "@/components/Session";
-import { ClaimRepo, installAppUrl, VerifySite } from "@/components/VerifySite";
+import { ClaimRepo, VerifySite } from "@/components/VerifySite";
+import { RepoPicker } from "@/components/RepoPicker";
 
 type Tab = "verify" | "grade" | "repo" | "analytics" | "appeal";
 
@@ -103,22 +104,23 @@ function LinkRepo({ entry, onDone }: { entry: Entry; onDone: () => void }) {
     try {
       await api(`/entries/${entry.id}/repo`, { method: "POST", body: JSON.stringify({ repoUrl: unlink ? null : repo.trim() }) });
       setMsg(unlink ? "Repo unlinked." : "Repo linked. Request a grade.");
+      if (unlink) setRepo("");
       onDone();
     } catch (e) { setMsg((e as Error).message); }
     setBusy(false);
   }
+  const linked = entry.repoUrl || entry.repoPrivate;
   return (
     <div className="flex flex-col gap-4 text-sm">
       <p className="text-ink-2">
         One thing, one entry. Link the repository this site is built from and Quality is read from it. It can be private: a private repository&apos;s URL is never
-        published. Your GitHub account must have push access, and the Is It Slop app must be installed on the account that owns it.
+        published.
       </p>
       {entry.repoPrivate && !entry.repoUrl && <div className="text-muted">A private repository is linked.</div>}
-      <input className="input" placeholder="https://github.com/owner/repo" value={repo} onChange={(e) => setRepo(e.target.value)} />
+      <RepoPicker value={repo} onChange={setRepo} wanted={entry.repoUrl ?? undefined} returnTo={`/s/${entry.id}`} />
       <div className="flex flex-wrap gap-2">
-        <button className="btn" onClick={() => go(false)} disabled={!repo.trim() || busy}>{busy ? "Linking…" : "Link repo"}</button>
-        {(entry.repoUrl || entry.repoPrivate) && <button className="btn btn-ghost" onClick={() => go(true)} disabled={busy}>Unlink</button>}
-        <a className="btn btn-ghost" href={installAppUrl(`/s/${entry.id}`)}>Install the app</a>
+        {repo && repo !== entry.repoUrl && <button className="btn" onClick={() => go(false)} disabled={busy}>{busy ? "Linking…" : "Link this repository"}</button>}
+        {linked && <button className="btn btn-ghost" onClick={() => go(true)} disabled={busy}>Unlink</button>}
       </div>
       {msg && <div className={msg.startsWith("Repo") ? "text-fresh" : "text-slop"}>{msg}</div>}
     </div>

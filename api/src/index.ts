@@ -40,6 +40,7 @@ app.get('/', (c) =>
       'POST /v1/verify/start {url, method: dns|file|email, email?}   (signed in) start proving a site is yours',
       'GET  /v1/auth/github?return=/   sign in with GitHub (sets a session cookie)',
       'GET  /v1/me                     who am I and what do I own',
+      'GET  /v1/github/repos           (signed in) repositories you can push to that the app can see',
       'POST /v1/auth/logout',
       'POST /v1/verify/check {verificationId, code?}   (signed in) on success the entry is created and owned by you',
       'GET  /v1/google/login?entry=     (signed in as owner) connect Google Analytics, read-only',

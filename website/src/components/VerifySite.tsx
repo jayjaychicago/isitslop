@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { api, type Entry } from "@/lib/api";
+import { RepoPicker } from "./RepoPicker";
 
 type StartResp = { verificationId: string; url: string; method: string; text: string; record?: { type: string; name: string; value: string }; file?: { url?: string; path?: string; content: string }; email?: string };
 
@@ -80,20 +81,19 @@ export const INSTALL_APP = "https://github.com/apps/is-it-slop/installations/new
 export const installAppUrl = (url: string) => `${INSTALL_APP}?state=${encodeURIComponent(url)}`;
 
 /** Claim a repository with the signed-in GitHub account. The entry is created on success. */
-export function ClaimRepo({ url, onDone, label = "Claim with GitHub" }: { url: string; onDone: (entry: Entry) => void; label?: string }) {
+export function ClaimRepo({ url, onDone, label = "Claim this repository" }: { url: string; onDone: (entry: Entry) => void; label?: string }) {
+  const [picked, setPicked] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   async function go() {
     setBusy(true); setMsg(null);
-    try { const r = await api<{ entry: Entry }>(`/claim`, { method: "POST", body: JSON.stringify({ url }) }); onDone(r.entry); } catch (e) { setMsg((e as Error).message); setBusy(false); }
+    try { const r = await api<{ entry: Entry }>(`/claim`, { method: "POST", body: JSON.stringify({ url: picked }) }); onDone(r.entry); } catch (e) { setMsg((e as Error).message); setBusy(false); }
   }
   return (
     <div className="flex flex-col gap-3 text-sm">
-      <p className="text-ink-2">Your GitHub account must have push access to this repository, and the Is It Slop app must be installed on the account that owns it. The repository can be private; its URL is never published.</p>
-      <div className="flex flex-wrap gap-2">
-        <button type="button" className="btn" onClick={go} disabled={busy}>{busy ? "Checking…" : label}</button>
-        <a className="btn btn-ghost" href={installAppUrl(url)}>Install the app</a>
-      </div>
+      <p className="text-ink-2">A repository is yours if your GitHub account can push to it. It can be private; a private repository&apos;s URL is never published.</p>
+      <RepoPicker value={picked} onChange={setPicked} wanted={url} returnTo={url} />
+      {picked && <button type="button" className="btn self-start" onClick={go} disabled={busy}>{busy ? "Checking…" : label}</button>}
       {msg && <div className="text-slop">{msg}</div>}
     </div>
   );

@@ -107,3 +107,6 @@ export function saveOwnerKey(entryId: string, key: string | null) {
     /* ignore */
   }
 }
+
+/** GET /github/repos: what the signed-in person can claim or link. */
+export type GithubRepos = { installations: { id: number; account: string }[]; repos: { fullName: string; url: string; private: boolean; account: string }[]; installUrl: string };
