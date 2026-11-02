@@ -36,45 +36,43 @@ export async function runGrade(env: Env, sql: Sql, e: EntryRow, opts: GradeOptio
   const prevRows = (await sql`select * from grades where entry_id = ${e.id} order by created_at desc limit 1`) as GradeRow[];
   const prev = prevRows[0];
 
-  // Popularity: read from the owner's connected Google Analytics. Nothing connected is unknown; connected and empty is zero.
-  let popularityScore: number | null;
-  let popularityInput: unknown;
-  if (opts.refreshPopularity || !prev) {
+  // Popularity and Quality are read concurrently: Google and GitHub each take a few seconds.
+  const popularityP = (async () => {
+    if (!(opts.refreshPopularity || !prev)) return { score: prev.popularity_score, input: prev.popularity_input as unknown };
     const reading = await readAnalytics(env, sql, e);
     if (typeof reading === 'string') return `analytics: ${reading}`;
     const popularity = reading ? scorePopularity(reading) : null;
-    popularityScore = popularity ? popularity.score : null;
     // Nothing from Google is kept: not the counts, not the property. Only the subscores and the score.
-    popularityInput = reading && popularity ? { provider: reading.provider, window: reading.window, reach: popularity.reach, returning: popularity.returning, note: popularity.note, version: popularity.version } : { note: 'No analytics connected: popularity is unknown.' };
-  } else {
-    popularityScore = prev.popularity_score;
-    popularityInput = prev.popularity_input;
-  }
+    const input = reading && popularity ? { provider: reading.provider, window: reading.window, reach: popularity.reach, returning: popularity.returning, note: popularity.note, version: popularity.version } : { note: 'No analytics connected: popularity is unknown.' };
+    return { score: popularity ? popularity.score : null, input };
+  })();
 
-  // Quality: GitHub signals on the repo (the entry itself, or the repo linked to the site). No repo is unknown.
-  let quality: { score: number | null; signals: unknown[]; repo: string | null; version: string; note?: string };
+  type Quality = { score: number | null; signals: unknown[]; repo: string | null; version: string; note?: string };
   const repoUrl = e.kind === 'github' ? e.url : e.repo_url;
-  if (opts.refreshQuality || !prev) {
-    if (!repoUrl) {
-      quality = { score: null, signals: [], repo: null, version: QUALITY_VERSION, note: 'No repository linked: quality is unknown. Link a repo to be scored.' };
-    } else {
-      const t = normalizeTarget(repoUrl);
-      if (typeof t === 'string' || !t.repo) return 'linked repo is not a valid github.com/owner/repo URL';
-      const token = await ownerGithubToken(env, sql, e);
-      if (!token) return 'the owner must be signed in with GitHub so the repo can be read with their token';
-      const facts = await collectRepoFacts(t.repo.owner, t.repo.name, token);
-      if (typeof facts === 'string') return facts;
-      quality = scoreQuality(facts);
-      // A repo can go private after it was linked: trust what GitHub says now, and remember it.
-      if (facts.isPrivate !== e.repo_private) {
-        await sql`update entries set repo_private = ${facts.isPrivate} where id = ${e.id}`;
-        e.repo_private = facts.isPrivate;
-      }
-      if (facts.isPrivate || e.repo_private) quality = { ...quality, repo: 'private repository' };
+  const qualityP = (async (): Promise<Quality | string> => {
+    if (!(opts.refreshQuality || !prev)) return prev.quality_breakdown as Quality;
+    if (!repoUrl) return { score: null, signals: [], repo: null, version: QUALITY_VERSION, note: 'No repository linked: quality is unknown. Link a repo to be scored.' };
+    const t = normalizeTarget(repoUrl);
+    if (typeof t === 'string' || !t.repo) return 'linked repo is not a valid github.com/owner/repo URL';
+    const token = await ownerGithubToken(env, sql, e);
+    if (!token) return 'the owner must be signed in with GitHub so the repo can be read with their token';
+    const facts = await collectRepoFacts(t.repo.owner, t.repo.name, token);
+    if (typeof facts === 'string') return facts;
+    let quality: Quality = scoreQuality(facts);
+    // A repo can go private after it was linked: trust what GitHub says now, and remember it.
+    if (facts.isPrivate !== e.repo_private) {
+      await sql`update entries set repo_private = ${facts.isPrivate} where id = ${e.id}`;
+      e.repo_private = facts.isPrivate;
     }
-  } else {
-    quality = prev.quality_breakdown as typeof quality;
-  }
+    if (facts.isPrivate || e.repo_private) quality = { ...quality, repo: 'private repository' };
+    return quality;
+  })();
+
+  const [pop, quality] = await Promise.all([popularityP, qualityP]);
+  if (typeof pop === 'string') return pop;
+  if (typeof quality === 'string') return quality;
+  const popularityScore = pop.score;
+  const popularityInput = pop.input;
 
   const v = verdict(quality.score, popularityScore);
   const sl = sloppy(quality.score, popularityScore);
@@ -99,7 +97,10 @@ grade.post('/entries/:id/grade', async (c) => {
     return c.json({ error: `you must accept the terms (version ${TERMS_VERSION}) by sending acceptTerms: true`, termsUrl: `${c.env.PUBLIC_SITE_URL}/terms`, termsVersion: TERMS_VERSION }, 400);
   }
   await sql`update entries set terms_version = ${TERMS_VERSION}, terms_accepted_at = now() where id = ${e.id}`;
-  const g = await runGrade(c.env, sql, e, { refreshQuality: true, refreshPopularity: true });
+  // The work finishes even if the browser leaves (a reload mid-grade used to cancel it).
+  const pending = runGrade(c.env, sql, e, { refreshQuality: true, refreshPopularity: true });
+  c.executionCtx.waitUntil(pending.catch(() => undefined));
+  const g = await pending;
   if (typeof g === 'string') return c.json({ error: g }, g.startsWith('analytics:') || g.includes('rate limit') || g.includes('not found') ? 422 : g.includes('signed in') ? 428 : 400);
   return c.json({ grade: publicGrade(g, e.repo_private) }, 201);
 });

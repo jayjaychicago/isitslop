@@ -88,7 +88,7 @@ function RequestGrade({ entry, user, onDone }: { entry: Entry; user: { githubLog
       </label>
       <div className="flex items-center gap-3">
         <button className="btn" onClick={go} disabled={!accept || busy}>{busy ? "Grading…" : "Request grade"}</button>
-        <span className="text-muted">At most 5 grades per entry per day.</span>
+        <span className="text-muted">{busy ? "Reading your repository on GitHub and your Google Analytics. About ten seconds; stay on this page." : "At most 5 grades per entry per day."}</span>
       </div>
       {msg && <div className={msg === "Graded." ? "text-fresh" : "text-slop"}>{msg}</div>}
     </div>

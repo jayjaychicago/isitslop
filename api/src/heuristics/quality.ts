@@ -144,21 +144,31 @@ export async function collectRepoFacts(owner: string, name: string, token?: stri
   const r = repo.json as { full_name: string; private?: boolean; created_at: string; pushed_at: string | null; archived: boolean; fork: boolean; default_branch: string; license: { spdx_id?: string; name?: string } | null; owner: { login: string } };
 
   // Commit cadence over the last 52 weeks. GitHub computes this lazily (202 = not ready yet); it is
-  // usually ready within a few seconds, so wait up to ~15 s before falling back.
-  let weeks: { total: number }[] | null = null;
-  for (let attempt = 0; attempt < 7 && !weeks; attempt++) {
-    const st = await gh(`/repos/${owner}/${name}/stats/commit_activity`, token);
-    if (st.status === 200 && Array.isArray(st.json) && (st.json as unknown[]).length) weeks = st.json as { total: number }[];
-    else if (st.status === 202) await new Promise((res) => setTimeout(res, 2000));
-    else break;
-  }
+  // usually ready within a few seconds, so poll up to ~15 s. Contributors and issues are read meanwhile.
+  const statsP = (async () => {
+    for (let attempt = 0; attempt < 7; attempt++) {
+      const st = await gh(`/repos/${owner}/${name}/stats/commit_activity`, token);
+      if (st.status === 200 && Array.isArray(st.json) && (st.json as unknown[]).length) return st.json as { total: number }[];
+      if (st.status !== 202) return null;
+      await new Promise((res) => setTimeout(res, 2000));
+    }
+    return null;
+  })();
+  const q = encodeURIComponent(`repo:${owner}/${name} is:issue`);
+  const [weeks, contrib, openRes, closedRes, issuesRes] = await Promise.all([
+    statsP,
+    gh(`/repos/${owner}/${name}/contributors?per_page=100`, token),
+    gh(`/search/issues?q=${q}+is:open&per_page=1`, token),
+    gh(`/search/issues?q=${q}+is:closed&per_page=1`, token),
+    gh(`/repos/${owner}/${name}/issues?state=all&per_page=100&sort=created&direction=desc`, token),
+  ]);
   let weeksWithCommits = 0;
   if (weeks) weeksWithCommits = weeks.filter((w) => w.total > 0).length;
   else {
-    // Fallback: walk every commit of the last year (up to 2,000) and count distinct ISO weeks.
+    // Fallback: walk the commits of the last year (up to 1,000) and count distinct ISO weeks.
     const since = new Date(Date.now() - 365 * 86_400_000).toISOString();
     const set = new Set<string>();
-    for (let page = 1; page <= 20; page++) {
+    for (let page = 1; page <= 10; page++) {
       const cm = await gh(`/repos/${owner}/${name}/commits?per_page=100&since=${since}&page=${page}`, token);
       if (!Array.isArray(cm.json) || !(cm.json as unknown[]).length) break;
       for (const x of cm.json as { commit: { author: { date: string } } }[]) set.add(isoWeek(x.commit.author.date));
@@ -167,18 +177,11 @@ export async function collectRepoFacts(owner: string, name: string, token?: stri
     weeksWithCommits = Math.min(52, set.size);
   }
 
-  const contrib = await gh(`/repos/${owner}/${name}/contributors?per_page=100`, token);
   const humansWithTwoPlusCommits = Array.isArray(contrib.json)
     ? (contrib.json as { login: string; type: string; contributions: number }[]).filter((c) => c.type !== 'Bot' && !/\[bot\]$/.test(c.login) && c.contributions >= 2).length
     : 0;
 
   // True open/closed totals come from the search API; the newest 100 issues give the outside-author count.
-  const q = encodeURIComponent(`repo:${owner}/${name} is:issue`);
-  const [openRes, closedRes, issuesRes] = await Promise.all([
-    gh(`/search/issues?q=${q}+is:open&per_page=1`, token),
-    gh(`/search/issues?q=${q}+is:closed&per_page=1`, token),
-    gh(`/repos/${owner}/${name}/issues?state=all&per_page=100&sort=created&direction=desc`, token),
-  ]);
   const total = (x: { status: number; json: unknown }) => (x.status === 200 && x.json ? ((x.json as { total_count?: number }).total_count ?? 0) : 0);
   const issues = (Array.isArray(issuesRes.json) ? (issuesRes.json as Issue[]) : []).filter((i) => !i.pull_request && i.user?.type !== 'Bot');
   let issuesClosed = total(closedRes);
