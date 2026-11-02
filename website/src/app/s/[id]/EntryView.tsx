@@ -7,6 +7,7 @@ import { ScoreTile, VerdictBadge, VerdictWords, popularityWord, qualityWord } fr
 import { SLOPPY_TITLE, sloppyClass } from "@/lib/api";
 import { OwnerPanel } from "./OwnerPanel";
 import { AdminDelete } from "./AdminDelete";
+import { SelfGrade } from "@/components/SearchBox";
 
 export function EntryView({ id }: { id: string }) {
   const [data, setData] = useState<EntryDetail | null>(null);
@@ -65,6 +66,8 @@ export function EntryView({ id }: { id: string }) {
 
       {flash && <div className="mt-4 card p-3 text-sm">{flash}</div>}
 
+      {entry.domain === "isitslop.org" && grade && <div className="mt-8"><SelfGrade sloppy={grade.sloppy} /></div>}
+
       <div className="card mt-8 overflow-hidden">
         <div className="p-5 sm:p-6 border-b border-line flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
@@ -77,10 +80,10 @@ export function EntryView({ id }: { id: string }) {
           {grade && (
             <div className="sm:text-right shrink-0">
               <div className={`score-num text-6xl sm:text-7xl leading-none whitespace-nowrap ${sloppyClass(grade.sloppy)}`} title={SLOPPY_TITLE}>
-                {grade.sloppy ?? "?"}<span className="text-[0.5em]">%</span>
+                {grade.sloppy ?? "?"}{grade.sloppy !== null && <span className="text-[0.5em]">%</span>}
               </div>
               <div className="text-xs uppercase tracking-wider text-muted font-semibold mt-1">sloppy</div>
-              <div className="text-xs text-muted mt-1">{grade.sloppy === null ? "Unknown until both halves are connected" : "Popularity and Quality averaged, subtracted from 100."}</div>
+              <div className="text-xs text-muted mt-1">{grade.sloppy === null ? (grade.popularity === null ? "Unknown until Google Analytics is connected: half the score is missing." : "Unknown until a repository is linked: half the score is missing.") : "Popularity and Quality averaged, subtracted from 100."}</div>
             </div>
           )}
         </div>

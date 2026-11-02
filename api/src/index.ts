@@ -12,6 +12,7 @@ import { google } from './routes/google.ts';
 import { auth } from './routes/auth.ts';
 import { feedback } from './routes/feedback.ts';
 import { scheduledRefresh } from './scheduled.ts';
+import { edgeCache } from './lib/edgecache.ts';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -53,6 +54,12 @@ app.get('/', (c) =>
   }),
 );
 app.get('/v1/health', (c) => c.json({ ok: true }));
+
+// Public reads are cached at the edge for anonymous visitors (see lib/edgecache.ts).
+app.use('/v1/entries', edgeCache(60));
+app.use('/v1/entries/:id', edgeCache(60));
+app.use('/v1/methodology', edgeCache(600));
+app.use('/v1/preview', edgeCache(3600));
 
 app.route('/v1', methodology);
 app.route('/v1', entries);

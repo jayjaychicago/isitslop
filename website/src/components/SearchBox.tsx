@@ -40,6 +40,9 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
   /** The only way in: prove it is yours. */
   const claim = () => router.push(`/claim?url=${encodeURIComponent(q.trim())}`);
 
+  /** Our own entry, graded by the same rules as everyone else's. */
+  const self = !q ? items.find((i) => i.domain === "isitslop.org") : undefined;
+
   return (
     <div className="flex flex-col gap-4">
       <form
@@ -83,7 +86,7 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
                 {it.grade && (
                   <div className="shrink-0 text-right lg:text-center lg:w-36 order-2 lg:order-1" title={SLOPPY_TITLE}>
                     <div className={`score-num text-5xl sm:text-7xl lg:text-8xl leading-none whitespace-nowrap ${sloppyClass(it.grade.sloppy)}`}>
-                      {it.grade.sloppy ?? "?"}<span className="text-[0.5em]">%</span>
+                      {it.grade.sloppy ?? "?"}{it.grade.sloppy !== null && <span className="text-[0.5em]">%</span>}
                     </div>
                     <div className="text-[10px] sm:text-xs uppercase tracking-wider text-muted font-semibold mt-1 whitespace-nowrap">sloppy</div>
                   </div>
@@ -102,6 +105,26 @@ export function SearchBox({ initial = [] }: { initial?: Item[] }) {
           </li>
         ))}
       </ul>
+      {self?.grade && <SelfGrade sloppy={self.grade.sloppy} id={self.id} />}
+    </div>
+  );
+}
+
+/** Said out loud, because the first thing on the page is our own grade and it is not flattering. */
+export function SelfGrade({ sloppy, id }: { sloppy: number | null; id?: string }) {
+  if (sloppy === null) return null;
+  const slop = sloppy >= 50;
+  return (
+    <div className="card p-5 sm:p-6 border-ink">
+      <h2 className="display text-2xl sm:text-3xl leading-tight">
+        {slop ? <>Yes, this site is <span className={sloppyClass(sloppy)}>{sloppy}% sloppy</span>.</> : <>This site is <span className={sloppyClass(sloppy)}>{sloppy}% sloppy</span>, by the same rules as everything else.</>}
+      </h2>
+      <p className="mt-2 text-ink-2 leading-relaxed">
+        {slop
+          ? "By its own rules: one person, a repo with no track record, nobody using it yet. The rules do not bend for the people who wrote them, and our number moves the only way yours does: other people putting in work, and people coming back. Watch it."
+          : "It was 100% sloppy on day one. The rules did not change for us; the work did."}
+        {id && <>{" "}<Link href={`/s/${id}`} className="underline">The breakdown.</Link></>}
+      </p>
     </div>
   );
 }
