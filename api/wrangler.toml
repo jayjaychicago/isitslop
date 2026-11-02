@@ -20,18 +20,17 @@ workers_dev = true
 #   GITHUB_TOKEN          optional last-resort fallback for /v1/preview when no app key is set
 #   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET  OAuth client for "Connect Google Analytics" (scope analytics.readonly)
 
-# Custom domains (the isitslop.org zone is on the same Cloudflare account).
-# internalapi is what the website and the operator's proxy call. api stays only until the GitHub and Google
-# OAuth registrations are moved to internalapi (see OAUTH_CALLBACK_ORIGIN), then it can go.
+# Custom domain (the isitslop.org zone is on the same Cloudflare account).
+# internalapi is what the website and the operator's apiblaze proxy call, and where the GitHub and Google
+# OAuth callbacks are registered. api.isitslop.org is a CNAME to the proxy, which serves the public score API.
 routes = [
   { pattern = "internalapi.isitslop.org", custom_domain = true },
-  { pattern = "api.isitslop.org", custom_domain = true },
 ]
 
 [vars]
 PUBLIC_SITE_URL = "https://isitslop.org"
 # Origin registered as the OAuth callback with GitHub and Google. Change both registrations before changing this.
-OAUTH_CALLBACK_ORIGIN = "https://api.isitslop.org"
+OAUTH_CALLBACK_ORIGIN = "https://internalapi.isitslop.org"
 # GitHub logins that can delete any entry from the site (comma separated). The operator.
 ADMIN_GITHUB_LOGINS = "jayjaychicago"
 # The isitslop GitHub App, installed on the isitslop org. Its private key is a secret (GITHUB_APP_PRIVATE_KEY).
