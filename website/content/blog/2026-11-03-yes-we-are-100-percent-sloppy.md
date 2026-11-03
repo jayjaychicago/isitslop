@@ -4,7 +4,7 @@ description: This site grades itself by its own rules. On day one the rules said
 author: Julien, API Blaze
 ---
 
-The first entry on isitslop.org is isitslop.org, and its grade is 100% sloppy. People keep asking whether that is a bug. It is not. It is the whole point.
+The first entry on isitslop.org is isitslop.org. Its grade on day one was 100% sloppy, and it is 95% as I write this. People keep asking whether that is a bug. It is not. It is the whole point.
 
 ## What the number says
 
