@@ -8,6 +8,10 @@ import type { Env } from './lib/env.ts';
 import { db } from './lib/db.ts';
 import { runGrade } from './routes/grade.ts';
 import type { EntryRow } from './lib/entries.ts';
+import { sendEmail } from './lib/ses.ts';
+
+/** Where the daily run reports failures. */
+const OPERATOR_EMAIL = 'support@isitslop.org';
 
 export async function scheduledRefresh(env: Env, now = new Date()): Promise<{ refreshed: number; failed: number; quality: boolean }> {
   const sql = db(env.DATABASE_URL);
@@ -20,14 +24,20 @@ export async function scheduledRefresh(env: Env, now = new Date()): Promise<{ re
     order by e.created_at
   `) as EntryRow[];
   let refreshed = 0;
-  let failed = 0;
+  const failures: string[] = [];
   for (const e of entries) {
-    const r = await runGrade(env, sql, e, { refreshQuality, refreshPopularity: true });
-    if (typeof r === 'string') {
-      failed++;
-      console.warn('refresh failed', e.url, r);
-    } else refreshed++;
+    try {
+      const r = await runGrade(env, sql, e, { refreshQuality, refreshPopularity: true, onAnalyticsError: 'degrade' });
+      if (typeof r === 'string') failures.push(`${e.url}: ${r}`);
+      else refreshed++;
+    } catch (err) {
+      failures.push(`${e.url}: ${(err as Error).message}`);
+    }
   }
-  console.log(`scheduled refresh: ${refreshed} refreshed, ${failed} failed, quality=${refreshQuality}`);
-  return { refreshed, failed, quality: refreshQuality };
+  for (const f of failures) console.warn('refresh failed', f);
+  console.log(`scheduled refresh: ${refreshed} refreshed, ${failures.length} failed, quality=${refreshQuality}`);
+  if (failures.length) {
+    await sendEmail(env, OPERATOR_EMAIL, `isitslop refresh: ${failures.length} of ${entries.length} failed`, `Daily refresh at ${now.toISOString()} (quality=${refreshQuality}).\n\n${failures.join('\n')}\n\nEach failed entry keeps its previous grade.`).catch(() => undefined);
+  }
+  return { refreshed, failed: failures.length, quality: refreshQuality };
 }

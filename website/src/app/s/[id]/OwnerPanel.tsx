@@ -75,7 +75,11 @@ function RequestGrade({ entry, user, onDone }: { entry: Entry; user: { githubLog
     <div className="flex flex-col gap-4 text-sm">
       <ul className="card p-3 bg-paper flex flex-col gap-1.5">
         <li className="text-fresh">✓ Signed in as {user.githubLogin}; the repository is read with your GitHub access</li>
-        <li className={entry.analyticsConnected ? "text-fresh" : "text-mixed"}>{entry.analyticsConnected ? "✓ Google Analytics connected" : "○ Google Analytics not connected: Quality is graded on its own and Popularity stays unknown until you connect it"}{!entry.analyticsConnected && <span className="text-muted ml-2">(analytics tab, any time)</span>}</li>
+        {entry.analyticsError ? (
+          <li className="text-slop">✗ Google Analytics is connected but could not be read: {entry.analyticsError}. Reconnect it<span className="text-muted ml-2">(analytics tab)</span></li>
+        ) : (
+          <li className={entry.analyticsConnected ? "text-fresh" : "text-mixed"}>{entry.analyticsConnected ? "✓ Google Analytics connected" : "○ Google Analytics not connected: Quality is graded on its own and Popularity stays unknown until you connect it"}{!entry.analyticsConnected && <span className="text-muted ml-2">(analytics tab, any time)</span>}</li>
+        )}
         {entry.kind === "site" && (
           <li className={repoOk ? "text-fresh" : "text-slop"}>{repoOk ? "✓ Repository linked" : "✗ No repository linked: Quality will be unknown"}{!repoOk && <span className="text-muted ml-2">(repo tab)</span>}</li>
         )}
@@ -149,6 +153,9 @@ function Analytics({ entry, onDone, gaPick, onPicked }: { entry: Entry; onDone: 
   }
   return (
     <div className="flex flex-col gap-4 text-sm">
+      {entry.analyticsError && (
+        <div className="card p-3 border-slop text-slop">Google Analytics is connected but the last read failed: {entry.analyticsError}. Reconnect below; until then Popularity is unknown.</div>
+      )}
       <p className="text-ink-2">
         Popularity is read from your Google Analytics 4 property: active users in the last 30 days and how many of them came back. You sign in with
         Google and grant read-only access to Analytics; nothing is typed in and nothing is written. The counts are turned into your public Popularity score and then discarded: nothing from Google is kept in a grade. The connection is stored encrypted; when

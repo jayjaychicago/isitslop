@@ -26,7 +26,11 @@ export async function requireOwner(c: Context<{ Bindings: Env }>, e: EntryRow, s
   return !!u && !!e.owner_user_id && u.id === e.owner_user_id;
 }
 
-export type GradeOptions = { refreshQuality: boolean; refreshPopularity: boolean };
+/**
+ * onAnalyticsError: 'fail' (the owner's button: they see the message) or 'degrade' (the daily refresh:
+ * Popularity becomes unknown with the reason, Quality still refreshes, and the entry remembers the error).
+ */
+export type GradeOptions = { refreshQuality: boolean; refreshPopularity: boolean; onAnalyticsError?: 'fail' | 'degrade' };
 
 /**
  * Compute and store a grade. Used by the owner's button (both fresh) and by the
@@ -40,7 +44,17 @@ export async function runGrade(env: Env, sql: Sql, e: EntryRow, opts: GradeOptio
   const popularityP = (async () => {
     if (!(opts.refreshPopularity || !prev)) return { score: prev.popularity_score, input: prev.popularity_input as unknown };
     const reading = await readAnalytics(env, sql, e);
-    if (typeof reading === 'string') return `analytics: ${reading}`;
+    if (typeof reading === 'string') {
+      // Remember why, so the owner sees it on the entry and can reconnect.
+      await sql`update entries set analytics_error = ${reading} where id = ${e.id}`;
+      e.analytics_error = reading;
+      if (opts.onAnalyticsError !== 'degrade') return `analytics: ${reading}`;
+      return { score: null, input: { note: `Google Analytics could not be read (${reading}). Reconnect it to restore Popularity.` } as unknown };
+    }
+    if (e.analytics_error) {
+      await sql`update entries set analytics_error = null where id = ${e.id}`;
+      e.analytics_error = null;
+    }
     const popularity = reading ? scorePopularity(reading) : null;
     // Nothing from Google is kept: not the counts, not the property. Only the subscores and the score.
     const input = reading && popularity ? { provider: reading.provider, window: reading.window, reach: popularity.reach, returning: popularity.returning, note: popularity.note, version: popularity.version } : { note: 'No analytics connected: popularity is unknown.' };

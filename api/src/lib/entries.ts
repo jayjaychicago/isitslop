@@ -18,6 +18,8 @@ export type EntryRow = {
   github_token_expires_at: string | null;
   analytics_provider: string | null;
   analytics_config: string | null;
+  /** Why the last read of the connected analytics failed (e.g. the Google grant was revoked); null when it works. */
+  analytics_error: string | null;
   owner_user_id: string | null;
   repo_private: boolean;
 };
@@ -62,6 +64,7 @@ export function publicEntry(e: EntryRow) {
     repoUrl: e.repo_private ? null : e.repo_url,
     repoPrivate: e.repo_private,
     analyticsConnected: !!e.analytics_provider,
+    analyticsError: e.analytics_provider ? e.analytics_error ?? null : null,
     ownerUserId: e.owner_user_id,
   };
 }

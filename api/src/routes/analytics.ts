@@ -25,8 +25,8 @@ analytics.post('/entries/:id/analytics', async (c) => {
   const cfg: AnalyticsConfig = { refreshToken: (JSON.parse(prev) as AnalyticsConfig).refreshToken, propertyId };
   const reading = await readGa4(c.env, cfg);
   if (typeof reading === 'string') return c.json({ error: reading }, 422);
-  await sql`update entries set analytics_provider = 'ga4', analytics_config = ${await seal(c.env, JSON.stringify(cfg))} where id = ${e.id}`;
-  return c.json({ entry: publicEntry({ ...e, analytics_provider: 'ga4' }), reading, note: 'Connected. Request a grade to use it.' });
+  await sql`update entries set analytics_provider = 'ga4', analytics_config = ${await seal(c.env, JSON.stringify(cfg))}, analytics_error = null where id = ${e.id}`;
+  return c.json({ entry: publicEntry({ ...e, analytics_provider: 'ga4', analytics_error: null }), reading, note: 'Connected. Request a grade to use it.' });
 });
 
 analytics.delete('/entries/:id/analytics', async (c) => {
@@ -35,7 +35,7 @@ analytics.delete('/entries/:id/analytics', async (c) => {
   if (!e) return c.json({ error: 'not found' }, 404);
   if (!(await requireOwner(c, e, sql))) return c.json({ error: 'sign in as the owner' }, 401);
   const revoked = await revokeStoredGoogle(c.env, e);
-  await sql`update entries set analytics_provider = null, analytics_config = null where id = ${e.id}`;
+  await sql`update entries set analytics_provider = null, analytics_config = null, analytics_error = null where id = ${e.id}`;
   return c.json({ ok: true, revoked });
 });
 
@@ -52,7 +52,7 @@ analytics.delete('/entries/:id/analytics/data', async (c) => {
   const isAdmin = (!!c.env.ADMIN_TOKEN && auth === c.env.ADMIN_TOKEN) || isAdminUser(c.env, await currentUser(c, sql));
   if (!isAdmin) return c.json({ error: 'operator only' }, 401);
   const revoked = await revokeStoredGoogle(c.env, e);
-  await sql`update entries set analytics_provider = null, analytics_config = null where id = ${e.id}`;
+  await sql`update entries set analytics_provider = null, analytics_config = null, analytics_error = null where id = ${e.id}`;
   const rows = await sql`
     update grades set popularity_score = null, popularity_input = null, sloppy = null,
       verdict = 'unknown_' || split_part(verdict, '_', 2)

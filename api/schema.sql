@@ -165,3 +165,7 @@ update grades g set popularity_input = jsonb_build_object(
   'note', case when c.v = 0 then 'No visitors in the last 30 days.' else 'Read from Google Analytics, last 30 days.' end,
   'version', '0.6.0')
 from calc c where g.id = c.id;
+
+
+-- 0.9.0: remember why the last analytics read failed, so the owner can see it and reconnect.
+alter table entries add column if not exists analytics_error text;

@@ -19,6 +19,8 @@ export type Entry = {
   repoUrl: string | null;
   repoPrivate: boolean;
   analyticsConnected: boolean;
+  /** Why the connected analytics could not be read last time; the owner should reconnect. */
+  analyticsError?: string | null;
   ownerUserId: string | null;
 };
 
