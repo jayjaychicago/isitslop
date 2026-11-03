@@ -139,3 +139,20 @@ pre {
   pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.8rem; }
 }
 html, body { overflow-x: hidden; }
+
+/* Blog posts: Markdown rendered by marked. */
+.prose-post h2 { font-family: var(--font-display); font-size: 1.9rem; line-height: 1.15; margin: 2.2rem 0 0.7rem; }
+.prose-post h3 { font-family: var(--font-display); font-size: 1.4rem; margin: 1.8rem 0 0.5rem; }
+.prose-post p, .prose-post li { color: var(--ink-2); font-size: 1.05rem; line-height: 1.7; margin-bottom: 1rem; }
+.prose-post li { margin-bottom: 0.4rem; }
+.prose-post ul { list-style: disc; padding-left: 1.4rem; }
+.prose-post ol { list-style: decimal; padding-left: 1.4rem; }
+.prose-post strong { color: var(--ink); }
+.prose-post a { text-decoration: underline; text-decoration-color: var(--line); }
+.prose-post a:hover { text-decoration-color: var(--ink); }
+.prose-post blockquote { border-left: 2px solid var(--line); padding-left: 1rem; color: var(--muted); margin: 1.2rem 0; }
+.prose-post code { font-size: 0.92em; background: var(--paper-2); padding: 0.1em 0.35em; border-radius: 4px; }
+.prose-post pre { background: var(--paper-2); border: 1px solid var(--line); border-radius: 10px; padding: 1rem; overflow-x: auto; margin: 1.2rem 0; }
+.prose-post pre code { background: none; padding: 0; }
+.prose-post img { max-width: 100%; border-radius: 10px; }
+.prose-post hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }

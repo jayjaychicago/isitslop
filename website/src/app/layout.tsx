@@ -40,6 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/methodology" className="hover:text-ink">Methodology</Link>
               <Link href="/contribute" className="hover:text-ink font-semibold text-ink">Change the rules</Link>
               <Link href="/api-docs" className="hover:text-ink">API</Link>
+              <Link href="/blog" className="hover:text-ink">Blog</Link>
               <a href="https://github.com/jayjaychicago/isitslop" className="hover:text-ink" target="_blank" rel="noreferrer">GitHub</a>
             </nav>
           </div>
