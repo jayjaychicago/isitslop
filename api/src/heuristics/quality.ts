@@ -136,6 +136,51 @@ async function gh(path: string, token?: string): Promise<{ status: number; json:
 type Issue = { pull_request?: unknown; state: string; user?: { login?: string; type?: string } };
 
 /** Collect the facts a quality score needs. Five requests. Returns a string error on failure. */
+/**
+ * Fallback for when GitHub's commit_activity statistics are not ready: how many of the last 52 weeks
+ * had at least one commit, read from the commit list itself. The list is newest first, so a busy repo
+ * can have more commits in a year than a few pages hold; the walk stops when it runs out of commits, and
+ * any week older than the oldest commit it saw is then probed on its own. Every week is counted either
+ * way, so the answer matches what the statistics endpoint would have said.
+ */
+export async function countCommitWeeks(owner: string, name: string, token?: string): Promise<number> {
+  const now = Date.now();
+  const since = new Date(now - 365 * 86_400_000).toISOString();
+  const seen = new Set<string>();
+  let oldest = now;
+  let truncated = false;
+  for (let page = 1; page <= 10; page++) {
+    const cm = await gh(`/repos/${owner}/${name}/commits?per_page=100&since=${since}&page=${page}`, token);
+    const list = Array.isArray(cm.json) ? (cm.json as { commit: { author: { date: string } } }[]) : [];
+    if (!list.length) break;
+    for (const x of list) {
+      seen.add(isoWeek(x.commit.author.date));
+      oldest = Math.min(oldest, Date.parse(x.commit.author.date));
+    }
+    if (list.length < 100) break;
+    if (page === 10) truncated = true;
+  }
+  if (truncated) {
+    // Weeks older than the oldest commit seen: one request per week, ten at a time.
+    const probes: { key: string; from: string; to: string }[] = [];
+    for (let t = new Date(since).getTime(); t < oldest; t += 7 * 86_400_000) {
+      const from = new Date(t).toISOString();
+      const to = new Date(Math.min(t + 7 * 86_400_000, oldest)).toISOString();
+      probes.push({ key: isoWeek(from), from, to });
+    }
+    for (let i = 0; i < probes.length; i += 10) {
+      const batch = probes.slice(i, i + 10);
+      const results = await Promise.all(batch.map((w) => gh(`/repos/${owner}/${name}/commits?per_page=1&since=${w.from}&until=${w.to}`, token)));
+      results.forEach((cm) => {
+        const list = Array.isArray(cm.json) ? (cm.json as { commit: { author: { date: string } } }[]) : [];
+        const first = list[0];
+        if (first) seen.add(isoWeek(first.commit.author.date));
+      });
+    }
+  }
+  return Math.min(52, seen.size);
+}
+
 export async function collectRepoFacts(owner: string, name: string, token?: string): Promise<RepoFacts | string> {
   const repo = await gh(`/repos/${owner}/${name}`, token);
   if (repo.status === 404) return 'repository not found (private repos are not supported)';
@@ -164,18 +209,7 @@ export async function collectRepoFacts(owner: string, name: string, token?: stri
   ]);
   let weeksWithCommits = 0;
   if (weeks) weeksWithCommits = weeks.filter((w) => w.total > 0).length;
-  else {
-    // Fallback: walk the commits of the last year (up to 1,000) and count distinct ISO weeks.
-    const since = new Date(Date.now() - 365 * 86_400_000).toISOString();
-    const set = new Set<string>();
-    for (let page = 1; page <= 10; page++) {
-      const cm = await gh(`/repos/${owner}/${name}/commits?per_page=100&since=${since}&page=${page}`, token);
-      if (!Array.isArray(cm.json) || !(cm.json as unknown[]).length) break;
-      for (const x of cm.json as { commit: { author: { date: string } } }[]) set.add(isoWeek(x.commit.author.date));
-      if ((cm.json as unknown[]).length < 100) break;
-    }
-    weeksWithCommits = Math.min(52, set.size);
-  }
+  else weeksWithCommits = await countCommitWeeks(owner, name, token);
 
   const humansWithTwoPlusCommits = Array.isArray(contrib.json)
     ? (contrib.json as { login: string; type: string; contributions: number }[]).filter((c) => c.type !== 'Bot' && !/\[bot\]$/.test(c.login) && c.contributions >= 2).length
