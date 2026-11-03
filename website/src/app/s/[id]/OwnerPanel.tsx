@@ -148,7 +148,7 @@ function Analytics({ entry, onDone, gaPick, onPicked }: { entry: Entry; onDone: 
   }
   async function disconnect() {
     setBusy(true); setMsg(null);
-    try { await api(`/entries/${entry.id}/analytics`, { method: "DELETE" }); setMsg("Disconnected. Is It Slop no longer has access to your Google Analytics and has been removed from the apps connected to your Google account."); onDone(); } catch (e) { setMsg((e as Error).message); }
+    try { await api(`/entries/${entry.id}/analytics`, { method: "DELETE" }); setMsg("Disconnected. The stored Google sign-in for this entry was erased; Is It Slop can no longer read its analytics."); onDone(); } catch (e) { setMsg((e as Error).message); }
     setBusy(false);
   }
   return (
@@ -159,7 +159,7 @@ function Analytics({ entry, onDone, gaPick, onPicked }: { entry: Entry; onDone: 
       <p className="text-ink-2">
         Popularity is read from your Google Analytics 4 property: active users in the last 30 days and how many of them came back. You sign in with
         Google and grant read-only access to Analytics; nothing is typed in and nothing is written. The counts are turned into your public Popularity score and then discarded: nothing from Google is kept in a grade. The connection is stored encrypted; when
-        you disconnect or delete the entry it is erased and Is It Slop is removed from the apps connected to your Google account. {entry.analyticsConnected ? "Currently connected." : "Nothing connected yet."}
+        you disconnect or delete the entry it is erased. To sign Is It Slop out of your Google account altogether, remove it at myaccount.google.com/permissions; that disconnects every entry you connected with that account. {entry.analyticsConnected ? "Currently connected." : "Nothing connected yet."}
       </p>
       {picked ? (
         <div className="text-ink-2">Connected: {picked}.</div>
@@ -173,7 +173,7 @@ function Analytics({ entry, onDone, gaPick, onPicked }: { entry: Entry; onDone: 
       ) : (
         <div className="flex flex-wrap gap-2">
           <a className="btn" href={`${API}/google/login?entry=${entry.id}`}>{entry.analyticsConnected ? "Reconnect Google Analytics" : "Connect Google Analytics"}</a>
-          {entry.analyticsConnected && <button className="btn btn-ghost" onClick={disconnect} disabled={busy}>Disconnect and delete Google data</button>}
+          {entry.analyticsConnected && <button className="btn btn-ghost" onClick={disconnect} disabled={busy}>Disconnect</button>}
         </div>
       )}
       {msg && <div className={msg.startsWith("Connected") || msg.startsWith("Disconnected") ? "text-fresh" : "text-slop"}>{msg}</div>}

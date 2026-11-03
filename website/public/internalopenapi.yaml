@@ -152,6 +152,27 @@ paths:
         "400": { description: Message too short or email malformed }
         "429": { description: Rate limited }
         "502": { description: Email could not be sent }
+  /contact:
+    post:
+      summary: The contact form, to support@isitslop.org
+      description: A Cloudflare Turnstile token is checked first, then the message is emailed with the sender as Reply-To. Nothing is stored. Rate limited to 5 messages an hour per IP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, message, token]
+              properties:
+                name: { type: string, maxLength: 120 }
+                email: { type: string, format: email }
+                message: { type: string, minLength: 5, maxLength: 5000 }
+                token: { type: string, description: The Turnstile response token from the widget. }
+      responses:
+        "200": { description: Sent, content: { application/json: { schema: { type: object, properties: { ok: { type: boolean } } } } } }
+        "400": { description: A field is missing or malformed, or the human check did not pass }
+        "429": { description: Rate limited }
+        "503": { description: Turnstile or email is not configured on this deployment }
   /methodology:
     get:
       tags: [public]

@@ -19,6 +19,7 @@ workers_dev = true
 #   GITHUB_APP_PRIVATE_KEY the app's private key (PEM); /v1/preview reads as the app (5,000 calls/hour)
 #   GITHUB_TOKEN          optional last-resort fallback for /v1/preview when no app key is set
 #   GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET  OAuth client for "Connect Google Analytics" (scope analytics.readonly)
+#   TURNSTILE_SECRET_KEY  Cloudflare Turnstile secret for the contact form (the site key is NEXT_PUBLIC_TURNSTILE_SITE_KEY on the website)
 
 # Custom domain (the isitslop.org zone is on the same Cloudflare account).
 # internalapi is what the website and the operator's apiblaze proxy call, and where the GitHub and Google

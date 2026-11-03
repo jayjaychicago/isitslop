@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getPost, postDate, renderMarkdown } from "@/lib/blog";
 import { PostEditor } from "../PostEditor";
+import { Comments } from "../Comments";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ export default async function PostPage({ params }: { params: Promise<{ slug: str
       {p.description && <p className="mt-4 text-lg text-ink-2 leading-relaxed">{p.description}</p>}
       <div className="prose-post mt-8" dangerouslySetInnerHTML={{ __html: renderMarkdown(p.body) }} />
       <PostEditor slug={slug} initial={p} />
+      {!p.draft && <Comments slug={slug} />}
     </article>
   );
 }

@@ -34,7 +34,7 @@ export function EntryView({ id }: { id: string }) {
       setFlash(`Google Analytics connected: ${h.get("property")}. ${h.get("detail") ?? `Last 30 days: ${h.get("visitors")} active users, ${h.get("returning")} returning. Request a grade.`}`);
     } else if (h.get("google") === "pick") {
       try { setGaPick(JSON.parse(h.get("properties") ?? "[]")); } catch { /* ignore */ }
-      setFlash("Google signed in. Pick the property in the analytics tab.");
+      setFlash(h.get("current") ? `Google signed in again. Property ${h.get("current")} is still connected; pick another in the analytics tab if you want to change it.` : "Google signed in. Pick the property in the analytics tab.");
     } else if (h.get("google") === "error") {
       setFlash(`Google: ${h.get("detail")}`);
     } else if (q.get("signin") === "denied") {

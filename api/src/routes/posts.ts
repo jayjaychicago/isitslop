@@ -1,8 +1,10 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
+import type { Sql } from '../lib/db.ts';
 import type { Env } from '../lib/env.ts';
 import { db } from '../lib/db.ts';
 import { currentUser, isAdminUser } from '../lib/session.ts';
 import { purge } from '../lib/edgecache.ts';
+import { rateLimit } from '../lib/ratelimit.ts';
 
 /**
  * The blog. Posts are rows, written and edited on the site by the operator (ADMIN_GITHUB_LOGINS),
@@ -13,6 +15,12 @@ export const posts = new Hono<{ Bindings: Env }>();
 type PostRow = { slug: string; title: string; description: string; author: string; date: string; draft: boolean; body: string; updated_at: string };
 const pub = (p: PostRow) => ({ slug: p.slug, title: p.title, description: p.description, author: p.author, date: p.date, draft: p.draft, body: p.body, updatedAt: p.updated_at });
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/** The list and the post, under both path forms the API answers on. */
+const purgePost = (reqUrl: string, slug: string) => {
+  const origin = new URL(reqUrl).origin;
+  return purge(['', '/v1'].flatMap((b) => [`${origin}${b}/posts`, `${origin}${b}/posts/${slug}`]));
+};
 
 posts.get('/posts', async (c) => {
   const sql = db(c.env.DATABASE_URL);
@@ -48,8 +56,7 @@ posts.put('/posts/:slug', async (c) => {
       date = excluded.date, draft = excluded.draft, body = excluded.body, updated_at = now()
     returning slug, title, description, author, to_char(date, 'YYYY-MM-DD') as date, draft, body, updated_at
   `) as PostRow[];
-  const origin = new URL(c.req.url).origin;
-  await purge([`${origin}/v1/posts`, `${origin}/v1/posts/${slug}`]);
+  await purgePost(c.req.url, slug);
   return c.json({ post: pub(rows[0]) });
 });
 
@@ -58,7 +65,58 @@ posts.delete('/posts/:slug', async (c) => {
   if (!isAdminUser(c.env, await currentUser(c, sql))) return c.json({ error: 'operator only' }, 403);
   const slug = c.req.param('slug');
   await sql`delete from posts where slug = ${slug}`;
-  const origin = new URL(c.req.url).origin;
-  await purge([`${origin}/v1/posts`, `${origin}/v1/posts/${slug}`]);
+  await purgePost(c.req.url, slug);
   return c.json({ deleted: slug });
+});
+
+/**
+ * Comments. Anyone signed in with GitHub can leave one under a published post; the author or the operator
+ * can remove it. Plain text, shown as written. Not edge cached: they are read with the cookie anyway.
+ */
+type CommentRow = { id: string; github_login: string; body: string; created_at: string };
+const pubComment = (r: CommentRow) => ({ id: r.id, githubLogin: r.github_login, body: r.body, createdAt: r.created_at });
+
+async function publishedPost(c: Context<{ Bindings: Env }>, sql: Sql, slug: string): Promise<boolean> {
+  const rows = (await sql`select draft from posts where slug = ${slug}`) as { draft: boolean }[];
+  if (!rows[0]) return false;
+  return !rows[0].draft || isAdminUser(c.env, await currentUser(c, sql));
+}
+
+posts.get('/posts/:slug/comments', async (c) => {
+  const sql = db(c.env.DATABASE_URL);
+  const slug = c.req.param('slug');
+  if (!(await publishedPost(c, sql, slug))) return c.json({ error: 'not found' }, 404);
+  const rows = (await sql`select id, github_login, body, created_at from comments where post_slug = ${slug} order by created_at`) as CommentRow[];
+  return c.json({ items: rows.map(pubComment) });
+});
+
+posts.post('/posts/:slug/comments', async (c) => {
+  const sql = db(c.env.DATABASE_URL);
+  const u = await currentUser(c, sql);
+  if (!u) return c.json({ error: 'sign in with GitHub to comment' }, 401);
+  const slug = c.req.param('slug');
+  if (!(await publishedPost(c, sql, slug))) return c.json({ error: 'not found' }, 404);
+  const b = (await c.req.json().catch(() => ({}))) as { body?: string };
+  const body = String(b.body ?? '').replace(/\r\n/g, '\n').trim();
+  if (!body) return c.json({ error: 'say something' }, 400);
+  if (body.length > 2000) return c.json({ error: 'at most 2000 characters' }, 400);
+  if (!(await rateLimit(sql, `comment:${u.id}`, 20, 3600))) return c.json({ error: 'at most 20 comments an hour' }, 429);
+  const rows = (await sql`
+    insert into comments (post_slug, user_id, github_login, body) values (${slug}, ${u.id}, ${u.github_login}, ${body})
+    returning id, github_login, body, created_at
+  `) as CommentRow[];
+  return c.json({ comment: pubComment(rows[0]) }, 201);
+});
+
+posts.delete('/posts/:slug/comments/:id', async (c) => {
+  const sql = db(c.env.DATABASE_URL);
+  const u = await currentUser(c, sql);
+  if (!u) return c.json({ error: 'sign in with GitHub' }, 401);
+  const id = c.req.param('id');
+  if (!/^[0-9a-f-]{36}$/.test(id)) return c.json({ error: 'not found' }, 404);
+  const rows = (await sql`select user_id from comments where id = ${id} and post_slug = ${c.req.param('slug')}`) as { user_id: string | null }[];
+  if (!rows[0]) return c.json({ error: 'not found' }, 404);
+  if (rows[0].user_id !== u.id && !isAdminUser(c.env, u)) return c.json({ error: 'only the author or the operator can remove a comment' }, 403);
+  await sql`delete from comments where id = ${id}`;
+  return c.json({ deleted: id });
 });

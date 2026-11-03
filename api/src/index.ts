@@ -12,6 +12,7 @@ import { google } from './routes/google.ts';
 import { auth } from './routes/auth.ts';
 import { feedback } from './routes/feedback.ts';
 import { posts } from './routes/posts.ts';
+import { contact } from './routes/contact.ts';
 import { scheduledRefresh } from './scheduled.ts';
 import { edgeCache } from './lib/edgecache.ts';
 
@@ -33,7 +34,9 @@ app.get('/', (c) =>
       'GET /health',
       'GET /methodology',
       'POST /feedback',
+      'POST /contact                      the contact form (Turnstile, then email)',
       'GET /posts, GET /v1/posts/:slug   the blog; PUT/DELETE /v1/posts/:slug (operator) write it',
+      'GET/POST /posts/:slug/comments     comments under a post (POST: signed in); DELETE /posts/:slug/comments/:id',
       'GET /score?url=example.com   (Authorization: Bearer API key) the current score of a URL, nothing else',
       'GET /entries?q=&limit=&offset=',
       'POST /claim {url}           (signed in) claim a repository; your GitHub account must have push access. Creates the entry.',
@@ -70,7 +73,7 @@ for (const base of ['', '/v1']) {
 }
 
 // Every route answers at the root and under /v1 (the OAuth callbacks are registered under /v1; the docs show the root).
-for (const r of [methodology, entries, verify, grade, appeals, github, analytics, feedback, posts, google, auth]) {
+for (const r of [methodology, entries, verify, grade, appeals, github, analytics, feedback, contact, posts, google, auth]) {
   app.route('/v1', r);
   app.route('/', r);
 }

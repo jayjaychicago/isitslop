@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import type { Env } from '../lib/env.ts';
 import { db } from '../lib/db.ts';
 import { randomToken, sha256 } from '../lib/crypto.ts';
-import { seal, signState, verifyState } from '../lib/github-auth.ts';
+import { open, seal, signState, verifyState } from '../lib/github-auth.ts';
 import { ga4Report, listGa4Properties, revokeGoogleToken } from '../lib/analytics.ts';
 import { getEntry } from '../lib/entries.ts';
 import { currentUser } from '../lib/session.ts';
@@ -70,9 +70,18 @@ google.get('/google/callback', async (c) => {
     return back(e.id, { google: 'error', detail: 'that Google account has no GA4 properties' });
   }
 
-  // Park the refresh token on the entry (encrypted) with no property yet. The owner always picks the
-  // property, even when there is only one: nothing is read until they have.
-  const cfg = { refreshToken: t.refresh_token, propertyId: '' };
-  await sql`update entries set analytics_provider = 'ga4', analytics_config = ${await seal(c.env, JSON.stringify(cfg))} where id = ${e.id}`;
-  return back(e.id, { google: 'pick', properties: JSON.stringify(props) });
+  // Park the refresh token on the entry (encrypted). On a reconnect, the property already picked stays
+  // picked when this account can still see it, so a sign-in that stops here (tab closed, nothing picked)
+  // never turns a working connection into "no analytics connected". A first connection has no property
+  // yet: the owner always picks, even when there is only one, and nothing is read until they have.
+  let propertyId = '';
+  if (e.analytics_provider === 'ga4' && e.analytics_config) {
+    const raw = await open(c.env, e.analytics_config);
+    const prevId = raw ? ((JSON.parse(raw) as { propertyId?: string }).propertyId ?? '') : '';
+    if (prevId && props.some((p) => p.id === prevId)) propertyId = prevId;
+  }
+  const cfg = { refreshToken: t.refresh_token, propertyId };
+  if (propertyId) await sql`update entries set analytics_provider = 'ga4', analytics_config = ${await seal(c.env, JSON.stringify(cfg))}, analytics_error = null where id = ${e.id}`;
+  else await sql`update entries set analytics_provider = 'ga4', analytics_config = ${await seal(c.env, JSON.stringify(cfg))} where id = ${e.id}`;
+  return back(e.id, { google: 'pick', properties: JSON.stringify(props), ...(propertyId ? { current: propertyId } : {}) });
 });

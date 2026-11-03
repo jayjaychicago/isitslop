@@ -182,3 +182,14 @@ create table if not exists posts (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- 0.11.0: comments under blog posts, by anyone signed in with GitHub.
+create table if not exists comments (
+  id uuid primary key default gen_random_uuid(),
+  post_slug text not null references posts(slug) on delete cascade,
+  user_id uuid references users(id) on delete cascade,
+  github_login text not null,
+  body text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists comments_post_idx on comments (post_slug, created_at);

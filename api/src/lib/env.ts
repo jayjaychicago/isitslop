@@ -23,6 +23,8 @@ export type Env = {
   TOKEN_KEY?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  /** Cloudflare Turnstile secret; the contact form is off without it. */
+  TURNSTILE_SECRET_KEY?: string;
 };
 
 export const TERMS_VERSION = '2026-10-22';

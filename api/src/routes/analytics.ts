@@ -34,15 +34,17 @@ analytics.delete('/entries/:id/analytics', async (c) => {
   const e = await getEntry(sql, c.req.param('id'));
   if (!e) return c.json({ error: 'not found' }, 404);
   if (!(await requireOwner(c, e, sql))) return c.json({ error: 'sign in as the owner' }, 401);
-  const revoked = await revokeStoredGoogle(c.env, e);
+  // The stored sign-in is erased, not revoked at Google: a Google account holds one grant for this app, and
+  // revoking it would also disconnect every other entry the owner connected with the same account.
   await sql`update entries set analytics_provider = null, analytics_config = null, analytics_error = null where id = ${e.id}`;
-  return c.json({ ok: true, revoked });
+  return c.json({ ok: true, revoked: false });
 });
 
 /**
  * Operator only: revoke the Google grant, drop the connection, and wipe the Popularity half out of every
  * grade (score and subscores), leaving Quality in place. Owners need no such thing: a grade holds nothing
- * from Google, and Disconnect erases the connection.
+ * from Google, and Disconnect erases the connection. Revoking the grant signs the account out of this app
+ * everywhere, so any other entry connected with the same Google account loses its connection too.
  */
 analytics.delete('/entries/:id/analytics/data', async (c) => {
   const sql = db(c.env.DATABASE_URL);
@@ -61,7 +63,11 @@ analytics.delete('/entries/:id/analytics/data', async (c) => {
   return c.json({ ok: true, revoked, gradesPurged: rows.length });
 });
 
-/** Revoke the entry's Google grant, if any, before its stored token is erased. True when Google confirmed. */
+/**
+ * Revoke the entry's Google grant, if any, before its stored token is erased. True when Google confirmed.
+ * Only the operator's data wipe does this: Google keeps one grant per account and app, so revoking it
+ * invalidates the refresh token of every entry connected with that account.
+ */
 export async function revokeStoredGoogle(env: Env, e: EntryRow): Promise<boolean> {
   if (e.analytics_provider !== 'ga4' || !e.analytics_config) return false;
   const raw = await open(env, e.analytics_config);

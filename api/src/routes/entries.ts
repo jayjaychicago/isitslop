@@ -4,7 +4,6 @@ import { db } from '../lib/db.ts';
 import { normalizeTarget } from '../lib/url.ts';
 import { rateLimit } from '../lib/ratelimit.ts';
 import { requireOwner } from './grade.ts';
-import { revokeStoredGoogle } from './analytics.ts';
 import { collectRepoFacts, scoreQuality } from '../heuristics/quality.ts';
 import { userGithubToken } from './github.ts';
 import { repoPermission, repoInfo } from '../lib/github-auth.ts';
@@ -141,7 +140,11 @@ entries.post('/entries/:id/repo', async (c) => {
   return c.json({ entry: publicEntry(rows[0]) });
 });
 
-/** Remove an entry and everything attached to it (grades, verifications, appeals, analytics). Owner key, admin token, or the signed-in operator. See terms, section 9. */
+/**
+ * Remove an entry and everything attached to it (grades, verifications, appeals, the stored Google sign-in).
+ * Owner key, admin token, or the signed-in operator. See terms, section 9. The Google grant itself is not
+ * revoked: it is shared by every entry connected with that Google account.
+ */
 entries.delete('/entries/:id', async (c) => {
   const sql = db(c.env.DATABASE_URL);
   const e = await getEntry(sql, c.req.param('id'));
@@ -149,7 +152,6 @@ entries.delete('/entries/:id', async (c) => {
   const auth = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
   const isAdmin = (!!c.env.ADMIN_TOKEN && auth === c.env.ADMIN_TOKEN) || isAdminUser(c.env, await currentUser(c, sql));
   if (!isAdmin && !(await requireOwner(c, e, sql))) return c.json({ error: 'sign in as the owner' }, 401);
-  await revokeStoredGoogle(c.env, e);
   await sql`delete from entries where id = ${e.id}`;
   return c.json({ deleted: e.id });
 });

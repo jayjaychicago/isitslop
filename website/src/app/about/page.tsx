@@ -62,7 +62,7 @@ export default function AboutPage() {
           <Link href="/contribute" className="underline">change them</Link>. Heuristics only, no LLMs, no paid data. The API is self-sustaining by design, so it runs on free tiers and modest hosting.
         </p>
         <p className="mt-2 text-ink-2 leading-relaxed">
-          Questions or complaints: the <Link href="/feedback" className="underline">feedback form</Link> or <a className="underline" href="mailto:support@isitslop.org">support@isitslop.org</a>. The founding brief is in{" "}
+          Questions or complaints: <Link href="/contact" className="underline">contact us</Link>, the <Link href="/feedback" className="underline">feedback form</Link>, or <a className="underline" href="mailto:support@isitslop.org">support@isitslop.org</a>. The founding brief is in{" "}
           <a className="underline" href="https://github.com/jayjaychicago/isitslop/blob/main/foundation.md">foundation.md</a>.
         </p>
       </section>
@@ -71,6 +71,7 @@ export default function AboutPage() {
         <Link href="/methodology" className="btn">Read the rules</Link>
         <Link href="/contribute" className="btn btn-ghost">Change the rules</Link>
         <Link href="/api-docs" className="btn btn-ghost">API</Link>
+        <Link href="/contact" className="btn btn-ghost">Contact us</Link>
       </div>
     </div>
   );
