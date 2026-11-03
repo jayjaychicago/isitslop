@@ -12,7 +12,7 @@ export default function ApiDocs() {
       <div className="card mt-6 p-5 sm:p-6 border-ink flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="display text-2xl sm:text-3xl leading-tight">Developer portal</div>
-          <p className="mt-1 text-ink-2">Interactive docs for the score API, a playground to try calls, your keys and what each has used.</p>
+          <p className="mt-1 text-ink-2">Interactive docs for the score API, a playground to try calls, your keys and what each has used. The written documentation, including the MCP connector, is at <a className="underline" href="/docs">/docs</a>.</p>
         </div>
         <a className="btn shrink-0 text-base" href={PORTAL} target="_blank" rel="noreferrer">Open the developer portal →</a>
       </div>
