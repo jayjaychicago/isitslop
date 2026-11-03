@@ -27,6 +27,16 @@ export default function AboutPage() {
       </section>
 
       <section className="mt-8">
+        <h2 className="display text-3xl">Why so harsh</h2>
+        <p className="mt-2 text-ink-2 leading-relaxed">
+          Both halves are built to be hard to fake, and that makes them hard on the honest too. One person can write excellent code, but a project only one person has ever touched has been tested by nobody&apos;s patience but theirs, so the rules count other humans&apos; commits and not the author&apos;s. A thing with fewer than a hundred monthly users may be loved by every one of them, but reach gates Popularity because &quot;nobody there&quot; and &quot;nobody there yet&quot; look the same from outside.
+        </p>
+        <p className="mt-2 text-ink-2 leading-relaxed">
+          The score is not a verdict on you. It is a measure of what a stranger can trust without taking your word for it, and it moves as that changes. This site scores itself by the same rules, and on day one that was 100% sloppy.
+        </p>
+      </section>
+
+      <section className="mt-8">
         <h2 className="display text-3xl">How a thing gets graded</h2>
         <ol className="mt-3 flex flex-col gap-3 text-ink-2 leading-relaxed">
           <li><strong className="text-ink">1. Claim it.</strong> Sign in with GitHub and paste a URL or a repo. A site is yours after a DNS record, a well-known file, or an email to admin@ your domain. A repo is yours if your GitHub account can push to it. Nothing enters the index until that proof passes, so there are no unclaimed entries.</li>

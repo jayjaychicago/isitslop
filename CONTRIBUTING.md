@@ -35,7 +35,7 @@ The website signs owners in with GitHub (`api/src/routes/auth.ts`, cookie on `.i
 Appeals are public. A maintainer resolves one with the admin token:
 
 ```sh
-curl -X POST https://api.isitslop.org/v1/appeals/APPEAL_ID/resolve \
+curl -X POST https://internalapi.isitslop.org/v1/appeals/APPEAL_ID/resolve \
   -H "authorization: Bearer $ADMIN_TOKEN" -H 'content-type: application/json' \
   -d '{"status":"accepted","response":"The contributors rule counted a release bot as a human. Fixed in 0.3.1, re-graded."}'
 ```

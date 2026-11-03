@@ -67,7 +67,7 @@ The owner connects their analytics (Google Analytics, PostHog or Plausible in v0
 
 ```
 website/   Next.js on Vercel          -> isitslop.org
-api/       Cloudflare Worker (Hono)   -> api.isitslop.org
+api/       Cloudflare Worker (Hono)   -> internalapi.isitslop.org (api.isitslop.org is the keyed score API, via the operator's proxy)
            Neon Postgres (free tier)  -> the index
            AWS SES                    -> verification email only
            GitHub App "is-it-slop"    -> owners sign in; repos are read with their token
