@@ -22,7 +22,7 @@ app.use('*', cors({
   origin: (origin, c) => (origin === c.env.PUBLIC_SITE_URL || /^http:\/\/localhost:\d+$/.test(origin) ? origin : c.env.PUBLIC_SITE_URL),
   credentials: true,
   allowHeaders: ['Content-Type', 'Authorization', 'x-api-key'],
-  allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   maxAge: 86400,
 }));
 
