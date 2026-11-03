@@ -112,7 +112,7 @@ export function EntryView({ id }: { id: string }) {
       {grade && detail === "popularity" && <PopularityDetails grade={grade} />}
       {grade && detail === "quality" && <QualityDetails grade={grade} />}
 
-      <OwnerPanel key={gaPick ? "pick" : "panel"} entry={entry} grade={grade} onChange={reload} gaPick={gaPick} onGaPicked={() => setGaPick(null)} initialTab={gaPick ? "analytics" : undefined} />
+      <OwnerPanel entry={entry} grade={grade} onChange={reload} gaPick={gaPick} onGaPicked={() => setGaPick(null)} initialTab={gaPick ? "analytics" : undefined} />
 
       <section className="mt-12">
         <h2 className="display text-3xl mb-3">Appeals</h2>
