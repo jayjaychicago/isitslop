@@ -12,7 +12,7 @@ info:
   contact: { url: "https://github.com/jayjaychicago/isitslop" }
   license: { name: MIT }
 servers:
-  - url: https://internalapi.isitslop.org/v1
+  - url: https://api.isitslop.org
 paths:
   /score:
     get:

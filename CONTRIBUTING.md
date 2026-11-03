@@ -24,18 +24,18 @@ When you add or change a rule:
 
 ## Scheduled refresh
 
-`api/src/scheduled.ts` runs from the cron in `wrangler.toml` (daily 04:10 UTC): popularity for every graded entry with analytics connected, plus quality on the 1st. `POST /v1/admin/refresh` (admin token; `?quality=1` to force quality) runs the same thing on demand.
+`api/src/scheduled.ts` runs from the cron in `wrangler.toml` (daily 04:10 UTC): popularity for every graded entry with analytics connected, plus quality on the 1st. `POST /admin/refresh` (admin token; `?quality=1` to force quality) runs the same thing on demand.
 
 ## Sessions and keys
 
-The website signs owners in with GitHub (`api/src/routes/auth.ts`, cookie on `.isitslop.org`). Owner actions check the session, or an owner key for API use (`requireOwner` in `grade.ts`). `GET /v1/score` is behind one fixed `API_KEY` secret.
+The website signs owners in with GitHub (`api/src/routes/auth.ts`, cookie on `.isitslop.org`). Owner actions check the session, or an owner key for API use (`requireOwner` in `grade.ts`). `GET /score` is behind one fixed `API_KEY` secret.
 
 ## Resolving appeals
 
 Appeals are public. A maintainer resolves one with the admin token:
 
 ```sh
-curl -X POST https://internalapi.isitslop.org/v1/appeals/APPEAL_ID/resolve \
+curl -X POST https://internalapi.isitslop.org/appeals/APPEAL_ID/resolve \
   -H "authorization: Bearer $ADMIN_TOKEN" -H 'content-type: application/json' \
   -d '{"status":"accepted","response":"The contributors rule counted a release bot as a human. Fixed in 0.3.1, re-graded."}'
 ```
@@ -48,7 +48,7 @@ The response is public. Either fix the rule for everyone and re-grade, or explai
 - GitLab, Codeberg and self-hosted repositories. Everything in v0 is GitHub.
 - Fraud resistance: cadence bots, sock-puppet contributors, issue farms.
 - Pull request signals: reviewed merges from outside contributors.
-- A badge endpoint (`/v1/entries/:id/badge.svg`) so owners can show their score.
+- A badge endpoint (`/entries/:id/badge.svg`) so owners can show their score.
 
 ## Style
 

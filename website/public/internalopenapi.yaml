@@ -3,7 +3,7 @@ info:
   title: Is it slop? internal API
   version: 0.6.1
   description: |
-    The API behind isitslop.org. Served from a Cloudflare Worker at https://internalapi.isitslop.org/v1.
+    The API behind isitslop.org. Served from a Cloudflare Worker at https://internalapi.isitslop.org.
 
     Two kinds of callers:
     - **Readers** need nothing. Entries, grades, appeals and the methodology are public.
@@ -20,7 +20,7 @@ info:
   license:
     name: MIT
 servers:
-  - url: https://internalapi.isitslop.org/v1
+  - url: https://internalapi.isitslop.org
 tags:
   - { name: public, description: No auth }
   - { name: owner, description: Session cookie from GitHub sign-in, or Bearer owner key where noted }

@@ -31,3 +31,9 @@ export function edgeCache(seconds: number) {
     }
   };
 }
+
+/** Drop cached copies of these URLs after a write, so the public sees it within seconds, not a minute. */
+export async function purge(urls: string[]): Promise<void> {
+  if (typeof caches === 'undefined') return;
+  await Promise.all(urls.map((u) => caches.default.delete(new Request(u, { method: 'GET' })).catch(() => false)));
+}

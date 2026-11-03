@@ -2,15 +2,15 @@ import { ApiKeys } from "@/components/ApiKeys";
 
 export default function ApiDocs() {
   // The public score API is served by the operator's proxy at api.isitslop.org; everything else is the Worker itself.
-  const score = "https://api.isitslop.org/v1";
-  const base = "https://internalapi.isitslop.org/v1";
+  const score = "https://api.isitslop.org";
+  const base = "https://internalapi.isitslop.org";
   // The score API's developer portal, run by the operator's proxy.
   const PORTAL = "https://isitslop.portal.apiblaze.com/1.0.0";
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
       <h1 className="display text-5xl">API</h1>
       <p className="mt-4 text-ink-2 leading-relaxed">
-        Everything the website does, curl can do. The score lookup lives at <code>{score}</code> and takes an API key; everything else is at <code>{base}</code>. JSON in, JSON out. Reading needs nothing. Owner actions need the session cookie from GitHub sign-in, or the owner key a site verification returns. Rate limited per IP. The OpenAPI spec is at <a className="underline" href="/internalopenapi.yaml">/internalopenapi.yaml</a>. Source on{" "}
+        Everything the website does, curl can do. The score lookup is <code>{score}/score</code> and takes an API key; everything else is at <code>{base}</code>. JSON in, JSON out. Reading needs nothing. Owner actions need the session cookie from GitHub sign-in, or the owner key a site verification returns. Rate limited per IP. The OpenAPI spec is at <a className="underline" href="/internalopenapi.yaml">/internalopenapi.yaml</a>. Source on{" "}
         <a className="underline" href="https://github.com/jayjaychicago/isitslop/tree/main/api">GitHub</a>.
       </p>
 

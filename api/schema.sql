@@ -169,3 +169,16 @@ from calc c where g.id = c.id;
 
 -- 0.9.0: remember why the last analytics read failed, so the owner can see it and reconnect.
 alter table entries add column if not exists analytics_error text;
+
+-- 0.10.0: the blog lives in the database so the operator can write and edit posts on the site itself.
+create table if not exists posts (
+  slug text primary key,
+  title text not null,
+  description text not null default '',
+  author text not null default '',
+  date date not null default current_date,
+  draft boolean not null default false,
+  body text not null default '',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);

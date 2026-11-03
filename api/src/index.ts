@@ -1,4 +1,4 @@
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { cors } from 'hono/cors';
 import type { Env } from './lib/env.ts';
 import { entries } from './routes/entries.ts';
@@ -11,6 +11,7 @@ import { analytics } from './routes/analytics.ts';
 import { google } from './routes/google.ts';
 import { auth } from './routes/auth.ts';
 import { feedback } from './routes/feedback.ts';
+import { posts } from './routes/posts.ts';
 import { scheduledRefresh } from './scheduled.ts';
 import { edgeCache } from './lib/edgecache.ts';
 
@@ -29,49 +30,50 @@ app.get('/', (c) =>
     name: 'isitslop api',
     docs: 'https://github.com/jayjaychicago/isitslop',
     endpoints: [
-      'GET  /v1/health',
-      'GET  /v1/methodology',
-      'POST /v1/feedback',
-      'GET  /v1/score?url=example.com   (Authorization: Bearer API key) the current score of a URL, nothing else',
-      'GET  /v1/entries?q=&limit=&offset=',
-      'POST /v1/claim {url}           (signed in) claim a repository; your GitHub account must have push access. Creates the entry.',
-      'GET  /v1/entries/:id',
-      'GET  /v1/preview?url=github.com/o/r   dry-run quality score, nothing stored',
-      'POST /v1/verify/start {url, method: dns|file|email, email?}   (signed in) start proving a site is yours',
-      'GET  /v1/auth/github?return=/   sign in with GitHub (sets a session cookie)',
-      'GET  /v1/me                     who am I and what do I own',
-      'GET  /v1/github/repos           (signed in) repositories you can push to that the app can see',
-      'POST /v1/auth/logout',
-      'POST /v1/verify/check {verificationId, code?}   (signed in) on success the entry is created and owned by you',
-      'GET  /v1/google/login?entry=     (signed in as owner) connect Google Analytics, read-only',
-      'POST /v1/entries/:id/analytics (Bearer owner key) {propertyId}   pick the GA4 property after sign-in',
-      'DELETE /v1/entries/:id/analytics (Bearer owner key)',
-      'POST /v1/entries/:id/grade  (signed in as owner, or Bearer owner key) {acceptTerms: true}',
-      'POST /v1/entries/:id/repo   (signed in as owner) {repoUrl}   link a repo to a site entry; your GitHub account must have push access',
-      'DELETE /v1/entries/:id       (Bearer owner key or admin)  remove the entry',
-      'POST /v1/entries/:id/appeals (Bearer owner key) {text}',
-      'POST /v1/appeals/:id/resolve (Bearer admin) {status, response}',
+      'GET /health',
+      'GET /methodology',
+      'POST /feedback',
+      'GET /posts, GET /v1/posts/:slug   the blog; PUT/DELETE /v1/posts/:slug (operator) write it',
+      'GET /score?url=example.com   (Authorization: Bearer API key) the current score of a URL, nothing else',
+      'GET /entries?q=&limit=&offset=',
+      'POST /claim {url}           (signed in) claim a repository; your GitHub account must have push access. Creates the entry.',
+      'GET /entries/:id',
+      'GET /preview?url=github.com/o/r   dry-run quality score, nothing stored',
+      'POST /verify/start {url, method: dns|file|email, email?}   (signed in) start proving a site is yours',
+      'GET /auth/github?return=/   sign in with GitHub (sets a session cookie)',
+      'GET /me                     who am I and what do I own',
+      'GET /github/repos           (signed in) repositories you can push to that the app can see',
+      'POST /auth/logout',
+      'POST /verify/check {verificationId, code?}   (signed in) on success the entry is created and owned by you',
+      'GET /google/login?entry=     (signed in as owner) connect Google Analytics, read-only',
+      'POST /entries/:id/analytics (Bearer owner key) {propertyId}   pick the GA4 property after sign-in',
+      'DELETE /entries/:id/analytics (Bearer owner key)',
+      'POST /entries/:id/grade  (signed in as owner, or Bearer owner key) {acceptTerms: true}',
+      'POST /entries/:id/repo   (signed in as owner) {repoUrl}   link a repo to a site entry; your GitHub account must have push access',
+      'DELETE /entries/:id       (Bearer owner key or admin)  remove the entry',
+      'POST /entries/:id/appeals (Bearer owner key) {text}',
+      'POST /appeals/:id/resolve (Bearer admin) {status, response}',
     ],
   }),
 );
+app.get('/health', (c) => c.json({ ok: true }));
 app.get('/v1/health', (c) => c.json({ ok: true }));
 
 // Public reads are cached at the edge for anonymous visitors (see lib/edgecache.ts).
-app.use('/v1/entries', edgeCache(60));
-app.use('/v1/entries/:id', edgeCache(60));
-app.use('/v1/methodology', edgeCache(600));
-app.use('/v1/preview', edgeCache(3600));
+for (const base of ['', '/v1']) {
+  app.use(`${base}/entries`, edgeCache(60));
+  app.use(`${base}/entries/:id`, edgeCache(60));
+  app.use(`${base}/methodology`, edgeCache(600));
+  app.use(`${base}/preview`, edgeCache(3600));
+  app.use(`${base}/posts`, edgeCache(60));
+  app.use(`${base}/posts/:slug`, edgeCache(60));
+}
 
-app.route('/v1', methodology);
-app.route('/v1', entries);
-app.route('/v1', verify);
-app.route('/v1', grade);
-app.route('/v1', appeals);
-app.route('/v1', github);
-app.route('/v1', analytics);
-app.route('/v1', feedback);
-app.route('/v1', google);
-app.route('/v1', auth);
+// Every route answers at the root and under /v1 (the OAuth callbacks are registered under /v1; the docs show the root).
+for (const r of [methodology, entries, verify, grade, appeals, github, analytics, feedback, posts, google, auth]) {
+  app.route('/v1', r);
+  app.route('/', r);
+}
 
 app.notFound((c) => c.json({ error: 'not found' }, 404));
 app.onError((err, c) => {
@@ -80,12 +82,14 @@ app.onError((err, c) => {
 });
 
 /** Admin: run the refresh now (same as the cron). ?quality=1 forces a quality refresh. */
-app.post('/v1/admin/refresh', async (c) => {
+app.post('/admin/refresh', adminRefresh);
+app.post('/v1/admin/refresh', adminRefresh);
+async function adminRefresh(c: Context<{ Bindings: Env }>) {
   const auth = (c.req.header('authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
   if (!c.env.ADMIN_TOKEN || auth !== c.env.ADMIN_TOKEN) return c.json({ error: 'unauthorized' }, 401);
   const force = c.req.query('quality') === '1';
   return c.json(await scheduledRefresh(c.env, force ? new Date(Date.UTC(2000, 0, 1)) : new Date()));
-});
+}
 
 export default {
   fetch: app.fetch,

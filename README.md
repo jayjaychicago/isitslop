@@ -11,7 +11,7 @@ Built for founders and open source maintainers who want an honest, public answer
 
 Heuristics only. No LLMs. Every rule is public and generated into the website's methodology page from the code. The API is a Cloudflare Worker written in TypeScript with Hono, the index is Neon Postgres, the website is Next.js on Vercel. Owners sign in with GitHub through the Is It Slop GitHub App, claim their repositories, link their sites, and connect Google Analytics; repositories are read with the owner's own access, so private repos work and nobody shares a rate limit. A private repository's URL is never published. It is not a security scanner, an SEO tool, or a replacement for talking to users.
 
-Live at [isitslop.org](https://isitslop.org). Score API at [api.isitslop.org](https://api.isitslop.org) (keys at [isitslop.org/api-docs](https://isitslop.org/api-docs)); everything else the site does is at internalapi.isitslop.org/v1. Read [foundation.md](foundation.md) first: it is the "why" for this repo.
+Live at [isitslop.org](https://isitslop.org). Score API at [api.isitslop.org](https://api.isitslop.org) (keys at [isitslop.org/api-docs](https://isitslop.org/api-docs)); everything else the site does is at internalapi.isitslop.org. Read [foundation.md](foundation.md) first: it is the "why" for this repo.
 
 ## Layout
 
@@ -39,16 +39,15 @@ Website:
 ```sh
 cd website
 npm install
-echo 'NEXT_PUBLIC_API_URL=http://localhost:8787/v1' > .env.local
+echo 'NEXT_PUBLIC_API_URL=http://localhost:8787' > .env.local
 npm run dev                           # http://localhost:3000
 ```
 
-Note the API base URL includes `/v1`.
 
 ## Look up a score
 
 ```sh
-curl -H "X-API-Key: $ISITSLOP_API_KEY" "https://api.isitslop.org/v1/score?url=apiblaze.com"
+curl -H "X-API-Key: $ISITSLOP_API_KEY" "https://api.isitslop.org/score?url=apiblaze.com"
 # {"found":true,"quality":79,"popularity":0,"verdict":"fringe_craft","label":"Fringe Craft",...}
 ```
 
@@ -57,7 +56,7 @@ Keys are issued per consumer. Reading the index and entry pages needs no key. Gr
 ## Try the quality rules on any public repo, without storing anything
 
 ```sh
-curl "https://internalapi.isitslop.org/v1/preview?url=github.com/honojs/hono"
+curl "https://internalapi.isitslop.org/preview?url=github.com/honojs/hono"
 ```
 
 ## Contributing
