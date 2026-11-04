@@ -11,7 +11,7 @@ declare global {
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? "";
 
-/** The contact form. A Cloudflare Turnstile check stands in for a captcha; the message is emailed to support@. */
+/** The support form. A Cloudflare Turnstile check stands in for a captcha; the message is emailed to the support inbox, whose address is not published. */
 export function ContactForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -50,7 +50,7 @@ export function ContactForm() {
   if (!SITE_KEY) {
     return (
       <div className="card p-5 mt-8 text-sm text-ink-2">
-        The form is not switched on yet. Email <a className="underline" href="mailto:support@isitslop.org">support@isitslop.org</a> instead.
+        The form is not available right now. Use the <a className="underline" href="/feedback">feedback form</a> or open an issue on <a className="underline" href="https://github.com/jayjaychicago/isitslop/issues">GitHub</a>.
       </div>
     );
   }
@@ -85,7 +85,7 @@ export function ContactForm() {
       {err && <div className="text-sm text-slop">{err}</div>}
       <div className="flex items-center gap-3">
         <button className="btn" type="submit" disabled={state === "sending" || !token || message.trim().length < 5}>{state === "sending" ? "Sending…" : "Send"}</button>
-        <span className="text-xs text-muted">{token ? "Goes to support@isitslop.org. Nothing is stored." : "Waiting for the human check."}</span>
+        <span className="text-xs text-muted">{token ? "Goes to the people who run the site. Nothing is stored." : "Waiting for the human check."}</span>
       </div>
     </form>
   );

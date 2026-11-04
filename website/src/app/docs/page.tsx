@@ -147,7 +147,7 @@ export default function DocsPage() {
         <li><strong className="text-ink">Repositories are read with the owner&apos;s own GitHub token</strong>, read-only. Private repositories are scored but never named.</li>
         <li><strong className="text-ink">Processors:</strong> Cloudflare (API and edge), Vercel (website), Neon (database), Amazon SES (email), Google Analytics (the site&apos;s own visit counts), apiblaze (API gateway and keys).</li>
         <li><strong className="text-ink">Retention:</strong> an entry and its grades stay until the owner or the operator deletes them. Sessions last 30 days. Feedback and contact messages are emailed, not stored.</li>
-        <li><strong className="text-ink">Your rights:</strong> delete your entry yourself from its page, or write to <a className="underline" href="mailto:support@isitslop.org">support@isitslop.org</a>.</li>
+        <li><strong className="text-ink">Your rights:</strong> delete your entry yourself from its page, or write to us through the <Link className="underline" href="/support">support form</Link>.</li>
       </ul>
 
       <H2 id="security">6. Security</H2>
@@ -157,7 +157,7 @@ export default function DocsPage() {
         <li>Owner actions require a GitHub sign-in session or the owner key returned by verification. Stored GitHub and Google tokens are encrypted at rest with a key held only by the API.</li>
         <li>API keys are per user, revocable instantly from the API page, and never shown again after creation.</li>
         <li>The connector exposes one read-only tool with no free-form request construction, so there is nothing for a prompt to redirect.</li>
-        <li>Report a vulnerability to <a className="underline" href="mailto:support@isitslop.org">support@isitslop.org</a>. We acknowledge within two working days and fix before disclosure. The code is public, so you can also open a pull request.</li>
+        <li>Report a vulnerability through the <Link className="underline" href="/support">support form</Link>. We acknowledge within two working days and fix before disclosure. The code is public, so you can also open a pull request.</li>
       </ul>
 
       <H2 id="reliability">7. Reliability and limits</H2>
@@ -170,7 +170,7 @@ export default function DocsPage() {
 
       <H2 id="support">8. Support</H2>
       <P>
-        <Link className="underline" href="/contact">Contact form</Link>, <a className="underline" href="mailto:support@isitslop.org">support@isitslop.org</a>, or an issue at <a className="underline" href={`${REPO}/issues`}>GitHub</a>. Bugs and rule changes are welcome as pull requests. A wrong score on your own entry is best raised as a public appeal from its page.
+        The <Link className="underline" href="/support">support form</Link>, or an issue at <a className="underline" href={`${REPO}/issues`}>GitHub</a>. Bugs and rule changes are welcome as pull requests. A wrong score on your own entry is best raised as a public appeal from its page.
       </P>
 
       <H2 id="changes">9. Versions and changes</H2>
@@ -185,7 +185,7 @@ export default function DocsPage() {
         ["Read or write", "Reads only."],
         ["Documentation URL", <code key="2">https://isitslop.org/docs</code>],
         ["Privacy policy URL", <code key="3">https://isitslop.org/privacy</code>],
-        ["Support contact", <code key="4">support@isitslop.org</code>],
+        ["Support contact", <code key="4">https://isitslop.org/support</code>],
         ["Company", "API Blaze, LLC, https://apiblaze.com"],
         ["API ownership", "First-party. The server calls the operator's own API on the operator's own domain."],
         ["Icon", <a key="5" className="underline" href="/brand/mark.png">/brand/mark.png</a>],
@@ -206,7 +206,7 @@ export default function DocsPage() {
         <Link href="/api-docs" className="btn">API page</Link>
         <Link href="/methodology" className="btn btn-ghost">Methodology</Link>
         <Link href="/privacy" className="btn btn-ghost">Privacy</Link>
-        <Link href="/contact" className="btn btn-ghost">Contact</Link>
+        <Link href="/support" className="btn btn-ghost">Support</Link>
       </div>
     </div>
   );

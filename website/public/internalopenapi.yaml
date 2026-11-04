@@ -134,7 +134,7 @@ paths:
 
   /feedback:
     post:
-      summary: Send feedback to support@isitslop.org
+      summary: Send feedback to the operators
       description: Emails the message to the maintainers. Nothing is stored. Rate limited to 5 messages an hour per IP.
       requestBody:
         required: true
@@ -154,7 +154,7 @@ paths:
         "502": { description: Email could not be sent }
   /contact:
     post:
-      summary: The contact form, to support@isitslop.org
+      summary: The support form (isitslop.org/support), emailed to the operators
       description: A Cloudflare Turnstile token is checked first, then the message is emailed with the sender as Reply-To. Nothing is stored. Rate limited to 5 messages an hour per IP.
       requestBody:
         required: true

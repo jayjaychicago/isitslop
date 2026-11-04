@@ -57,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/terms" className="hover:text-ink">Terms</Link>
               <Link href="/privacy" className="hover:text-ink">Privacy</Link>
               <Link href="/feedback" className="hover:text-ink">Feedback</Link>
+              <Link href="/support" className="hover:text-ink">Support</Link>
               <a href="https://github.com/jayjaychicago/isitslop/blob/main/foundation.md" className="hover:text-ink">Foundation</a>
             </div>
           </div>
